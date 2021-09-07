@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/StateHolder.dart';
 import 'package:nhentai/bloc/DoujinshiListBloc.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
@@ -8,7 +10,6 @@ import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
-import 'package:nhentai/text_widget/DefaultScreenTitle.dart';
 import 'package:nhentai/text_widget/DefaultSectionLabel.dart';
 
 class DoujinshiGallery extends StatefulWidget {
@@ -22,6 +23,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   final IntegerBloc _numOfPagesBloc = IntegerBloc();
   final DoujinshiListBloc _doujinshiListBloc = DoujinshiListBloc();
   final StringBloc _pageIndicatorBloc = StringBloc();
+  final StringBloc _searchTermBloc = StringBloc();
+  String _searchTerm = '';
+
+  StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
 
   final ScrollController _scrollController = ScrollController();
 
@@ -38,7 +43,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _doujinshiListBloc.updateData(getCurrentPage());
       _pageIndicatorBloc.updateData(_pageIndicator());
     } else {
-      DoujinshiList doujinshiList = await _getBookListByPage.execute(page);
+      DoujinshiList doujinshiList =
+          await _getBookListByPage.execute(page, _searchTerm);
       print('Number of pages: ${doujinshiList.numPages}');
       if (doujinshiList.numPages > 0) {
         currentPage = page;
@@ -83,6 +89,17 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     return pageIndicator;
   }
 
+  void _onSearchTermChanged(String newTerm) {
+    print('newTerm=$newTerm');
+    if (newTerm != _searchTerm) {
+      doujinshiMap.clear();
+      _searchTerm = newTerm;
+      _searchTermBloc.updateData(newTerm);
+      selectedPageHolder.data = 0;
+      _goToPage(0);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +111,22 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     Widget bodyWidget = ListView(
       controller: _scrollController,
       children: [
+        StreamBuilder(
+            stream: _searchTermBloc.output,
+            initialData: '',
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              String searchTerm = snapshot.data;
+              return Visibility(
+                child: Center(
+                  child: Container(
+                    child: SectionLabel(
+                        'Result for $searchTerm', Colors.blueGrey[500]!),
+                    margin: EdgeInsets.fromLTRB(0, 20, 0, 10),
+                  ),
+                ),
+                visible: searchTerm.isNotEmpty,
+              );
+            }),
         DoujinshiGridGallery(
           doujinshiListBloc: _doujinshiListBloc,
         ),
@@ -113,18 +146,19 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
           child: Center(
             child: NumberPageIndicesList(
                 numOfPagesBloc: _numOfPagesBloc,
-                selectedPageIndexHolder: StateHolder<int>(data: 0),
+                selectedPageIndexHolder: selectedPageHolder,
                 onPagePressed: this._goToPage),
           ),
           height: 40,
         )
       ],
     );
+
     return Scaffold(
       appBar: AppBar(
-        title: DefaultScreenTitle('nHentai Gallery'),
+        title: _getTitle(),
         centerTitle: true,
-        backgroundColor: Colors.green[500],
+        backgroundColor: Colors.grey[900],
       ),
       body: Container(
         child: bodyWidget,
@@ -139,5 +173,85 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     _doujinshiListBloc.dispose();
     _numOfPagesBloc.dispose();
     _pageIndicatorBloc.dispose();
+  }
+
+  Widget _getTitle() {
+    TextEditingController editingController = TextEditingController();
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              SvgPicture.asset(
+                Constant.IMAGE_LOGO,
+                width: 40,
+                height: 20,
+              ),
+              Expanded(
+                child: Container(
+                  margin: EdgeInsets.fromLTRB(15, 0, 20, 0),
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(5)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Expanded(
+                          child: Container(
+                        margin: EdgeInsets.only(left: 10),
+                        child: TextField(
+                          controller: editingController,
+                          decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Milf',
+                              contentPadding: EdgeInsets.only(bottom: 6)),
+                          style: TextStyle(
+                              fontFamily: 'NunitoRegular',
+                              fontSize: 18,
+                              color: Colors.green[500]),
+                          maxLines: 1,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: _onSearchTermChanged,
+                        ),
+                      )),
+                      Container(
+                        child: IconButton(
+                          onPressed: () {
+                            editingController.clear();
+                            _onSearchTermChanged('');
+                          },
+                          padding: EdgeInsets.all(0),
+                          icon: Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Colors.green[500],
+                          ),
+                        ),
+                      ),
+                      Container(
+                        child: IconButton(
+                          onPressed: () =>
+                              _onSearchTermChanged(editingController.text),
+                          icon: Icon(Icons.search),
+                          padding: EdgeInsets.all(0),
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green[500],
+                          borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(5),
+                              bottomRight: Radius.circular(5)),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              )
+            ],
+          ),
+        )
+      ],
+    );
   }
 }

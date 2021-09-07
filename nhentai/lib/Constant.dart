@@ -13,4 +13,5 @@ class Constant {
   static const String IMAGE_LANG_GB = 'images/ic_lang_gb.png';
   static const String IMAGE_LANG_JP = 'images/ic_lang_jp.png';
   static const String IMAGE_LANG_CN = 'images/ic_lang_cn.png';
+  static const String IMAGE_LOGO = 'images/ic_nhentai_logo.svg';
 }
