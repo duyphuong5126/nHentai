@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/StateHolder.dart';
@@ -156,6 +157,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
     return Scaffold(
       appBar: AppBar(
+        backwardsCompatibility: false,
+        systemOverlayStyle:
+            SystemUiOverlayStyle(statusBarColor: Colors.green[500]),
         title: _getTitle(),
         centerTitle: true,
         backgroundColor: Colors.grey[900],
@@ -177,6 +181,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   Widget _getTitle() {
     TextEditingController editingController = TextEditingController();
+    TextStyle searchTextStyle = TextStyle(
+        fontFamily: 'NunitoRegular', fontSize: 18, color: Colors.green[500]);
     return Row(
       children: [
         Expanded(
@@ -184,33 +190,33 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
             children: [
               SvgPicture.asset(
                 Constant.IMAGE_LOGO,
-                width: 40,
-                height: 20,
+                width: 30,
+                height: 15,
               ),
               Expanded(
                 child: Container(
                   margin: EdgeInsets.fromLTRB(15, 0, 20, 0),
-                  height: 40,
+                  height: 35,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.all(Radius.circular(5)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                           child: Container(
+                        height: 35,
                         margin: EdgeInsets.only(left: 10),
                         child: TextField(
                           controller: editingController,
                           decoration: InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Milf',
-                              contentPadding: EdgeInsets.only(bottom: 6)),
-                          style: TextStyle(
-                              fontFamily: 'NunitoRegular',
-                              fontSize: 18,
-                              color: Colors.green[500]),
+                              hintStyle: searchTextStyle,
+                              contentPadding: EdgeInsets.only(bottom: 10)),
+                          style: searchTextStyle,
                           maxLines: 1,
                           textInputAction: TextInputAction.search,
                           onSubmitted: _onSearchTermChanged,
