@@ -53,6 +53,7 @@ flutter:
    - images/ic_lang_gb.png
    - images/ic_lang_cn.png
    - images/ic_nhentai_logo.svg
+   - images/ic_nothing_here_grey.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

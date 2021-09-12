@@ -47,16 +47,14 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       DoujinshiList doujinshiList =
           await _getBookListByPage.execute(page, _searchTerm);
       print('Number of pages: ${doujinshiList.numPages}');
-      if (doujinshiList.numPages > 0) {
-        currentPage = page;
-        numOfPages = doujinshiList.numPages;
-        itemCountPerPage = doujinshiList.perPage;
-        doujinshiMap[currentPage] = doujinshiList.result;
+      currentPage = page;
+      numOfPages = doujinshiList.numPages;
+      itemCountPerPage = doujinshiList.perPage;
+      doujinshiMap[currentPage] = doujinshiList.result;
 
-        _doujinshiListBloc.updateData(getCurrentPage());
-        _numOfPagesBloc.updateData(doujinshiList.numPages);
-        _pageIndicatorBloc.updateData(_pageIndicator());
-      }
+      _doujinshiListBloc.updateData(getCurrentPage());
+      _numOfPagesBloc.updateData(doujinshiList.numPages);
+      _pageIndicatorBloc.updateData(_pageIndicator());
     }
   }
 
@@ -66,7 +64,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _goToPage(int page) {
-    if (page < 0 || page >= numOfPages) {
+    if (page < 0 || (page > 0 && page >= numOfPages)) {
       print('Page $page does not exist');
     } else {
       print('Go to page $page');
@@ -78,7 +76,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   String _pageIndicator() {
     String pageIndicator;
     int currentPageSize = getCurrentPage().length;
-    if (currentPageSize <= 0) {
+    if (numOfPages <= 0) {
+      pageIndicator = _searchTerm.isNotEmpty
+          ? 'No result for \"$_searchTerm\"'
+          : 'No result';
+    } else if (currentPageSize <= 0) {
       pageIndicator = 'Page ${currentPage + 1}/$numOfPages';
     } else if (currentPageSize <= 1) {
       pageIndicator =
@@ -91,7 +93,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _onSearchTermChanged(String newTerm) {
-    print('newTerm=$newTerm');
+    print('newTerm=$newTerm, _searchTerm=$_searchTerm');
     if (newTerm != _searchTerm) {
       doujinshiMap.clear();
       _searchTerm = newTerm;
@@ -109,64 +111,44 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   @override
   Widget build(BuildContext context) {
-    Widget bodyWidget = ListView(
-      controller: _scrollController,
-      children: [
-        StreamBuilder(
-            stream: _searchTermBloc.output,
-            initialData: '',
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              String searchTerm = snapshot.data;
-              return Visibility(
-                child: Center(
-                  child: Container(
-                    child: SectionLabel(
-                        'Result for $searchTerm', Colors.blueGrey[500]!),
-                    margin: EdgeInsets.fromLTRB(0, 20, 0, 10),
-                  ),
-                ),
-                visible: searchTerm.isNotEmpty,
-              );
-            }),
-        DoujinshiGridGallery(
-          doujinshiListBloc: _doujinshiListBloc,
-        ),
-        Center(
-          child: Container(
-            child: StreamBuilder(
-                stream: _pageIndicatorBloc.output,
-                initialData: '',
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  return SectionLabel(snapshot.data, Colors.blueGrey[500]!);
-                }),
-            margin: EdgeInsets.fromLTRB(10, 20, 10, 0),
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.fromLTRB(10, 20, 10, 40),
-          child: Center(
-            child: NumberPageIndicesList(
-                numOfPagesBloc: _numOfPagesBloc,
-                selectedPageIndexHolder: selectedPageHolder,
-                onPagePressed: this._goToPage),
-          ),
-          height: 40,
-        )
-      ],
-    );
-
     return Scaffold(
       appBar: AppBar(
-        backwardsCompatibility: false,
         systemOverlayStyle:
             SystemUiOverlayStyle(statusBarColor: Colors.green[500]),
         title: _getTitle(),
         centerTitle: true,
         backgroundColor: Colors.grey[900],
       ),
-      body: Container(
-        child: bodyWidget,
-        color: Colors.black,
+      body: Stack(
+        alignment: Alignment.topLeft,
+        children: [
+          Container(
+            child: _getBodyWidget(),
+            color: Colors.black,
+          ),
+          StreamBuilder(
+              stream: _numOfPagesBloc.output,
+              initialData: -1,
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                return Visibility(
+                  child: Container(
+                    child: Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        Image.asset(
+                          'images/ic_nothing_here_grey.png',
+                          height: 450,
+                        )
+                      ],
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    color: Color.fromARGB(255, 24, 24, 24),
+                    constraints: BoxConstraints.expand(),
+                  ),
+                  visible: snapshot.data == 0,
+                );
+              })
+        ],
       ),
     );
   }
@@ -256,6 +238,58 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
               )
             ],
           ),
+        )
+      ],
+    );
+  }
+
+  Widget _getBodyWidget() {
+    return ListView(
+      controller: _scrollController,
+      children: [
+        StreamBuilder(
+            stream: _searchTermBloc.output,
+            initialData: '',
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              String searchTerm = snapshot.data;
+              return Visibility(
+                child: Center(
+                  child: Container(
+                    child: SectionLabel(
+                        'Result for $searchTerm', Colors.blueGrey[500]!),
+                    margin: EdgeInsets.fromLTRB(0, 20, 0, 10),
+                  ),
+                ),
+                visible: searchTerm.isNotEmpty,
+              );
+            }),
+        DoujinshiGridGallery(
+          doujinshiListBloc: _doujinshiListBloc,
+        ),
+        Center(
+          child: Container(
+            child: StreamBuilder(
+                stream: _pageIndicatorBloc.output,
+                initialData: '',
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  String label = snapshot.data;
+                  return Visibility(
+                    child: SectionLabel(label, Colors.blueGrey[500]!),
+                    visible: label.isNotEmpty,
+                  );
+                }),
+            margin: EdgeInsets.fromLTRB(10, 20, 10, 0),
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.fromLTRB(10, 20, 10, 40),
+          child: Center(
+            child: NumberPageIndicesList(
+                numOfPagesBloc: _numOfPagesBloc,
+                selectedPageIndexHolder: selectedPageHolder,
+                onPagePressed: this._goToPage),
+          ),
+          height: 40,
         )
       ],
     );

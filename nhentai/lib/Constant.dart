@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 class Constant {
   static const String BOOK_ID = 'bookId';
   static const String BOOK_COVER_URL = 'bookCoverUrl';
@@ -14,4 +16,9 @@ class Constant {
   static const String IMAGE_LANG_JP = 'images/ic_lang_jp.png';
   static const String IMAGE_LANG_CN = 'images/ic_lang_cn.png';
   static const String IMAGE_LOGO = 'images/ic_nhentai_logo.svg';
+  static const String IMAGE_NOTHING = 'images/ic_nothing_here_grey.png';
+
+  static Color getNothingColor() {
+    return Color.fromARGB(255, 26, 26, 26);
+  }
 }
