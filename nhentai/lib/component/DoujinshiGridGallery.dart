@@ -93,7 +93,7 @@ class _DoujinshiGridGalleryState extends State<DoujinshiGridGallery> {
                             overflow: TextOverflow.ellipsis,
                             text: TextSpan(
                                 style: TextStyle(
-                                    fontFamily: 'NunitoRegular',
+                                    fontFamily: Constant.NUNITO_REGULAR,
                                     fontSize: 14,
                                     color: Colors.white),
                                 children: spans),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/page/DoujinshiGallery.dart';
 import 'package:nhentai/page/DownloadPage.dart';
 import 'package:nhentai/page/FavoritePage.dart';
@@ -61,9 +62,10 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Colors.grey[900],
         showSelectedLabels: false,
         showUnselectedLabels: false,
-        selectedLabelStyle: TextStyle(fontFamily: 'NunitoBlack', fontSize: 18),
+        selectedLabelStyle:
+            TextStyle(fontFamily: Constant.NUNITO_BLACK, fontSize: 18),
         unselectedLabelStyle:
-            TextStyle(fontFamily: 'NunitoRegular', fontSize: 16),
+            TextStyle(fontFamily: Constant.NUNITO_REGULAR, fontSize: 16),
         onTap: _onTabSelected,
       ),
     );

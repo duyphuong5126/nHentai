@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
 
 class NumberPageIndex extends StatefulWidget {
@@ -28,8 +29,9 @@ class _NumberPageIndexState extends State<NumberPageIndex> {
         initialData: widget.initialSelectedPageIndex,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           int currentPage = snapshot.data;
-          String fontFamily =
-              index == currentPage ? 'NunitoBold' : 'NunitoLight';
+          String fontFamily = index == currentPage
+              ? Constant.NUNITO_BOLD
+              : Constant.NUNITO_LIGHT;
           Color textColor =
               index == currentPage ? Colors.green[500]! : Colors.white;
           return Container(

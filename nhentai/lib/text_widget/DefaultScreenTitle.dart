@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhentai/Constant.dart';
 
 class DefaultScreenTitle extends StatelessWidget {
   final String title;
@@ -11,7 +12,7 @@ class DefaultScreenTitle extends StatelessWidget {
       title,
       style: TextStyle(
           fontSize: 20.0,
-          fontFamily: 'NunitoBlack',
+          fontFamily: Constant.NUNITO_BLACK,
           letterSpacing: 1.5,
           color: Colors.white),
     );

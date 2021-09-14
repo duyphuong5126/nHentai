@@ -18,7 +18,15 @@ class Constant {
   static const String IMAGE_LOGO = 'images/ic_nhentai_logo.svg';
   static const String IMAGE_NOTHING = 'images/ic_nothing_here_grey.png';
 
+  static const String NUNITO_BLACK = 'NunitoBlack';
+  static const String NUNITO_REGULAR = 'NunitoRegular';
+  static const String NUNITO_BOLD = 'NunitoBold';
+  static const String NUNITO_LIGHT = 'NunitoLight';
+
+  static Color grey4D4D4D = Color.fromARGB(255, 77, 77, 77);
+  static Color grey1f1f1f = Color.fromARGB(255, 31, 31, 31);
+
   static Color getNothingColor() {
-    return Color.fromARGB(255, 26, 26, 26);
+    return Color.fromARGB(255, 24, 24, 24);
   }
 }

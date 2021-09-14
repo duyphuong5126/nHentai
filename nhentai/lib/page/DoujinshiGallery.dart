@@ -5,12 +5,15 @@ import 'package:nhentai/Constant.dart';
 import 'package:nhentai/StateHolder.dart';
 import 'package:nhentai/bloc/DoujinshiListBloc.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
+import 'package:nhentai/bloc/SortOptionBloc.dart';
 import 'package:nhentai/bloc/StringBloc.dart';
 import 'package:nhentai/component/DoujinshiGridGallery.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
+import 'package:nhentai/component/SortOptionList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
+import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/text_widget/DefaultSectionLabel.dart';
 
 class DoujinshiGallery extends StatefulWidget {
@@ -25,7 +28,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   final DoujinshiListBloc _doujinshiListBloc = DoujinshiListBloc();
   final StringBloc _pageIndicatorBloc = StringBloc();
   final StringBloc _searchTermBloc = StringBloc();
+  final SortOptionBloc _sortOptionBloc = SortOptionBloc();
   String _searchTerm = '';
+  SortOption _sortOption = SortOption.MostRecent;
 
   StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
 
@@ -45,7 +50,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _pageIndicatorBloc.updateData(_pageIndicator());
     } else {
       DoujinshiList doujinshiList =
-          await _getBookListByPage.execute(page, _searchTerm);
+          await _getBookListByPage.execute(page, _searchTerm, _sortOption);
       print('Number of pages: ${doujinshiList.numPages}');
       currentPage = page;
       numOfPages = doujinshiList.numPages;
@@ -103,6 +108,16 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     }
   }
 
+  void _onSortOptionSelected(SortOption newSortOption) {
+    print('_sortOption=$_sortOption, newSortOption=$newSortOption');
+    if (newSortOption != _sortOption && _searchTerm.isNotEmpty) {
+      doujinshiMap.clear();
+      _sortOption = newSortOption;
+      selectedPageHolder.data = 0;
+      _goToPage(0);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -142,7 +157,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       ],
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    color: Color.fromARGB(255, 24, 24, 24),
+                    color: Constant.getNothingColor(),
                     constraints: BoxConstraints.expand(),
                   ),
                   visible: snapshot.data == 0,
@@ -159,12 +174,16 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     _doujinshiListBloc.dispose();
     _numOfPagesBloc.dispose();
     _pageIndicatorBloc.dispose();
+    _searchTermBloc.dispose();
+    _sortOptionBloc.dispose();
   }
 
   Widget _getTitle() {
     TextEditingController editingController = TextEditingController();
     TextStyle searchTextStyle = TextStyle(
-        fontFamily: 'NunitoRegular', fontSize: 18, color: Colors.green[500]);
+        fontFamily: Constant.NUNITO_REGULAR,
+        fontSize: 18,
+        color: Colors.green[500]);
     return Row(
       children: [
         Expanded(
@@ -257,8 +276,25 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                   child: Container(
                     child: SectionLabel(
                         'Result for $searchTerm', Colors.blueGrey[500]!),
-                    margin: EdgeInsets.fromLTRB(0, 20, 0, 10),
+                    margin: EdgeInsets.fromLTRB(0, 20, 0, 0),
                   ),
+                ),
+                visible: searchTerm.isNotEmpty,
+              );
+            }),
+        StreamBuilder(
+            stream: _searchTermBloc.output,
+            initialData: '',
+            builder: (BuildContext c, AsyncSnapshot s) {
+              String searchTerm = s.data;
+              return Visibility(
+                child: Container(
+                  child: SortOptionList(
+                    sortOptionBloc: _sortOptionBloc,
+                    onSortOptionSelected: this._onSortOptionSelected,
+                  ),
+                  margin: EdgeInsets.only(top: 20, bottom: 10),
+                  height: 40,
                 ),
                 visible: searchTerm.isNotEmpty,
               );
