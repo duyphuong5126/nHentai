@@ -29,4 +29,9 @@ class Tag {
     data['count'] = this.count;
     return data;
   }
+
+  @override
+  String toString() {
+    return '(id=$id, type=$type, name=$name, url=$url, count=$count)';
+  }
 }

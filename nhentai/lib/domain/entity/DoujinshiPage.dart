@@ -1,11 +1,11 @@
-class Page {
+class DoujinshiPage {
   late String t;
   late int w;
   late int h;
 
-  Page({required this.t, required this.w, required this.h});
+  DoujinshiPage({required this.t, required this.w, required this.h});
 
-  Page.fromJson(Map<String, dynamic> json) {
+  DoujinshiPage.fromJson(Map<String, dynamic> json) {
     t = json['t'];
     w = json['w'];
     h = json['h'];

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:http/http.dart';
+import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 
 class DoujinshiRemoteDataSource {
@@ -25,11 +26,29 @@ class DoujinshiRemoteDataSource {
       DoujinshiList doujinshiList =
           DoujinshiList.fromJson(jsonDecode(response.body));
       print(
-          '-------------------\GET $url\nResult: ${response.statusCode} - ${doujinshiList.result.map((e) => e.id)}\n-------------------');
+          '-------------------\nGET $url\nResult: ${response.statusCode} - ${doujinshiList.result.map((e) => e.id)}\n-------------------');
       result = Future.value(doujinshiList);
     } catch (e) {
-      print('-------------------\GET $url\Error: $e\n-------------------');
+      print('-------------------\nGET $url\nError: $e\n-------------------');
       result = Future.value(DoujinshiList(result: [], numPages: 0, perPage: 0));
+    }
+    return result;
+  }
+
+  Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(
+      int doujinshiId) async {
+    String url = 'https://nhentai.net/api/gallery/$doujinshiId/related';
+    Response response = await get(Uri.parse(url));
+    Future<RecommendedDoujinshiList> result;
+    try {
+      RecommendedDoujinshiList doujinshiList =
+          RecommendedDoujinshiList.fromJson(jsonDecode(response.body));
+      print(
+          '-------------------\nGET $url\nResult: ${response.statusCode} - ${doujinshiList.result.map((e) => e.id)}\n-------------------');
+      result = Future.value(doujinshiList);
+    } catch (e) {
+      print('-------------------\nGET $url\nError: $e\n-------------------');
+      result = Future.value(RecommendedDoujinshiList(result: []));
     }
     return result;
   }

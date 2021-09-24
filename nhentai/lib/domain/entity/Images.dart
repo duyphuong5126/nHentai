@@ -1,19 +1,19 @@
-import 'package:nhentai/domain/entity/Page.dart';
+import 'package:nhentai/domain/entity/DoujinshiPage.dart';
 
 class Images {
-  late List<Page> pages;
-  late Page cover;
-  late Page thumbnail;
+  late List<DoujinshiPage> pages;
+  late DoujinshiPage cover;
+  late DoujinshiPage thumbnail;
 
   Images({required this.pages, required this.cover, required this.thumbnail});
 
   Images.fromJson(Map<String, dynamic> json) {
     pages = [];
     json['pages'].forEach((v) {
-      pages.add(new Page.fromJson(v));
+      pages.add(new DoujinshiPage.fromJson(v));
     });
-    cover = new Page.fromJson(json['cover']);
-    thumbnail = new Page.fromJson(json['thumbnail']);
+    cover = new DoujinshiPage.fromJson(json['cover']);
+    thumbnail = new DoujinshiPage.fromJson(json['thumbnail']);
   }
 
   Map<String, dynamic> toJson() {

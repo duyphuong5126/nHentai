@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nhentai/Constant.dart';
+import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/StateHolder.dart';
 import 'package:nhentai/bloc/DoujinshiListBloc.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
@@ -118,6 +119,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     }
   }
 
+  void _openDoujinshi(Doujinshi doujinshi) {
+    Navigator.of(context)
+        .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -214,7 +220,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           controller: editingController,
                           decoration: InputDecoration(
                               border: InputBorder.none,
-                              hintText: 'Milf',
+                              hintText: 'Type something',
                               hintStyle: searchTextStyle,
                               contentPadding: EdgeInsets.only(bottom: 10)),
                           style: searchTextStyle,
@@ -301,6 +307,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
             }),
         DoujinshiGridGallery(
           doujinshiListBloc: _doujinshiListBloc,
+          onDoujinshiSelected: this._openDoujinshi,
         ),
         Center(
           child: Container(

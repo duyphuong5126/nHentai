@@ -14,9 +14,10 @@ class Doujinshi {
   late int numPages;
   late int numFavorites;
 
-  static String _thumbnailBaseUrl = 'https://t.nhentai.net';
-
-  late String bookThumbnail;
+  late String thumbnailImage;
+  late String coverImage;
+  List<String> previewThumbnailList = [];
+  String backUpCoverImage = '';
   String languageIcon = '';
 
   Doujinshi(
@@ -50,8 +51,21 @@ class Doujinshi {
   }
 
   void _initData() {
-    String imageType = images.thumbnail.t == 'p' ? '.png' : '.jpg';
-    bookThumbnail = '$_thumbnailBaseUrl/galleries/$mediaId/thumb$imageType';
+    String thumbnailType = images.thumbnail.t == 'p' ? '.png' : '.jpg';
+    thumbnailImage =
+        '${Constant.NHENTAI_T}/galleries/$mediaId/thumb$thumbnailType';
+    coverImage = '${Constant.NHENTAI_T}/galleries/$mediaId/cover.jpg';
+    print('Test>>> pages: ${images.pages}');
+    if (images.pages.isNotEmpty) {
+      String backUpCoverType = images.pages.first.t == 'p' ? '.png' : '.jpg';
+      backUpCoverImage =
+          '${Constant.NHENTAI_I}/galleries/$mediaId/1$backUpCoverType';
+      for (int index = 0; index < images.pages.length; index++) {
+        previewThumbnailList.add(
+            '${Constant.NHENTAI_T}/galleries/$mediaId/${index + 1}t$backUpCoverType');
+      }
+    }
+
     if (tags.any((element) {
       String lang = element.name.toLowerCase();
       return lang == Constant.ENGLISH_LANG || lang == Constant.TRANSLATED_LANG;
@@ -59,11 +73,11 @@ class Doujinshi {
       languageIcon = Constant.IMAGE_LANG_GB;
     }
     if (tags.any(
-            (element) => element.name.toLowerCase() == Constant.JAPANESE_LANG)) {
+        (element) => element.name.toLowerCase() == Constant.JAPANESE_LANG)) {
       languageIcon = Constant.IMAGE_LANG_JP;
     }
     if (tags.any(
-            (element) => element.name.toLowerCase() == Constant.CHINESE_LANG)) {
+        (element) => element.name.toLowerCase() == Constant.CHINESE_LANG)) {
       languageIcon = Constant.IMAGE_LANG_CN;
     }
   }
