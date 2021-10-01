@@ -5,8 +5,11 @@ import 'package:nhentai/component/doujinshi/PreviewThumbnailSeeMore.dart';
 
 class PreviewSection extends StatefulWidget {
   final List<String> pages;
+  final Function(int) onPageSelected;
 
-  const PreviewSection({Key? key, required this.pages}) : super(key: key);
+  const PreviewSection(
+      {Key? key, required this.pages, required this.onPageSelected})
+      : super(key: key);
 
   @override
   _PreviewSectionState createState() => _PreviewSectionState();
@@ -49,11 +52,11 @@ class _PreviewSectionState extends State<PreviewSection> {
                           thumbnailUrl: pages.elementAt(index),
                           imagePosition: index,
                           remainsCount: remainItemCount,
-                          onThumbnailSelected: (position) {})
+                          onThumbnailSelected: widget.onPageSelected)
                       : PreviewThumbnail(
                           thumbnailUrl: pages.elementAt(index),
                           imagePosition: index,
-                          onThumbnailSelected: (position) {});
+                          onThumbnailSelected: widget.onPageSelected);
                 }))
       ],
     );

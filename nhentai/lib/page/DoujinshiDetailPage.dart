@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nhentai/Constant.dart';
+import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/bloc/DoujinshiBloc.dart';
 import 'package:nhentai/bloc/DoujinshiListBloc.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
@@ -17,6 +18,7 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
+import 'package:nhentai/page/uimodel/ReadingModel.dart';
 
 class DoujinshiPage extends StatefulWidget {
   final DoujinshiBloc doujinshiBloc;
@@ -100,8 +102,13 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(SizedBox(
       height: 10,
     ));
-    tagMap.forEach((tagName, tagList) {
-      itemList.add(TagsSection(tagName: tagName, tagList: tagList));
+    List<String> tagNames = tagMap.keys.toList(growable: false);
+    tagNames.sort(
+        (first, second) => first.toLowerCase().compareTo(second.toLowerCase()));
+    tagNames.forEach((tagName) {
+      List<Tag>? tags = tagMap[tagName];
+      itemList.add(
+          TagsSection(tagName: tagName, tagList: tags != null ? tags : []));
       itemList.add(SizedBox(
         height: 10,
       ));
@@ -134,7 +141,14 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(PreviewSection(pages: doujinshi.previewThumbnailList));
+    itemList.add(PreviewSection(
+      pages: doujinshi.previewThumbnailList,
+      onPageSelected: (pageIndex) {
+        Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_READER_PAGE,
+            arguments:
+                ReadingModel(doujinshi: doujinshi, startPageIndex: pageIndex));
+      },
+    ));
     itemList.add(SizedBox(
       height: 10,
     ));

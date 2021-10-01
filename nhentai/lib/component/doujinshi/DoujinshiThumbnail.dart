@@ -80,7 +80,7 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                             overflow: TextOverflow.ellipsis,
                             text: TextSpan(
                                 style: TextStyle(
-                                    fontFamily: Constant.NUNITO_REGULAR,
+                                    fontFamily: Constant.NUNITO_SEMI_BOLD,
                                     fontSize: 14,
                                     color: Colors.white),
                                 children: spans),

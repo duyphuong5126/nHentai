@@ -15,6 +15,7 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
+import 'package:nhentai/support/Extensions.dart';
 import 'package:nhentai/text_widget/DefaultSectionLabel.dart';
 
 class DoujinshiGallery extends StatefulWidget {
@@ -245,8 +246,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       ),
                       Container(
                         child: IconButton(
-                          onPressed: () =>
-                              _onSearchTermChanged(editingController.text),
+                          onPressed: () {
+                            _onSearchTermChanged(editingController.text);
+                            context.closeSoftKeyBoard();
+                          },
                           icon: Icon(Icons.search),
                           padding: EdgeInsets.all(0),
                         ),

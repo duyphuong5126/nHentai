@@ -61,7 +61,7 @@ class _TagsSectionState extends State<TagsSection> {
                     text:
                         '(${tag.count > 100000 ? compactFormat.format(tag.count) : decimalFormat.format(tag.count)})',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_REGULAR,
+                        fontFamily: Constant.NUNITO_SEMI_BOLD,
                         fontSize: 14,
                         color: Constant.grey767676),
                   ),

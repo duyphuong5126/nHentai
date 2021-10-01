@@ -17,6 +17,7 @@ class Doujinshi {
   late String thumbnailImage;
   late String coverImage;
   List<String> previewThumbnailList = [];
+  List<String> fullSizePageUrlList = [];
   String backUpCoverImage = '';
   String languageIcon = '';
 
@@ -63,6 +64,9 @@ class Doujinshi {
       for (int index = 0; index < images.pages.length; index++) {
         previewThumbnailList.add(
             '${Constant.NHENTAI_T}/galleries/$mediaId/${index + 1}t$backUpCoverType');
+        String imageType = images.pages[index].t == 'p' ? '.png' : '.jpg';
+        fullSizePageUrlList.add(
+            '${Constant.NHENTAI_I}/galleries/$mediaId/${index + 1}$imageType');
       }
     }
 
