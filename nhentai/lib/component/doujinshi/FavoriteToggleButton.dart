@@ -13,9 +13,7 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
   Widget build(BuildContext context) {
     return MaterialButton(
       padding: EdgeInsets.all(0),
-      onPressed: () {
-        print('Favorite is toggled');
-      },
+      onPressed: () {},
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         child: Row(

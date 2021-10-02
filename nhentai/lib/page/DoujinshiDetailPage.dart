@@ -76,7 +76,6 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(SizedBox(
       height: 10,
     ));
-    print('Test>>> backUpCoverImage ${doujinshi.backUpCoverImage}');
     itemList.add(CoverImage(
       coverImageUrl: doujinshi.coverImage,
       backUpCoverImageUrl: doujinshi.backUpCoverImage,

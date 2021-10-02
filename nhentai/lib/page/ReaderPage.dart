@@ -7,6 +7,7 @@ import 'package:nhentai/bloc/IntegerBloc.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class ReaderPage extends StatefulWidget {
@@ -29,10 +30,10 @@ class _ReaderPageState extends State<ReaderPage>
   late AnimationController _animationController;
   late Animation<Offset> _topSlideAnimation;
   late Animation<Offset> _bottomSlideAnimation;
-  late ScrollController _scrollController;
-  late ScrollController _thumbnailScrollController;
+  late AutoScrollController _scrollController;
+  late AutoScrollController _thumbnailScrollController;
 
-  final IntegerBloc _currentPageBloc = IntegerBloc();
+  IntegerBloc? _currentPageBloc = IntegerBloc();
 
   @override
   void initState() {
@@ -52,9 +53,6 @@ class _ReaderPageState extends State<ReaderPage>
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
     Doujinshi doujinshi = readingModel.doujinshi;
-    int maxThumbnailCount = doujinshi.fullSizePageUrlList.length;
-    int reversePosition = -1;
-    int forwardPosition = -1;
     return Scaffold(
       body: SafeArea(
           child: Stack(
@@ -63,35 +61,8 @@ class _ReaderPageState extends State<ReaderPage>
               child: Align(
             child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
                 (visiblePage) {
-              _currentPageBloc.updateData(visiblePage);
-              int jumpToPosition = visiblePage;
-              ScrollDirection scrollDirection =
-                  _scrollController.position.userScrollDirection;
-              int jumpOffset = 3;
-              print(
-                  'visiblePage=$visiblePage, scrollDirection=$scrollDirection');
-              if (scrollDirection == ScrollDirection.reverse) {
-                jumpToPosition =
-                    (jumpToPosition + jumpOffset < maxThumbnailCount)
-                        ? jumpToPosition + jumpOffset
-                        : maxThumbnailCount - 1;
-                if (reversePosition == -1 || jumpToPosition > reversePosition) {
-                  reversePosition = jumpToPosition;
-                  forwardPosition = -1;
-                  _thumbnailScrollController
-                      .jumpTo(reversePosition * _DEFAULT_THUMBNAIL_WIDTH);
-                }
-              } else if (scrollDirection == ScrollDirection.forward) {
-                jumpToPosition = (jumpToPosition - jumpOffset >= 0)
-                    ? jumpToPosition - jumpOffset
-                    : 0;
-                if (forwardPosition == -1 || jumpToPosition < forwardPosition) {
-                  forwardPosition = jumpToPosition;
-                  reversePosition = -1;
-                  _thumbnailScrollController
-                      .jumpTo(forwardPosition * _DEFAULT_THUMBNAIL_WIDTH);
-                }
-              }
+              _currentPageBloc?.updateData(visiblePage);
+              _thumbnailScrollController.scrollToIndex(visiblePage);
             }),
             alignment: Alignment.topLeft,
           )),
@@ -114,7 +85,8 @@ class _ReaderPageState extends State<ReaderPage>
   @override
   void dispose() {
     super.dispose();
-    _currentPageBloc.dispose();
+    _currentPageBloc?.dispose();
+    _currentPageBloc = null;
     _scrollController.dispose();
     _thumbnailScrollController.dispose();
   }
@@ -180,7 +152,7 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   Widget _buildReaderFooter(Doujinshi doujinshi) {
-    _thumbnailScrollController = ScrollController(keepScrollOffset: false);
+    _thumbnailScrollController = AutoScrollController(keepScrollOffset: false);
     return SlideTransition(
       position: _bottomSlideAnimation,
       child: Container(
@@ -194,18 +166,21 @@ class _ReaderPageState extends State<ReaderPage>
                   itemCount: doujinshi.previewThumbnailList.length,
                   itemBuilder: (BuildContext c, int index) {
                     String thumbnailUrl = doujinshi.previewThumbnailList[index];
-                    return ReaderThumbnail(
-                        thumbnailUrl: thumbnailUrl,
-                        width: _DEFAULT_THUMBNAIL_WIDTH,
-                        height: _DEFAULT_THUMBNAIL_HEIGHT,
-                        thumbnailIndex: index,
-                        onThumbnailSelected: (selectedIndex) {
-                          print('selectedIndex=$selectedIndex');
-                          /*_scrollController
-                              .jumpTo(selectedIndex * _DEFAULT_ITEM_HEIGHT);
-                          _currentPageBloc.updateData(selectedIndex);*/
-                        },
-                        selectedIndexBloc: _currentPageBloc);
+                    return AutoScrollTag(
+                      key: ValueKey(index),
+                      controller: _thumbnailScrollController,
+                      index: index,
+                      child: ReaderThumbnail(
+                          thumbnailUrl: thumbnailUrl,
+                          width: _DEFAULT_THUMBNAIL_WIDTH,
+                          height: _DEFAULT_THUMBNAIL_HEIGHT,
+                          thumbnailIndex: index,
+                          onThumbnailSelected: (selectedIndex) {
+                            _scrollController.scrollToIndex(selectedIndex);
+                            _currentPageBloc?.updateData(selectedIndex);
+                          },
+                          selectedIndexBloc: _currentPageBloc!),
+                    );
                   }),
               constraints:
                   BoxConstraints.expand(height: _DEFAULT_THUMBNAIL_HEIGHT),
@@ -226,7 +201,7 @@ class _ReaderPageState extends State<ReaderPage>
                 ),
                 Expanded(
                     child: StreamBuilder(
-                  stream: _currentPageBloc.output,
+                  stream: _currentPageBloc?.output,
                   initialData: 0,
                   builder: (BuildContext co, AsyncSnapshot snapshot) {
                     int currentPage = snapshot.data;
@@ -297,45 +272,47 @@ class _ReaderPageState extends State<ReaderPage>
     double initialScrollOffset = _DEFAULT_ITEM_HEIGHT * startPageIndex;
     double height = MediaQuery.of(context).size.height;
     _scrollController =
-        ScrollController(initialScrollOffset: initialScrollOffset);
+        AutoScrollController(initialScrollOffset: initialScrollOffset);
     return ListView.builder(
       controller: _scrollController,
       itemCount: doujinshi.fullSizePageUrlList.length,
       itemBuilder: (BuildContext buildContext, int index) {
-        return VisibilityDetector(
+        return AutoScrollTag(
           key: ValueKey(index),
-          onVisibilityChanged: (VisibilityInfo info) {
-            if (_scrollController.position.userScrollDirection !=
-                ScrollDirection.idle) {
+          controller: _scrollController,
+          index: index,
+          child: VisibilityDetector(
+            key: ValueKey(index),
+            onVisibilityChanged: (VisibilityInfo info) {
               onPageVisible((info.key as ValueKey).value);
-            }
-          },
-          child: Container(
-            child: CachedNetworkImage(
-              imageUrl: doujinshi.fullSizePageUrlList[index],
-              errorWidget: (context, url, error) => Image.asset(
-                Constant.IMAGE_NOTHING,
+            },
+            child: Container(
+              child: CachedNetworkImage(
+                imageUrl: doujinshi.fullSizePageUrlList[index],
+                errorWidget: (context, url, error) => Image.asset(
+                  Constant.IMAGE_NOTHING,
+                  fit: BoxFit.fitWidth,
+                ),
                 fit: BoxFit.fitWidth,
-              ),
-              fit: BoxFit.fitWidth,
-              placeholder: (BuildContext context, String url) {
-                return Container(
-                  color: Colors.transparent,
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                          fontSize: 24,
-                          fontFamily: Constant.NUNITO_BLACK,
-                          color: Colors.white),
+                placeholder: (BuildContext context, String url) {
+                  return Container(
+                    color: Colors.transparent,
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                            fontSize: 24,
+                            fontFamily: Constant.NUNITO_BLACK,
+                            color: Colors.white),
+                      ),
                     ),
-                  ),
-                  constraints:
-                      BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
-                );
-              },
+                    constraints:
+                        BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
+                  );
+                },
+              ),
+              margin: EdgeInsets.only(bottom: 10),
             ),
-            margin: EdgeInsets.only(bottom: 10),
           ),
         );
       },

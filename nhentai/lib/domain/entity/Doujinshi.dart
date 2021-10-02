@@ -56,7 +56,6 @@ class Doujinshi {
     thumbnailImage =
         '${Constant.NHENTAI_T}/galleries/$mediaId/thumb$thumbnailType';
     coverImage = '${Constant.NHENTAI_T}/galleries/$mediaId/cover.jpg';
-    print('Test>>> pages: ${images.pages}');
     if (images.pages.isNotEmpty) {
       String backUpCoverType = images.pages.first.t == 'p' ? '.png' : '.jpg';
       backUpCoverImage =

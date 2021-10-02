@@ -53,7 +53,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     } else {
       DoujinshiList doujinshiList =
           await _getBookListByPage.execute(page, _searchTerm, _sortOption);
-      print('Number of pages: ${doujinshiList.numPages}');
       currentPage = page;
       numOfPages = doujinshiList.numPages;
       itemCountPerPage = doujinshiList.perPage;
@@ -72,9 +71,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   void _goToPage(int page) {
     if (page < 0 || (page > 0 && page >= numOfPages)) {
-      print('Page $page does not exist');
     } else {
-      print('Go to page $page');
       _changeToPage(page);
       _scrollController.jumpTo(0);
     }
@@ -100,7 +97,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _onSearchTermChanged(String newTerm) {
-    print('newTerm=$newTerm, _searchTerm=$_searchTerm');
     if (newTerm != _searchTerm) {
       doujinshiMap.clear();
       _searchTerm = newTerm;
@@ -111,7 +107,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _onSortOptionSelected(SortOption newSortOption) {
-    print('_sortOption=$_sortOption, newSortOption=$newSortOption');
     if (newSortOption != _sortOption && _searchTerm.isNotEmpty) {
       doujinshiMap.clear();
       _sortOption = newSortOption;
