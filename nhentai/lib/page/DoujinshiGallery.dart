@@ -4,11 +4,13 @@ import 'package:flutter_svg/svg.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/StateHolder.dart';
+import 'package:nhentai/bloc/BoolBloc.dart';
 import 'package:nhentai/bloc/DoujinshiListBloc.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
 import 'package:nhentai/bloc/SortOptionBloc.dart';
 import 'package:nhentai/bloc/StringBloc.dart';
 import 'package:nhentai/component/DoujinshiGridGallery.dart';
+import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/component/SortOptionList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
@@ -31,6 +33,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   final StringBloc _pageIndicatorBloc = StringBloc();
   final StringBloc _searchTermBloc = StringBloc();
   final SortOptionBloc _sortOptionBloc = SortOptionBloc();
+  final BoolBloc _loadingBloc = BoolBloc();
   String _searchTerm = '';
   SortOption _sortOption = SortOption.MostRecent;
 
@@ -51,6 +54,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _doujinshiListBloc.updateData(getCurrentPage());
       _pageIndicatorBloc.updateData(_pageIndicator());
     } else {
+      _loadingBloc.updateData(true);
       DoujinshiList doujinshiList =
           await _getBookListByPage.execute(page, _searchTerm, _sortOption);
       currentPage = page;
@@ -61,6 +65,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _doujinshiListBloc.updateData(getCurrentPage());
       _numOfPagesBloc.updateData(doujinshiList.numPages);
       _pageIndicatorBloc.updateData(_pageIndicator());
+      _loadingBloc.updateData(false);
     }
   }
 
@@ -137,34 +142,56 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
         backgroundColor: Colors.grey[900],
       ),
       body: Stack(
-        alignment: Alignment.topLeft,
         children: [
-          Container(
-            child: _getBodyWidget(),
-            color: Colors.black,
-          ),
-          StreamBuilder(
-              stream: _numOfPagesBloc.output,
-              initialData: -1,
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                return Visibility(
-                  child: Container(
-                    child: Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        Image.asset(
-                          'images/ic_nothing_here_grey.png',
-                          height: 450,
-                        )
-                      ],
+          Positioned.fill(
+              child: Align(
+            alignment: Alignment.topLeft,
+            child: Container(
+              child: _getBodyWidget(),
+              color: Colors.black,
+            ),
+          )),
+          Positioned.fill(
+              child: Align(
+            alignment: Alignment.topLeft,
+            child: StreamBuilder(
+                stream: _numOfPagesBloc.output,
+                initialData: -1,
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  return Visibility(
+                    child: Container(
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Image.asset(
+                            'images/ic_nothing_here_grey.png',
+                            height: 450,
+                          )
+                        ],
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      color: Constant.getNothingColor(),
+                      constraints: BoxConstraints.expand(),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    color: Constant.getNothingColor(),
-                    constraints: BoxConstraints.expand(),
-                  ),
-                  visible: snapshot.data == 0,
+                    visible: snapshot.data == 0,
+                  );
+                }),
+          )),
+          Positioned.fill(
+              child: Align(
+            alignment: Alignment.bottomLeft,
+            child: StreamBuilder(
+              stream: _loadingBloc.output,
+              initialData: false,
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                bool isLoading = snapshot.data;
+                return Visibility(
+                  child: LoadingMessage(loadingMessage: 'Loading, please wait'),
+                  visible: isLoading,
                 );
-              })
+              },
+            ),
+          ))
         ],
       ),
     );
@@ -178,6 +205,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     _pageIndicatorBloc.dispose();
     _searchTermBloc.dispose();
     _sortOptionBloc.dispose();
+    _loadingBloc.dispose();
   }
 
   Widget _getTitle() {
@@ -331,7 +359,19 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 onPagePressed: this._goToPage),
           ),
           height: 40,
-        )
+        ),
+        StreamBuilder(
+            stream: _loadingBloc.output,
+            initialData: false,
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              bool isLoading = snapshot.data;
+              return Visibility(
+                child: SizedBox(
+                  height: 100,
+                ),
+                visible: isLoading,
+              );
+            })
       ],
     );
   }
