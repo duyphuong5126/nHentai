@@ -5,7 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
-import 'package:nhentai/bloc/ReaderTypeBloc.dart';
+import 'package:nhentai/bloc/DoubleCubit.dart';
+import 'package:nhentai/bloc/ReaderTypeCubit.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
@@ -41,11 +42,13 @@ class _ReaderPageState extends State<ReaderPage>
   PageController? _pageController;
 
   IntegerBloc? _currentPageBloc = IntegerBloc();
-  ReaderTypeBloc? _readerTypeBloc = ReaderTypeBloc(ReaderType.LeftToRight);
+  ReaderTypeCubit? _readerTypeCubit = ReaderTypeCubit(ReaderType.LeftToRight);
+  DoubleCubit? _screenTransparencyCubit = DoubleCubit(0);
 
   void _iniReaderType() async {
-    ReaderType readerType = await _preferenceManager.getReaderType();
-    _readerTypeBloc?.updateType(readerType);
+    _readerTypeCubit?.updateType(await _preferenceManager.getReaderType());
+    _screenTransparencyCubit
+        ?.emit(await _preferenceManager.getReaderTransparency());
   }
 
   @override
@@ -101,8 +104,10 @@ class _ReaderPageState extends State<ReaderPage>
     super.dispose();
     _currentPageBloc?.dispose();
     _currentPageBloc = null;
-    _readerTypeBloc?.dispose();
-    _readerTypeBloc = null;
+    _readerTypeCubit?.dispose();
+    _readerTypeCubit = null;
+    _screenTransparencyCubit?.dispose();
+    _screenTransparencyCubit = null;
     _scrollController?.dispose();
     _scrollController = null;
     _pageController?.dispose();
@@ -176,7 +181,7 @@ class _ReaderPageState extends State<ReaderPage>
       position: _bottomSlideAnimation,
       child: Container(
         child: BlocBuilder(
-          bloc: _readerTypeBloc,
+          bloc: _readerTypeCubit,
           builder: (BuildContext context, ReaderType readerType) {
             return Column(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -261,6 +266,7 @@ class _ReaderPageState extends State<ReaderPage>
                                         topLeft: topCornersRadius,
                                         topRight: topCornersRadius)),
                                 backgroundColor: Constant.grey4D4D4D,
+                                barrierColor: Colors.transparent,
                                 context: context,
                                 builder: (context) {
                                   return _buildSettingsBottomSheet();
@@ -288,11 +294,13 @@ class _ReaderPageState extends State<ReaderPage>
 
   Widget _buildReaderBody(
       Doujinshi doujinshi, int startPageIndex, Function(int) onPageVisible) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
     return BlocBuilder(
         buildWhen: (ReaderType prevType, ReaderType newType) {
           return newType != prevType;
         },
-        bloc: _readerTypeBloc,
+        bloc: _readerTypeCubit,
         builder: (BuildContext c, ReaderType readerType) {
           Widget readerBody = (readerType == ReaderType.TopDown)
               ? _buildVerticalReader(doujinshi, startPageIndex, onPageVisible)
@@ -323,7 +331,27 @@ class _ReaderPageState extends State<ReaderPage>
               minScale: 0.5,
               maxScale: 4,
               panEnabled: true,
-              child: readerBody,
+              child: BlocBuilder(
+                buildWhen: (double preTransparency, double newTransparency) {
+                  return preTransparency != newTransparency;
+                },
+                bloc: _screenTransparencyCubit,
+                builder: (BuildContext c, double transparency) {
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      readerBody,
+                      IgnorePointer(
+                        child: Container(
+                          color: Color.fromARGB(transparency.toInt(), 0, 0, 0),
+                          width: screenWidth,
+                          height: screenHeight,
+                        ),
+                      )
+                    ],
+                  );
+                },
+              ),
             ),
           );
         });
@@ -431,7 +459,7 @@ class _ReaderPageState extends State<ReaderPage>
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Reading type',
@@ -444,34 +472,69 @@ class _ReaderPageState extends State<ReaderPage>
                       buildWhen: (ReaderType prevType, ReaderType newType) {
                         return newType != prevType;
                       },
-                      bloc: _readerTypeBloc,
-                      builder: (BuildContext b, ReaderType type) {
+                      bloc: _readerTypeCubit,
+                      builder: (BuildContext b, ReaderType selectedType) {
                         return DropdownButton<ReaderType>(
-                            value: type,
+                            value: selectedType,
                             icon: Icon(Icons.keyboard_arrow_down),
                             iconSize: 18,
                             onChanged: (newType) {
                               if (newType != null) {
                                 _preferenceManager.saveReaderType(newType);
-                                _readerTypeBloc?.updateType(newType);
+                                _readerTypeCubit?.updateType(newType);
                               }
                             },
                             items: ReaderType.values
-                                .map((readerType) =>
-                                    generateDropDownItem(readerType))
+                                .map((readerType) => generateDropDownItem(
+                                    readerType, readerType == selectedType))
                                 .toList());
+                      })
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Text(
+                    'Eye comfort',
+                    style: TextStyle(
+                        fontFamily: Constant.NUNITO_SEMI_BOLD,
+                        fontSize: 16,
+                        color: Colors.white),
+                  ),
+                  BlocBuilder(
+                      buildWhen:
+                          (double preTransparency, double newTransparency) {
+                        return preTransparency != newTransparency;
+                      },
+                      bloc: _screenTransparencyCubit,
+                      builder: (BuildContext c, double transparency) {
+                        return Expanded(
+                            child: Container(
+                          child: Slider(
+                            value: transparency,
+                            min: 0,
+                            max: 255,
+                            onChanged: (double value) {
+                              _screenTransparencyCubit?.emit(value);
+                              _preferenceManager.saveReaderTransparency(value);
+                            },
+                          ),
+                          margin: EdgeInsets.only(left: 10),
+                        ));
                       })
                 ],
               )
             ],
           ),
-          padding: EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
         )
       ],
     );
   }
 
-  DropdownMenuItem<ReaderType> generateDropDownItem(ReaderType readerType) {
+  DropdownMenuItem<ReaderType> generateDropDownItem(
+      ReaderType readerType, bool isSelected) {
+    Color itemColor = isSelected ? Constant.mainColor : Constant.grey767676;
     return DropdownMenuItem<ReaderType>(
         value: readerType,
         child: Text(
@@ -479,7 +542,7 @@ class _ReaderPageState extends State<ReaderPage>
           style: TextStyle(
               fontFamily: Constant.NUNITO_SEMI_BOLD,
               fontSize: 16,
-              color: Constant.mainColor),
+              color: itemColor),
         ));
   }
 }
