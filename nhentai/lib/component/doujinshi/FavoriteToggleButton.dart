@@ -37,7 +37,7 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
         ),
         decoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(3)),
-            color: Colors.green[500]),
+            color: Constant.mainColor),
       ),
     );
   }

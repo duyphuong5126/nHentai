@@ -1,12 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/IntegerBloc.dart';
+import 'package:nhentai/bloc/ReaderTypeBloc.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
+import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -24,20 +28,30 @@ class _ReaderPageState extends State<ReaderPage>
   static const double _DEFAULT_THUMBNAIL_WIDTH = 60;
   static const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
 
+  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+
   final TransformationController _transformationController =
       TransformationController();
   late TapDownDetails _doubleTapDownDetails;
   late AnimationController _animationController;
   late Animation<Offset> _topSlideAnimation;
   late Animation<Offset> _bottomSlideAnimation;
-  late AutoScrollController _scrollController;
   late AutoScrollController _thumbnailScrollController;
+  AutoScrollController? _scrollController;
+  PageController? _pageController;
 
   IntegerBloc? _currentPageBloc = IntegerBloc();
+  ReaderTypeBloc? _readerTypeBloc = ReaderTypeBloc(ReaderType.LeftToRight);
+
+  void _iniReaderType() async {
+    ReaderType readerType = await _preferenceManager.getReaderType();
+    _readerTypeBloc?.updateType(readerType);
+  }
 
   @override
   void initState() {
     super.initState();
+    _iniReaderType();
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
     _topSlideAnimation =
@@ -87,7 +101,12 @@ class _ReaderPageState extends State<ReaderPage>
     super.dispose();
     _currentPageBloc?.dispose();
     _currentPageBloc = null;
-    _scrollController.dispose();
+    _readerTypeBloc?.dispose();
+    _readerTypeBloc = null;
+    _scrollController?.dispose();
+    _scrollController = null;
+    _pageController?.dispose();
+    _pageController = null;
     _thumbnailScrollController.dispose();
   }
 
@@ -152,119 +171,203 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   Widget _buildReaderFooter(Doujinshi doujinshi) {
-    _thumbnailScrollController = AutoScrollController(keepScrollOffset: false);
+    _thumbnailScrollController = AutoScrollController(keepScrollOffset: true);
     return SlideTransition(
       position: _bottomSlideAnimation,
       child: Container(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              child: ListView.builder(
-                  controller: _thumbnailScrollController,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: doujinshi.previewThumbnailList.length,
-                  itemBuilder: (BuildContext c, int index) {
-                    String thumbnailUrl = doujinshi.previewThumbnailList[index];
-                    return AutoScrollTag(
-                      key: ValueKey(index),
-                      controller: _thumbnailScrollController,
-                      index: index,
-                      child: ReaderThumbnail(
-                          thumbnailUrl: thumbnailUrl,
-                          width: _DEFAULT_THUMBNAIL_WIDTH,
-                          height: _DEFAULT_THUMBNAIL_HEIGHT,
-                          thumbnailIndex: index,
-                          onThumbnailSelected: (selectedIndex) {
-                            _scrollController.scrollToIndex(selectedIndex);
-                            _currentPageBloc?.updateData(selectedIndex);
-                          },
-                          selectedIndexBloc: _currentPageBloc!),
-                    );
-                  }),
-              constraints:
-                  BoxConstraints.expand(height: _DEFAULT_THUMBNAIL_HEIGHT),
-            ),
-            Row(
+        child: BlocBuilder(
+          bloc: _readerTypeBloc,
+          builder: (BuildContext context, ReaderType readerType) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Container(
-                  child: IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      icon: Icon(
-                        Icons.refresh,
-                        color: Colors.white,
-                        size: 25,
-                      )),
-                  padding: EdgeInsets.symmetric(horizontal: 5),
+                  child: ListView.builder(
+                      reverse: readerType == ReaderType.RightToLeft,
+                      controller: _thumbnailScrollController,
+                      scrollDirection: Axis.horizontal,
+                      itemCount: doujinshi.previewThumbnailList.length,
+                      itemBuilder: (BuildContext c, int index) {
+                        String thumbnailUrl =
+                            doujinshi.previewThumbnailList[index];
+                        return AutoScrollTag(
+                          key: ValueKey(index),
+                          controller: _thumbnailScrollController,
+                          index: index,
+                          child: ReaderThumbnail(
+                              thumbnailUrl: thumbnailUrl,
+                              width: _DEFAULT_THUMBNAIL_WIDTH,
+                              height: _DEFAULT_THUMBNAIL_HEIGHT,
+                              thumbnailIndex: index,
+                              onThumbnailSelected: (selectedIndex) {
+                                _scrollController?.scrollToIndex(selectedIndex);
+                                _pageController?.jumpToPage(selectedIndex);
+                                _currentPageBloc?.updateData(selectedIndex);
+                              },
+                              selectedIndexBloc: _currentPageBloc!),
+                        );
+                      }),
+                  constraints:
+                      BoxConstraints.expand(height: _DEFAULT_THUMBNAIL_HEIGHT),
                 ),
-                Expanded(
-                    child: StreamBuilder(
-                  stream: _currentPageBloc?.output,
-                  initialData: 0,
-                  builder: (BuildContext co, AsyncSnapshot snapshot) {
-                    int currentPage = snapshot.data;
-                    return Text(
-                      'Page ${currentPage + 1} of ${doujinshi.numPages}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontFamily: Constant.NUNITO_SEMI_BOLD,
-                          fontSize: 18,
-                          color: Colors.white),
-                    );
-                  },
-                )),
-                Container(
-                  child: IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.settings,
-                        color: Colors.white,
-                        size: 25,
-                      )),
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                )
+                Row(
+                  children: [
+                    Container(
+                      child: IconButton(
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.refresh,
+                            color: Colors.white,
+                            size: 25,
+                          )),
+                      padding: EdgeInsets.symmetric(horizontal: 5),
+                    ),
+                    Expanded(
+                        child: StreamBuilder(
+                      stream: _currentPageBloc?.output,
+                      initialData: 0,
+                      builder: (BuildContext co, AsyncSnapshot snapshot) {
+                        int currentPage = snapshot.data;
+                        return Column(
+                          children: [
+                            Text(
+                              'Page ${currentPage + 1} of ${doujinshi.numPages}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                  fontSize: 18,
+                                  color: Colors.white),
+                            ),
+                            Text(
+                              'Current direction: ${Constant.READER_TYPES[readerType]}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                  fontSize: 14,
+                                  color: Colors.white),
+                            )
+                          ],
+                        );
+                      },
+                    )),
+                    Container(
+                      child: IconButton(
+                          onPressed: () {
+                            Radius topCornersRadius = Radius.circular(10);
+                            showModalBottomSheet(
+                                enableDrag: false,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.only(
+                                        topLeft: topCornersRadius,
+                                        topRight: topCornersRadius)),
+                                backgroundColor: Constant.grey4D4D4D,
+                                context: context,
+                                builder: (context) {
+                                  return _buildSettingsBottomSheet();
+                                });
+                          },
+                          icon: Icon(
+                            Icons.settings,
+                            color: Colors.white,
+                            size: 25,
+                          )),
+                      padding: EdgeInsets.symmetric(horizontal: 5),
+                    )
+                  ],
+                ),
               ],
-            ),
-          ],
+            );
+          },
         ),
         constraints: BoxConstraints.expand(height: 150),
         color: Constant.black96000000,
+        padding: EdgeInsets.only(bottom: 10),
       ),
     );
   }
 
   Widget _buildReaderBody(
       Doujinshi doujinshi, int startPageIndex, Function(int) onPageVisible) {
-    return GestureDetector(
-      onDoubleTapDown: _onDoubleTapDown,
-      onDoubleTap: _onDoubleTap,
-      onTap: () {
-        switch (_animationController.status) {
-          case AnimationStatus.completed:
-            {
-              _animationController.reverse();
-              break;
-            }
+    return BlocBuilder(
+        buildWhen: (ReaderType prevType, ReaderType newType) {
+          return newType != prevType;
+        },
+        bloc: _readerTypeBloc,
+        builder: (BuildContext c, ReaderType readerType) {
+          Widget readerBody = (readerType == ReaderType.TopDown)
+              ? _buildVerticalReader(doujinshi, startPageIndex, onPageVisible)
+              : _buildHorizontalReader(doujinshi, startPageIndex, onPageVisible,
+                  readerType == ReaderType.RightToLeft);
+          return GestureDetector(
+            onDoubleTapDown: _onDoubleTapDown,
+            onDoubleTap: _onDoubleTap,
+            onTap: () {
+              switch (_animationController.status) {
+                case AnimationStatus.completed:
+                  {
+                    _animationController.reverse();
+                    break;
+                  }
 
-          case AnimationStatus.dismissed:
-            {
-              _animationController.forward();
-              break;
-            }
-          default:
-            break;
-        }
-      },
-      child: InteractiveViewer(
-        transformationController: _transformationController,
-        minScale: 0.5,
-        maxScale: 4,
-        panEnabled: true,
-        child: _buildVerticalReader(doujinshi, startPageIndex, onPageVisible),
-      ),
-    );
+                case AnimationStatus.dismissed:
+                  {
+                    _animationController.forward();
+                    break;
+                  }
+                default:
+                  break;
+              }
+            },
+            child: InteractiveViewer(
+              transformationController: _transformationController,
+              minScale: 0.5,
+              maxScale: 4,
+              panEnabled: true,
+              child: readerBody,
+            ),
+          );
+        });
+  }
+
+  Widget _buildHorizontalReader(Doujinshi doujinshi, int startPageIndex,
+      Function(int) onPageVisible, bool reserve) {
+    _pageController = PageController(initialPage: startPageIndex);
+    onPageVisible(startPageIndex);
+    return PageView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: doujinshi.fullSizePageUrlList.length,
+        reverse: reserve,
+        controller: _pageController,
+        onPageChanged: onPageVisible,
+        itemBuilder: (BuildContext c, int index) {
+          return Container(
+            child: CachedNetworkImage(
+              imageUrl: doujinshi.fullSizePageUrlList[index],
+              errorWidget: (context, url, error) => Image.asset(
+                Constant.IMAGE_NOTHING,
+                fit: BoxFit.fitWidth,
+              ),
+              fit: BoxFit.fitWidth,
+              placeholder: (BuildContext context, String url) {
+                return Container(
+                  color: Colors.transparent,
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontFamily: Constant.NUNITO_BLACK,
+                          color: Colors.white),
+                    ),
+                  ),
+                  constraints:
+                      BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
+                );
+              },
+            ),
+            margin: EdgeInsets.only(bottom: 10),
+          );
+        });
   }
 
   Widget _buildVerticalReader(
@@ -279,7 +382,7 @@ class _ReaderPageState extends State<ReaderPage>
       itemBuilder: (BuildContext buildContext, int index) {
         return AutoScrollTag(
           key: ValueKey(index),
-          controller: _scrollController,
+          controller: _scrollController!,
           index: index,
           child: VisibilityDetector(
             key: ValueKey(index),
@@ -318,5 +421,65 @@ class _ReaderPageState extends State<ReaderPage>
       },
       cacheExtent: height * _EXTENT_CACHE_FACTOR,
     );
+  }
+
+  Widget _buildSettingsBottomSheet() {
+    return Wrap(
+      children: [
+        Container(
+          constraints: BoxConstraints(minWidth: double.infinity, minHeight: 80),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Text(
+                    'Reading type',
+                    style: TextStyle(
+                        fontFamily: Constant.NUNITO_SEMI_BOLD,
+                        fontSize: 16,
+                        color: Colors.white),
+                  ),
+                  BlocBuilder(
+                      buildWhen: (ReaderType prevType, ReaderType newType) {
+                        return newType != prevType;
+                      },
+                      bloc: _readerTypeBloc,
+                      builder: (BuildContext b, ReaderType type) {
+                        return DropdownButton<ReaderType>(
+                            value: type,
+                            icon: Icon(Icons.keyboard_arrow_down),
+                            iconSize: 18,
+                            onChanged: (newType) {
+                              if (newType != null) {
+                                _preferenceManager.saveReaderType(newType);
+                                _readerTypeBloc?.updateType(newType);
+                              }
+                            },
+                            items: ReaderType.values
+                                .map((readerType) =>
+                                    generateDropDownItem(readerType))
+                                .toList());
+                      })
+                ],
+              )
+            ],
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 20),
+        )
+      ],
+    );
+  }
+
+  DropdownMenuItem<ReaderType> generateDropDownItem(ReaderType readerType) {
+    return DropdownMenuItem<ReaderType>(
+        value: readerType,
+        child: Text(
+          Constant.READER_TYPES[readerType]!,
+          style: TextStyle(
+              fontFamily: Constant.NUNITO_SEMI_BOLD,
+              fontSize: 16,
+              color: Constant.mainColor),
+        ));
   }
 }

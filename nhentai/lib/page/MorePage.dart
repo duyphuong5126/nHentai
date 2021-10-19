@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/text_widget/DefaultScreenTitle.dart';
 
 class MorePage extends StatefulWidget {
@@ -15,7 +16,7 @@ class _MorePageState extends State<MorePage> {
       appBar: AppBar(
         title: DefaultScreenTitle('More'),
         centerTitle: true,
-        backgroundColor: Colors.green[500],
+        backgroundColor: Constant.mainColor,
       ),
       body: Container(
         color: Colors.white,

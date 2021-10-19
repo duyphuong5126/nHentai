@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
               tooltip: 'More'),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green[500],
+        selectedItemColor: Constant.mainColor,
         unselectedItemColor: Colors.grey[900],
         showSelectedLabels: false,
         showUnselectedLabels: false,

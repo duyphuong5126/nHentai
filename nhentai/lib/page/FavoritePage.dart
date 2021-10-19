@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/text_widget/DefaultScreenTitle.dart';
 
 class FavoritePage extends StatefulWidget {
@@ -15,7 +16,7 @@ class _FavoritePageState extends State<FavoritePage> {
       appBar: AppBar(
         title: DefaultScreenTitle('Favorite'),
         centerTitle: true,
-        backgroundColor: Colors.green[500],
+        backgroundColor: Constant.mainColor,
       ),
       body: Container(
         color: Colors.white,

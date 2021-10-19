@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/text_widget/DefaultScreenTitle.dart';
 
 class DownloadPage extends StatefulWidget {
@@ -15,7 +16,7 @@ class _DownloadPageState extends State<DownloadPage> {
       appBar: AppBar(
         title: DefaultScreenTitle('Download'),
         centerTitle: true,
-        backgroundColor: Colors.green[500],
+        backgroundColor: Constant.mainColor,
       ),
       body: Container(
         color: Colors.white,

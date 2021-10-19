@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:nhentai/page/uimodel/ReaderType.dart';
 
 class Constant {
   static const String NHENTAI_I = 'https://i.nhentai.net';
@@ -30,11 +31,17 @@ class Constant {
   static const String NUNITO_SEMI_BOLD = 'NunitoSemiBold';
   static const String NUNITO_LIGHT = 'NunitoLight';
 
+  static const Map<ReaderType, String> READER_TYPES = {
+    ReaderType.LeftToRight: 'Left to right',
+    ReaderType.TopDown: 'Top down',
+    ReaderType.RightToLeft: 'Right to left',
+  };
+
   static Color grey4D4D4D = Color.fromARGB(255, 77, 77, 77);
   static Color grey767676 = Color.fromARGB(255, 118, 118, 118);
   static Color grey1f1f1f = Color.fromARGB(255, 31, 31, 31);
   static Color black96000000 = Color.fromARGB(150, 0, 0, 0);
-  static Color mainColor = Colors.green[500]!;
+  static Color mainColor = Color.fromARGB(255, 237, 37, 83);
 
   static Color getNothingColor() {
     return Color.fromARGB(255, 24, 24, 24);

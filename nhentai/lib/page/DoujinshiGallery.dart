@@ -136,7 +136,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     return Scaffold(
       appBar: AppBar(
         systemOverlayStyle:
-            SystemUiOverlayStyle(statusBarColor: Colors.green[500]),
+            SystemUiOverlayStyle(statusBarColor: Constant.mainColor),
         title: _getTitle(),
         centerTitle: true,
         backgroundColor: Colors.grey[900],
@@ -212,8 +212,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     TextEditingController editingController = TextEditingController();
     TextStyle searchTextStyle = TextStyle(
         fontFamily: Constant.NUNITO_REGULAR,
-        fontSize: 18,
-        color: Colors.green[500]);
+        fontSize: 16,
+        color: Constant.mainColor);
     return Row(
       children: [
         Expanded(
@@ -244,7 +244,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           controller: editingController,
                           decoration: InputDecoration(
                               border: InputBorder.none,
-                              hintText: 'Type something',
+                              hintText: 'e.g. tag: "big breast"',
                               hintStyle: searchTextStyle,
                               contentPadding: EdgeInsets.only(bottom: 10)),
                           style: searchTextStyle,
@@ -263,7 +263,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           icon: Icon(
                             Icons.close,
                             size: 20,
-                            color: Colors.green[500],
+                            color: Constant.mainColor,
                           ),
                         ),
                       ),
@@ -277,7 +277,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           padding: EdgeInsets.all(0),
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green[500],
+                          color: Constant.mainColor,
                           borderRadius: BorderRadius.only(
                               topRight: Radius.circular(5),
                               bottomRight: Radius.circular(5)),

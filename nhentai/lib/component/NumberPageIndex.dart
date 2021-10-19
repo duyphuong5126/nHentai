@@ -33,7 +33,7 @@ class _NumberPageIndexState extends State<NumberPageIndex> {
               ? Constant.NUNITO_BOLD
               : Constant.NUNITO_LIGHT;
           Color textColor =
-              index == currentPage ? Colors.green[500]! : Colors.white;
+              index == currentPage ? Constant.mainColor : Colors.white;
           return Container(
             child: TextButton(
               onPressed: () {
