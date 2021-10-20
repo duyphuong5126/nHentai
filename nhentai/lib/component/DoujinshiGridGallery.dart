@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:nhentai/bloc/DoujinshiListBloc.dart';
 import 'package:nhentai/component/doujinshi/DoujinshiThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
@@ -30,22 +31,17 @@ class _DoujinshiGridGalleryState extends State<DoujinshiGridGallery> {
   }
 
   Widget buildDoujinList(List<Doujinshi> _doujinshiList) {
-    return GridView.builder(
+    return StaggeredGridView.countBuilder(
+      crossAxisCount: 4,
       physics: NeverScrollableScrollPhysics(),
       itemCount: _doujinshiList.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 0,
-          mainAxisSpacing: 0,
-          childAspectRatio: 2 / 3),
       padding: EdgeInsets.all(0),
       shrinkWrap: true,
+      staggeredTileBuilder: (index) => StaggeredTile.fit(2),
       itemBuilder: (BuildContext context, int index) {
         return DoujinshiThumbnail(
           doujinshi: _doujinshiList[index],
           onDoujinshiSelected: widget.onDoujinshiSelected,
-          width: 100,
-          height: 300,
         );
       },
     );
