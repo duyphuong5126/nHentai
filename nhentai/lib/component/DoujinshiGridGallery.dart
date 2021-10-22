@@ -35,7 +35,9 @@ class _DoujinshiGridGalleryState extends State<DoujinshiGridGallery> {
       crossAxisCount: 4,
       physics: NeverScrollableScrollPhysics(),
       itemCount: _doujinshiList.length,
-      padding: EdgeInsets.all(0),
+      padding: EdgeInsets.all(5),
+      mainAxisSpacing: 5,
+      crossAxisSpacing: 5,
       shrinkWrap: true,
       staggeredTileBuilder: (index) => StaggeredTile.fit(2),
       itemBuilder: (BuildContext context, int index) {

@@ -157,7 +157,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           widget.doujinshiBloc.updateData(doujinshi);
         }));
     itemList.add(SizedBox(
-      height: 10,
+      height: 50,
     ));
     _getRecommendedList(doujinshi.id);
     return ListView(

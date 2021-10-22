@@ -50,114 +50,114 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
     return SizedBox(
       width: widget.width,
       height: widget.height,
-      child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(3),
-            child: Container(
-              child: Stack(
-                alignment: AlignmentDirectional.bottomCenter,
-                children: [
-                  Image.network(
-                    doujinshi.thumbnailImage,
-                    height: double.infinity,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (BuildContext context, Object error,
-                        StackTrace? stackTrace) {
-                      return Container(
-                        color: Constant.getNothingColor(),
-                        padding: EdgeInsets.all(5),
-                        child: Image.asset(
-                          Constant.IMAGE_NOTHING,
-                          height: double.infinity,
-                          width: double.infinity,
-                          fit: BoxFit.fitWidth,
-                        ),
-                      );
-                    },
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: Container(
-                        height: 70,
-                        color: Constant.black96000000,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                        child: RichText(
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          text: TextSpan(
-                              style: TextStyle(
-                                  fontFamily: Constant.NUNITO_SEMI_BOLD,
-                                  fontSize: 14,
-                                  color: Colors.white),
-                              children: titleSpans),
-                        ),
-                      ))
-                    ],
-                  )
-                ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(3)),
+        child: Container(
+          color: Constant.grey767676,
+          child: Stack(
+            alignment: AlignmentDirectional.bottomCenter,
+            children: [
+              Image.network(
+                doujinshi.thumbnailImage,
+                height: double.infinity,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (BuildContext context, Object error,
+                    StackTrace? stackTrace) {
+                  return Container(
+                    color: Constant.getNothingColor(),
+                    padding: EdgeInsets.all(5),
+                    child: Image.asset(
+                      Constant.IMAGE_NOTHING,
+                      height: double.infinity,
+                      width: double.infinity,
+                      fit: BoxFit.fitWidth,
+                    ),
+                  );
+                },
               ),
-            ),
+              Row(
+                children: [
+                  Expanded(
+                      child: Container(
+                    height: 70,
+                    decoration: BoxDecoration(
+                        color: Constant.black96000000,
+                        borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(3),
+                            bottomRight: Radius.circular(3))),
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                    child: RichText(
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                          style: TextStyle(
+                              fontFamily: Constant.NUNITO_SEMI_BOLD,
+                              fontSize: 14,
+                              color: Colors.white),
+                          children: titleSpans),
+                    ),
+                  ))
+                ],
+              )
+            ],
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5.0),
-          )),
+        ),
+      ),
     );
   }
 
   Widget _unknownSizeThumbnail(
       Doujinshi doujinshi, List<InlineSpan> titleSpans) {
-    return Card(
-        child: Padding(
-          padding: EdgeInsets.all(3),
-          child: Container(
-            constraints: BoxConstraints(minHeight: 100),
-            child: Stack(
-              alignment: AlignmentDirectional.bottomCenter,
-              children: [
-                Image.network(
-                  doujinshi.thumbnailImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (BuildContext context, Object error,
-                      StackTrace? stackTrace) {
-                    return Container(
-                      color: Constant.getNothingColor(),
-                      padding: EdgeInsets.all(5),
-                      child: Image.asset(
-                        Constant.IMAGE_NOTHING,
-                        fit: BoxFit.cover,
-                      ),
-                    );
-                  },
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                        child: Container(
-                      height: 70,
-                      color: Constant.black96000000,
-                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                      child: RichText(
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        text: TextSpan(
-                            style: TextStyle(
-                                fontFamily: Constant.NUNITO_SEMI_BOLD,
-                                fontSize: 14,
-                                color: Colors.white),
-                            children: titleSpans),
-                      ),
-                    ))
-                  ],
-                )
-              ],
-            ),
+    return ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(3)),
+        child: Container(
+          color: Constant.grey767676,
+          constraints: BoxConstraints(minHeight: 100),
+          child: Stack(
+            alignment: AlignmentDirectional.bottomCenter,
+            children: [
+              Image.network(
+                doujinshi.thumbnailImage,
+                fit: BoxFit.cover,
+                errorBuilder: (BuildContext context, Object error,
+                    StackTrace? stackTrace) {
+                  return Container(
+                    color: Constant.getNothingColor(),
+                    padding: EdgeInsets.all(5),
+                    child: Image.asset(
+                      Constant.IMAGE_NOTHING,
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                },
+              ),
+              Row(
+                children: [
+                  Expanded(
+                      child: Container(
+                    height: 70,
+                    decoration: BoxDecoration(
+                        color: Constant.black96000000,
+                        borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(3),
+                            bottomRight: Radius.circular(3))),
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                    child: RichText(
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                          style: TextStyle(
+                              fontFamily: Constant.NUNITO_SEMI_BOLD,
+                              fontSize: 14,
+                              color: Colors.white),
+                          children: titleSpans),
+                    ),
+                  ))
+                ],
+              )
+            ],
           ),
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5.0),
         ));
   }
 }

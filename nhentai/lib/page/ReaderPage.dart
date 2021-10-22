@@ -187,11 +187,17 @@ class _ReaderPageState extends State<ReaderPage>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Container(
-                  child: ListView.builder(
+                  margin: EdgeInsets.symmetric(horizontal: 5),
+                  child: ListView.separated(
                       reverse: readerType == ReaderType.RightToLeft,
                       controller: _thumbnailScrollController,
                       scrollDirection: Axis.horizontal,
                       itemCount: doujinshi.previewThumbnailList.length,
+                      separatorBuilder: (BuildContext c, int index) {
+                        return SizedBox(
+                          width: 5,
+                        );
+                      },
                       itemBuilder: (BuildContext c, int index) {
                         String thumbnailUrl =
                             doujinshi.previewThumbnailList[index];
@@ -285,9 +291,9 @@ class _ReaderPageState extends State<ReaderPage>
             );
           },
         ),
-        constraints: BoxConstraints.expand(height: 150),
+        constraints: BoxConstraints.expand(height: 160),
         color: Constant.black96000000,
-        padding: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.only(bottom: 10, top: 10),
       ),
     );
   }
@@ -359,7 +365,9 @@ class _ReaderPageState extends State<ReaderPage>
 
   Widget _buildHorizontalReader(Doujinshi doujinshi, int startPageIndex,
       Function(int) onPageVisible, bool reserve) {
-    _pageController = PageController(initialPage: startPageIndex);
+    if (_pageController == null) {
+      _pageController = PageController(initialPage: startPageIndex);
+    }
     onPageVisible(startPageIndex);
     return PageView.builder(
         scrollDirection: Axis.horizontal,
@@ -404,6 +412,7 @@ class _ReaderPageState extends State<ReaderPage>
     double height = MediaQuery.of(context).size.height;
     _scrollController =
         AutoScrollController(initialScrollOffset: initialScrollOffset);
+    _pageController = null;
     return ListView.builder(
       controller: _scrollController,
       itemCount: doujinshi.fullSizePageUrlList.length,

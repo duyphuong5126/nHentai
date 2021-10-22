@@ -44,7 +44,7 @@ class _PreviewSectionState extends State<PreviewSection> {
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: numOfRows,
                     crossAxisSpacing: 5,
-                    mainAxisSpacing: 0,
+                    mainAxisSpacing: 5,
                     childAspectRatio: 4 / 3),
                 itemBuilder: (BuildContext context, int index) {
                   return total > MAX_ITEM && index == MAX_ITEM - 1

@@ -39,15 +39,21 @@ class _HorizontalDoujinshiListState extends State<HorizontalDoujinshiList> {
               ),
               SizedBox(
                 height: 300,
-                child: ListView(
+                child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  children: List.generate(
-                      doujinshiList.length,
-                      (index) => DoujinshiThumbnail(
-                          doujinshi: doujinshiList[index],
-                          onDoujinshiSelected: widget.onDoujinshiSelected,
-                          width: 200,
-                          height: 300)),
+                  itemCount: doujinshiList.length,
+                  separatorBuilder: (BuildContext context, int index) {
+                    return SizedBox(
+                      width: 5,
+                    );
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return DoujinshiThumbnail(
+                        doujinshi: doujinshiList[index],
+                        onDoujinshiSelected: widget.onDoujinshiSelected,
+                        width: 200,
+                        height: 300);
+                  },
                 ),
               )
             ],
