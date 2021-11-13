@@ -15,7 +15,7 @@ import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/support/Extensions.dart';
-import 'package:nhentai/text_widget/DefaultSectionLabel.dart';
+import 'package:nhentai/component/DefaultSectionLabel.dart';
 
 class DoujinshiGallery extends StatefulWidget {
   @override
@@ -133,10 +133,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   @override
   Widget build(BuildContext context) {
+    Future.delayed(Duration(milliseconds: 1)).then((value) =>
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Constant.mainDarkColor,
+            systemStatusBarContrastEnforced: true)));
     return Scaffold(
       appBar: AppBar(
-        systemOverlayStyle:
-            SystemUiOverlayStyle(statusBarColor: Constant.mainColor),
         title: _getTitle(),
         centerTitle: true,
         backgroundColor: Colors.grey[900],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
@@ -11,8 +12,8 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/DoujinshiCollectionType.dart';
-import 'package:nhentai/text_widget/DefaultScreenTitle.dart';
-import 'package:nhentai/text_widget/DefaultSectionLabel.dart';
+import 'package:nhentai/component/DefaultScreenTitle.dart';
+import 'package:nhentai/component/DefaultSectionLabel.dart';
 
 class DoujinshiCollectionPage extends StatefulWidget {
   const DoujinshiCollectionPage({Key? key}) : super(key: key);
@@ -51,6 +52,10 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    Future.delayed(Duration(milliseconds: 1)).then((value) =>
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Constant.mainDarkColor,
+            systemStatusBarContrastEnforced: true)));
     return Scaffold(
       appBar: AppBar(
         title: BlocBuilder(
@@ -64,7 +69,16 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
         ),
         centerTitle: true,
         backgroundColor: Constant.mainColor,
-        actions: [IconButton(onPressed: () {}, icon: Icon(Icons.history))],
+        actions: [
+          BlocBuilder(
+              bloc: _collectionTypeCubit,
+              builder: (context, collectionType) {
+                Icon icon = collectionType == DoujinshiCollectionType.Recent
+                    ? Icon(Icons.favorite)
+                    : Icon(Icons.history);
+                return IconButton(onPressed: () {}, icon: icon);
+              })
+        ],
       ),
       body: Stack(
         children: [
@@ -233,5 +247,15 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
     _pageIndicatorCubit.close();
     _collectionTypeCubit.close();
     _loadingCubit.close();
+  }
+
+  void _reset() {
+    _scrollController.jumpTo(0);
+    _numOfPagesCubit.emit(0);
+    _doujinshiListCubit.emit([]);
+    _pageIndicatorCubit.emit('');
+    _loadingCubit.emit(false);
+    numOfPages = 0;
+    currentPage = -1;
   }
 }

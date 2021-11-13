@@ -69,7 +69,6 @@ class DoujinshiDatabase {
         limit: take);
     recentlyReadDoujinshisList.forEach((doujinshiMap) {
       String doujinshiJson = doujinshiMap[_DOUJINSHI_JSON];
-      print('Test>>> doujinshiJson=$doujinshiJson');
       resultList.add(Doujinshi.fromJson(jsonDecode(doujinshiJson)));
     });
     return resultList;
@@ -94,9 +93,7 @@ class DoujinshiDatabase {
         whereArgs: [doujinshi.id]);
     int currentTimeMillis = DateTime.now().microsecondsSinceEpoch;
     if (recentlyReadDoujinshisList.isNotEmpty) {
-      print(
-          'Last read page: ${recentlyReadDoujinshisList[0][_LAST_READ_PAGE]}');
-      int updateResult = await _database!.update(
+      await _database!.update(
           _DOUJINSHI_TABLE,
           {
             _LAST_READ_PAGE: lastReadPageIndex,
@@ -104,8 +101,6 @@ class DoujinshiDatabase {
           },
           where: '$_DOUJINSHI_ID = ?',
           whereArgs: [doujinshi.id]);
-      print(
-          'Test>>> Update result of doujinshi ${doujinshi.id}: $updateResult');
     } else {
       await _insertDoujinshi(doujinshi,
           lastReadPageIndex: lastReadPageIndex,
@@ -139,7 +134,7 @@ class DoujinshiDatabase {
       bool isFavorite = false,
       bool isDownloaded = false,
       int currentTimeMillis = -1}) async {
-    int insertionResult = await _database!.insert(_DOUJINSHI_TABLE, {
+    await _database!.insert(_DOUJINSHI_TABLE, {
       _DOUJINSHI_ID: doujinshi.id,
       _DOUJINSHI_JSON: jsonEncode(doujinshi),
       _LAST_READ_PAGE: lastReadPageIndex,
@@ -147,8 +142,5 @@ class DoujinshiDatabase {
       _IS_DOWNLOADED_DOUJINSHI: isDownloaded ? 1 : 0,
       _UPDATED_TIME: currentTimeMillis
     });
-
-    print(
-        'Test>>> Insertion result of doujinshi ${doujinshi.id}: $insertionResult');
   }
 }
