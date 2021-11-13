@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/bloc/IntegerBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 
 class NumberPageIndex extends StatefulWidget {
   final int pageIndex;
   final int initialSelectedPageIndex;
-  final IntegerBloc selectedPageIndexBloc;
+  final DataCubit<int> selectedPageIndexCubit;
   final Function(int) onPagePressed;
 
   const NumberPageIndex(
       {Key? key,
       required this.pageIndex,
       required this.initialSelectedPageIndex,
-      required this.selectedPageIndexBloc,
+      required this.selectedPageIndexCubit,
       required this.onPagePressed})
       : super(key: key);
 
@@ -24,11 +25,13 @@ class _NumberPageIndexState extends State<NumberPageIndex> {
   @override
   Widget build(BuildContext context) {
     int index = widget.pageIndex;
-    return StreamBuilder(
-        stream: widget.selectedPageIndexBloc.output.distinct(),
-        initialData: widget.initialSelectedPageIndex,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          int currentPage = snapshot.data;
+    widget.selectedPageIndexCubit.emit(widget.initialSelectedPageIndex);
+    return BlocBuilder(
+        bloc: widget.selectedPageIndexCubit,
+        buildWhen: (int previousIndex, int currentIndex) {
+          return previousIndex != currentIndex;
+        },
+        builder: (BuildContext context, int currentPage) {
           String fontFamily = index == currentPage
               ? Constant.NUNITO_BOLD
               : Constant.NUNITO_LIGHT;

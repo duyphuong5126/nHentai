@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/page/DoujinshiGallery.dart';
 import 'package:nhentai/page/DownloadPage.dart';
-import 'package:nhentai/page/FavoritePage.dart';
+import 'package:nhentai/page/DoujinshiCollectionPage.dart';
 import 'package:nhentai/page/MorePage.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
       body: IndexedStack(
         children: [
           DoujinshiGallery(),
-          FavoritePage(),
+          DoujinshiCollectionPage(),
           DownloadPage(),
           MorePage()
         ],
@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
               tooltip: 'Favorite'),
           BottomNavigationBarItem(
               backgroundColor: Colors.white,
-              icon: Icon(Icons.download_outlined),
+              icon: Icon(Icons.download_done_sharp),
               label: 'Download',
               tooltip: 'Download'),
           BottomNavigationBarItem(

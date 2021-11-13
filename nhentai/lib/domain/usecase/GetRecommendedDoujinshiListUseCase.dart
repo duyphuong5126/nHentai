@@ -1,10 +1,16 @@
 import 'package:nhentai/data/DoujinshiRepository.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 
-class GetRecommendedDoujinshiListUseCase {
-  DoujinshiRepository _repository = new DoujinshiRepository();
+abstract class GetRecommendedDoujinshiListUseCase {
+  Future<RecommendedDoujinshiList> execute(int doujinshiId);
+}
 
-  Future<RecommendedDoujinshiList> execute(int doujinshiId) async {
+class GetRecommendedDoujinshiListUseCaseImpl
+    extends GetRecommendedDoujinshiListUseCase {
+  DoujinshiRepository _repository = new DoujinshiRepositoryImpl();
+
+  @override
+  Future<RecommendedDoujinshiList> execute(int doujinshiId) {
     return _repository.getRecommendedDoujinshiList(doujinshiId);
   }
 }

@@ -5,7 +5,15 @@ import 'package:http/http.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 
-class DoujinshiRemoteDataSource {
+abstract class DoujinshiRemoteDataSource {
+  Future<DoujinshiList> getDoujinshiList(
+      int page, String searchTerm, SortOption sortOption);
+
+  Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(int doujinshiId);
+}
+
+class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
+  @override
   Future<DoujinshiList> getDoujinshiList(
       int page, String searchTerm, SortOption sortOption) async {
     String sortString = '';
@@ -35,6 +43,7 @@ class DoujinshiRemoteDataSource {
     return result;
   }
 
+  @override
   Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(
       int doujinshiId) async {
     String url = 'https://nhentai.net/api/gallery/$doujinshiId/related';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
-import 'package:nhentai/bloc/DoujinshiBloc.dart';
-import 'package:nhentai/bloc/DoujinshiListBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
 import 'package:nhentai/component/doujinshi/DateTimeSection.dart';
 import 'package:nhentai/component/doujinshi/DownloadButton.dart';
@@ -12,19 +12,19 @@ import 'package:nhentai/component/doujinshi/HorizontalDoujinshiList.dart';
 import 'package:nhentai/component/doujinshi/IDSection.dart';
 import 'package:nhentai/component/doujinshi/PageCountSection.dart';
 import 'package:nhentai/component/doujinshi/PreviewSection.dart';
+import 'package:nhentai/component/doujinshi/PreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/SecondTitle.dart';
 import 'package:nhentai/component/doujinshi/TagsSection.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
+import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 
 class DoujinshiPage extends StatefulWidget {
-  final DoujinshiBloc doujinshiBloc;
-
-  const DoujinshiPage({Key? key, required this.doujinshiBloc})
-      : super(key: key);
+  const DoujinshiPage({Key? key}) : super(key: key);
 
   @override
   _DoujinshiPageState createState() => _DoujinshiPageState();
@@ -32,27 +32,39 @@ class DoujinshiPage extends StatefulWidget {
 
 class _DoujinshiPageState extends State<DoujinshiPage> {
   late List<Widget> itemList;
-  final DoujinshiListBloc recommendedDoujinshiListBloc = DoujinshiListBloc();
-  GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
-      GetRecommendedDoujinshiListUseCase();
+  late DataCubit<Doujinshi> doujinshiCubit;
+  late DataCubit<int> lastReadPageCubit = DataCubit<int>(-1);
+  final DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
+      DataCubit<List<Doujinshi>>([]);
+  final GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
+      GetRecommendedDoujinshiListUseCaseImpl();
+  final GetDoujinshiStatusesUseCase _getDoujinshiStatusesUseCase =
+      GetDoujinshiStatusesUseCaseImpl();
 
   void _getRecommendedList(int doujinshiId) async {
     RecommendedDoujinshiList recommendedDoujinshiList =
         await _recommendedDoujinshiListUseCase.execute(doujinshiId);
-    recommendedDoujinshiListBloc.updateData(recommendedDoujinshiList.result);
+    _recommendedDoujinshiListCubit.emit(recommendedDoujinshiList.result);
+  }
+
+  void _updateDoujinshiStatuses(int doujinshiId) async {
+    DoujinshiStatuses statuses =
+        await _getDoujinshiStatusesUseCase.execute(doujinshiId);
+    print('Test>>> lastReadPageIndex=${statuses.lastReadPageIndex}');
+    lastReadPageCubit.emit(statuses.lastReadPageIndex);
   }
 
   @override
   Widget build(BuildContext context) {
+    print('Test>>> DoujinshiPage build');
+    doujinshiCubit = DataCubit<Doujinshi>(
+        ModalRoute.of(context)?.settings.arguments as Doujinshi);
     return Scaffold(
       body: SafeArea(
         child: Container(
-          child: StreamBuilder(
-            stream: widget.doujinshiBloc.output,
-            initialData:
-                ModalRoute.of(context)?.settings.arguments as Doujinshi,
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              Doujinshi doujinshi = snapshot.data;
+          child: BlocBuilder(
+            bloc: doujinshiCubit,
+            builder: (BuildContext context, Doujinshi doujinshi) {
               return _generateDetailSections(doujinshi);
             },
           ),
@@ -140,30 +152,80 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(SizedBox(
       height: 10,
     ));
+    itemList.add(BlocBuilder(
+        bloc: lastReadPageCubit,
+        buildWhen: (int previousLastReadPage, int currentLastReadPage) {
+          return currentLastReadPage >= 0;
+        },
+        builder: (BuildContext c, int lastReadPageIndex) {
+          String thumbnailUrl = lastReadPageIndex >= 0
+              ? doujinshi.previewThumbnailList[lastReadPageIndex]
+              : '';
+          return Visibility(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Last read page',
+                  style: TextStyle(
+                      fontFamily: Constant.NUNITO_EXTRA_BOLD,
+                      fontSize: 18,
+                      color: Colors.white),
+                ),
+                SizedBox(
+                  height: 5,
+                ),
+                SizedBox(
+                  height: 197.5,
+                  width: 148.125,
+                  child: PreviewThumbnail(
+                      thumbnailUrl: thumbnailUrl,
+                      imagePosition: lastReadPageIndex,
+                      onThumbnailSelected: (int selectedIndex) {
+                        _openDoujinshi(doujinshi, selectedIndex);
+                      }),
+                )
+              ],
+            ),
+            visible: lastReadPageIndex >= 0,
+          );
+        }));
+    itemList.add(SizedBox(
+      height: 10,
+    ));
     itemList.add(PreviewSection(
       pages: doujinshi.previewThumbnailList,
       onPageSelected: (pageIndex) {
-        Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_READER_PAGE,
-            arguments:
-                ReadingModel(doujinshi: doujinshi, startPageIndex: pageIndex));
+        _openDoujinshi(doujinshi, pageIndex);
       },
     ));
     itemList.add(SizedBox(
       height: 10,
     ));
     itemList.add(HorizontalDoujinshiList(
-        doujinshiListBloc: recommendedDoujinshiListBloc,
+        doujinshiListCubit: _recommendedDoujinshiListCubit,
         onDoujinshiSelected: (doujinshi) {
-          widget.doujinshiBloc.updateData(doujinshi);
+          doujinshiCubit.emit(doujinshi);
         }));
     itemList.add(SizedBox(
       height: 50,
     ));
     _getRecommendedList(doujinshi.id);
+    _updateDoujinshiStatuses(doujinshi.id);
     return ListView(
       children: List.generate(itemList.length, (index) {
         return itemList[index];
       }),
     );
+  }
+
+  void _openDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
+    final needToUpdateStatuses = await Navigator.of(context).pushNamed(
+            MainNavigator.DOUJINSHI_READER_PAGE,
+            arguments: ReadingModel(
+                doujinshi: doujinshi, startPageIndex: startPageIndex));
+    if (needToUpdateStatuses is bool && needToUpdateStatuses) {
+      _updateDoujinshiStatuses(doujinshi.id);
+    }
   }
 }

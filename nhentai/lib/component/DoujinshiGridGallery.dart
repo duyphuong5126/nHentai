@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:nhentai/bloc/DoujinshiListBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/doujinshi/DoujinshiThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 
 class DoujinshiGridGallery extends StatefulWidget {
-  final DoujinshiListBloc doujinshiListBloc;
+  final DataCubit<List<Doujinshi>> doujinshiListCubit;
   final Function(Doujinshi) onDoujinshiSelected;
 
   const DoujinshiGridGallery(
       {Key? key,
-      required this.doujinshiListBloc,
+      required this.doujinshiListCubit,
       required this.onDoujinshiSelected})
       : super(key: key);
 
@@ -21,11 +22,9 @@ class DoujinshiGridGallery extends StatefulWidget {
 class _DoujinshiGridGalleryState extends State<DoujinshiGridGallery> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: widget.doujinshiListBloc.output,
-        initialData: <Doujinshi>[],
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          List<Doujinshi> doujinshiList = snapshot.data;
+    return BlocBuilder(
+        bloc: widget.doujinshiListCubit,
+        builder: (BuildContext context, List<Doujinshi> doujinshiList) {
           return buildDoujinList(doujinshiList);
         });
   }

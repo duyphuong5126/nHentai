@@ -4,11 +4,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/bloc/IntegerBloc.dart';
-import 'package:nhentai/bloc/DoubleCubit.dart';
-import 'package:nhentai/bloc/ReaderTypeCubit.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/domain/usecase/StoreReadDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
@@ -30,6 +29,8 @@ class _ReaderPageState extends State<ReaderPage>
   static const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
 
   final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+  final StoreReadDoujinshiUseCase _storeReadDoujinshiUseCase =
+      StoreReadDoujinshiUseCaseImpl();
 
   final TransformationController _transformationController =
       TransformationController();
@@ -41,14 +42,19 @@ class _ReaderPageState extends State<ReaderPage>
   AutoScrollController? _scrollController;
   PageController? _pageController;
 
-  IntegerBloc? _currentPageBloc = IntegerBloc();
-  ReaderTypeCubit? _readerTypeCubit = ReaderTypeCubit(ReaderType.LeftToRight);
-  DoubleCubit? _screenTransparencyCubit = DoubleCubit(0);
+  DataCubit<int>? _currentPageCubit = DataCubit<int>(-1);
+  DataCubit<ReaderType>? _readerTypeCubit =
+      DataCubit<ReaderType>(ReaderType.LeftToRight);
+  DataCubit<double>? _screenTransparencyCubit = DataCubit<double>(0);
 
   void _iniReaderType() async {
-    _readerTypeCubit?.updateType(await _preferenceManager.getReaderType());
+    _readerTypeCubit?.emit(await _preferenceManager.getReaderType());
     _screenTransparencyCubit
         ?.emit(await _preferenceManager.getReaderTransparency());
+  }
+
+  void _storeReadDoujinshi(Doujinshi doujinshi, int lastReadPageIndex) async {
+    _storeReadDoujinshiUseCase.execute(doujinshi, lastReadPageIndex);
   }
 
   @override
@@ -70,40 +76,41 @@ class _ReaderPageState extends State<ReaderPage>
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
     Doujinshi doujinshi = readingModel.doujinshi;
-    return Scaffold(
+    return WillPopScope(child: Scaffold(
       body: SafeArea(
           child: Stack(
-        children: [
-          Positioned.fill(
-              child: Align(
-            child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
-                (visiblePage) {
-              _currentPageBloc?.updateData(visiblePage);
-              _thumbnailScrollController.scrollToIndex(visiblePage);
-            }),
-            alignment: Alignment.topLeft,
+            children: [
+              Positioned.fill(
+                  child: Align(
+                    child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
+                            (visiblePage) {
+                          _currentPageCubit?.emit(visiblePage);
+                          _thumbnailScrollController.scrollToIndex(visiblePage);
+                          _storeReadDoujinshi(doujinshi, visiblePage);
+                        }),
+                    alignment: Alignment.topLeft,
+                  )),
+              Positioned.fill(
+                  child: Align(
+                    child: _buildReaderHeader(doujinshi.title.english),
+                    alignment: Alignment.topLeft,
+                  )),
+              Positioned.fill(
+                  child: Align(
+                    child: _buildReaderFooter(doujinshi),
+                    alignment: Alignment.bottomLeft,
+                  ))
+            ],
           )),
-          Positioned.fill(
-              child: Align(
-            child: _buildReaderHeader(doujinshi.title.english),
-            alignment: Alignment.topLeft,
-          )),
-          Positioned.fill(
-              child: Align(
-            child: _buildReaderFooter(doujinshi),
-            alignment: Alignment.bottomLeft,
-          ))
-        ],
-      )),
       backgroundColor: Constant.grey1f1f1f,
-    );
+    ), onWillPop: () => _onWillPop(context));
   }
 
   @override
   void dispose() {
     super.dispose();
-    _currentPageBloc?.dispose();
-    _currentPageBloc = null;
+    _currentPageCubit?.dispose();
+    _currentPageCubit = null;
     _readerTypeCubit?.dispose();
     _readerTypeCubit = null;
     _screenTransparencyCubit?.dispose();
@@ -140,7 +147,7 @@ class _ReaderPageState extends State<ReaderPage>
             Container(
               child: IconButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(true);
                   },
                   icon: Icon(
                     Icons.arrow_back,
@@ -213,9 +220,9 @@ class _ReaderPageState extends State<ReaderPage>
                               onThumbnailSelected: (selectedIndex) {
                                 _scrollController?.scrollToIndex(selectedIndex);
                                 _pageController?.jumpToPage(selectedIndex);
-                                _currentPageBloc?.updateData(selectedIndex);
+                                _currentPageCubit?.emit(selectedIndex);
                               },
-                              selectedIndexBloc: _currentPageBloc!),
+                              selectedIndexBloc: _currentPageCubit!),
                         );
                       }),
                   constraints:
@@ -234,11 +241,9 @@ class _ReaderPageState extends State<ReaderPage>
                       padding: EdgeInsets.symmetric(horizontal: 5),
                     ),
                     Expanded(
-                        child: StreamBuilder(
-                      stream: _currentPageBloc?.output,
-                      initialData: 0,
-                      builder: (BuildContext co, AsyncSnapshot snapshot) {
-                        int currentPage = snapshot.data;
+                        child: BlocBuilder(
+                      bloc: _currentPageCubit!,
+                      builder: (BuildContext co, int currentPage) {
                         return Column(
                           children: [
                             Text(
@@ -490,7 +495,7 @@ class _ReaderPageState extends State<ReaderPage>
                             onChanged: (newType) {
                               if (newType != null) {
                                 _preferenceManager.saveReaderType(newType);
-                                _readerTypeCubit?.updateType(newType);
+                                _readerTypeCubit?.emit(newType);
                               }
                             },
                             items: ReaderType.values
@@ -553,5 +558,10 @@ class _ReaderPageState extends State<ReaderPage>
               fontSize: 16,
               color: itemColor),
         ));
+  }
+
+  Future<bool> _onWillPop(BuildContext context) async {
+    Navigator.of(context).pop(true);
+    return false;
   }
 }

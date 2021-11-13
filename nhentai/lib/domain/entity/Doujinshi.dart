@@ -61,8 +61,9 @@ class Doujinshi {
       backUpCoverImage =
           '${Constant.NHENTAI_I}/galleries/$mediaId/1$backUpCoverType';
       for (int index = 0; index < images.pages.length; index++) {
+        String thumbnailType = images.pages[index].t == 'p' ? '.png' : '.jpg';
         previewThumbnailList.add(
-            '${Constant.NHENTAI_T}/galleries/$mediaId/${index + 1}t$backUpCoverType');
+            '${Constant.NHENTAI_T}/galleries/$mediaId/${index + 1}t$thumbnailType');
         String imageType = images.pages[index].t == 'p' ? '.png' : '.jpg';
         fullSizePageUrlList.add(
             '${Constant.NHENTAI_I}/galleries/$mediaId/${index + 1}$imageType');

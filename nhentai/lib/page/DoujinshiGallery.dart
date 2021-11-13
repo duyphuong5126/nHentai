@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/StateHolder.dart';
-import 'package:nhentai/bloc/BoolBloc.dart';
-import 'package:nhentai/bloc/DoujinshiListBloc.dart';
-import 'package:nhentai/bloc/IntegerBloc.dart';
-import 'package:nhentai/bloc/SortOptionBloc.dart';
-import 'package:nhentai/bloc/StringBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/DoujinshiGridGallery.dart';
 import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
@@ -26,14 +23,17 @@ class DoujinshiGallery extends StatefulWidget {
 }
 
 class _DoujinshiGalleryState extends State<DoujinshiGallery> {
-  GetDoujinshiListUseCase _getBookListByPage = new GetDoujinshiListUseCase();
+  GetDoujinshiListUseCase _getBookListByPage =
+      new GetDoujinshiListUseCaseImpl();
 
-  final IntegerBloc _numOfPagesBloc = IntegerBloc();
-  final DoujinshiListBloc _doujinshiListBloc = DoujinshiListBloc();
-  final StringBloc _pageIndicatorBloc = StringBloc();
-  final StringBloc _searchTermBloc = StringBloc();
-  final SortOptionBloc _sortOptionBloc = SortOptionBloc();
-  final BoolBloc _loadingBloc = BoolBloc();
+  final DataCubit<int> _numOfPagesCubit = DataCubit<int>(-1);
+  final DataCubit<List<Doujinshi>> _doujinshiListCubit =
+      DataCubit<List<Doujinshi>>([]);
+  final DataCubit<String> _pageIndicatorCubit = DataCubit<String>('');
+  final DataCubit<String> _searchTermCubit = DataCubit<String>('');
+  final DataCubit<SortOption> _sortOptionCubit =
+      DataCubit<SortOption>(SortOption.MostRecent);
+  final DataCubit<bool> _loadingCubit = DataCubit<bool>(false);
   String _searchTerm = '';
   SortOption _sortOption = SortOption.MostRecent;
 
@@ -51,10 +51,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       currentPage = page;
       doujinshiMap[currentPage] = doujinshiMap[page]!;
 
-      _doujinshiListBloc.updateData(getCurrentPage());
-      _pageIndicatorBloc.updateData(_pageIndicator());
+      _doujinshiListCubit.emit(_getCurrentPage());
+      _pageIndicatorCubit.emit(_pageIndicator());
     } else {
-      _loadingBloc.updateData(true);
+      _loadingCubit.emit(true);
       DoujinshiList doujinshiList =
           await _getBookListByPage.execute(page, _searchTerm, _sortOption);
       currentPage = page;
@@ -62,14 +62,14 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       itemCountPerPage = doujinshiList.perPage;
       doujinshiMap[currentPage] = doujinshiList.result;
 
-      _doujinshiListBloc.updateData(getCurrentPage());
-      _numOfPagesBloc.updateData(doujinshiList.numPages);
-      _pageIndicatorBloc.updateData(_pageIndicator());
-      _loadingBloc.updateData(false);
+      _doujinshiListCubit.emit(_getCurrentPage());
+      _numOfPagesCubit.emit(doujinshiList.numPages);
+      _pageIndicatorCubit.emit(_pageIndicator());
+      _loadingCubit.emit(false);
     }
   }
 
-  List<Doujinshi> getCurrentPage() {
+  List<Doujinshi> _getCurrentPage() {
     List<Doujinshi>? doujinshiList = doujinshiMap[currentPage];
     return doujinshiList != null ? doujinshiList : [];
   }
@@ -84,7 +84,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   String _pageIndicator() {
     String pageIndicator;
-    int currentPageSize = getCurrentPage().length;
+    int currentPageSize = _getCurrentPage().length;
     if (numOfPages <= 0) {
       pageIndicator = _searchTerm.isNotEmpty
           ? 'No result for \"$_searchTerm\"'
@@ -105,7 +105,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     if (newTerm != _searchTerm) {
       doujinshiMap.clear();
       _searchTerm = newTerm;
-      _searchTermBloc.updateData(newTerm);
+      _searchTermCubit.emit(newTerm);
       selectedPageHolder.data = 0;
       _goToPage(0);
     }
@@ -154,10 +154,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
           Positioned.fill(
               child: Align(
             alignment: Alignment.topLeft,
-            child: StreamBuilder(
-                stream: _numOfPagesBloc.output,
-                initialData: -1,
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
+            child: BlocBuilder(
+                bloc: _numOfPagesCubit,
+                builder: (BuildContext context, int numOfPages) {
                   return Visibility(
                     child: Container(
                       child: Stack(
@@ -173,18 +172,16 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       color: Constant.getNothingColor(),
                       constraints: BoxConstraints.expand(),
                     ),
-                    visible: snapshot.data == 0,
+                    visible: numOfPages == 0,
                   );
                 }),
           )),
           Positioned.fill(
               child: Align(
             alignment: Alignment.bottomLeft,
-            child: StreamBuilder(
-              stream: _loadingBloc.output,
-              initialData: false,
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
-                bool isLoading = snapshot.data;
+            child: BlocBuilder(
+              bloc: _loadingCubit,
+              builder: (BuildContext context, bool isLoading) {
                 return Visibility(
                   child: LoadingMessage(loadingMessage: 'Loading, please wait'),
                   visible: isLoading,
@@ -200,12 +197,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   @override
   void dispose() {
     super.dispose();
-    _doujinshiListBloc.dispose();
-    _numOfPagesBloc.dispose();
-    _pageIndicatorBloc.dispose();
-    _searchTermBloc.dispose();
-    _sortOptionBloc.dispose();
-    _loadingBloc.dispose();
+    _doujinshiListCubit.dispose();
+    _numOfPagesCubit.dispose();
+    _pageIndicatorCubit.dispose();
+    _searchTermCubit.dispose();
+    _sortOptionCubit.dispose();
+    _loadingCubit.dispose();
   }
 
   Widget _getTitle() {
@@ -298,11 +295,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     return ListView(
       controller: _scrollController,
       children: [
-        StreamBuilder(
-            stream: _searchTermBloc.output,
-            initialData: '',
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              String searchTerm = snapshot.data;
+        BlocBuilder(
+            bloc: _searchTermCubit,
+            builder: (BuildContext context, String searchTerm) {
               return Visibility(
                 child: Center(
                   child: Container(
@@ -314,15 +309,13 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 visible: searchTerm.isNotEmpty,
               );
             }),
-        StreamBuilder(
-            stream: _searchTermBloc.output,
-            initialData: '',
-            builder: (BuildContext c, AsyncSnapshot s) {
-              String searchTerm = s.data;
+        BlocBuilder(
+            bloc: _searchTermCubit,
+            builder: (BuildContext c, String searchTerm) {
               return Visibility(
                 child: Container(
                   child: SortOptionList(
-                    sortOptionBloc: _sortOptionBloc,
+                    sortOptionCubit: _sortOptionCubit,
                     onSortOptionSelected: this._onSortOptionSelected,
                   ),
                   margin: EdgeInsets.only(top: 20, bottom: 10),
@@ -332,16 +325,14 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
               );
             }),
         DoujinshiGridGallery(
-          doujinshiListBloc: _doujinshiListBloc,
+          doujinshiListCubit: _doujinshiListCubit,
           onDoujinshiSelected: this._openDoujinshi,
         ),
         Center(
           child: Container(
-            child: StreamBuilder(
-                stream: _pageIndicatorBloc.output,
-                initialData: '',
-                builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  String label = snapshot.data;
+            child: BlocBuilder(
+                bloc: _pageIndicatorCubit,
+                builder: (BuildContext c, String label) {
                   return Visibility(
                     child: SectionLabel(label, Colors.blueGrey[500]!),
                     visible: label.isNotEmpty,
@@ -354,17 +345,15 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
           margin: EdgeInsets.fromLTRB(10, 20, 10, 40),
           child: Center(
             child: NumberPageIndicesList(
-                numOfPagesBloc: _numOfPagesBloc,
+                numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
                 onPagePressed: this._goToPage),
           ),
           height: 40,
         ),
-        StreamBuilder(
-            stream: _loadingBloc.output,
-            initialData: false,
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              bool isLoading = snapshot.data;
+        BlocBuilder(
+            bloc: _loadingCubit,
+            builder: (BuildContext context, bool isLoading) {
               return Visibility(
                 child: SizedBox(
                   height: 100,

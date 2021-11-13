@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/StateHolder.dart';
-import 'package:nhentai/bloc/IntegerBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/NumberPageIndex.dart';
 
 class NumberPageIndicesList<T extends StateHolder<int>> extends StatefulWidget {
-  final IntegerBloc numOfPagesBloc;
+  final DataCubit<int> numOfPagesCubit;
   final Function(int) onPagePressed;
   final T selectedPageIndexHolder;
 
   const NumberPageIndicesList({
     Key? key,
-    required this.numOfPagesBloc,
+    required this.numOfPagesCubit,
     required this.selectedPageIndexHolder,
     required this.onPagePressed,
   }) : super(key: key);
@@ -20,7 +21,7 @@ class NumberPageIndicesList<T extends StateHolder<int>> extends StatefulWidget {
 }
 
 class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
-  final IntegerBloc _selectedPageIndexBloc = IntegerBloc();
+  final DataCubit<int> _selectedPageIndexCubit = DataCubit<int>(-1);
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _indexItemKey = GlobalKey();
   bool isIndexItemKeySet = false;
@@ -41,16 +42,18 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: widget.numOfPagesBloc.output,
-        initialData: 0,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          int numOfPages = snapshot.data;
+    return BlocBuilder(
+        bloc: widget.numOfPagesCubit,
+        buildWhen: (int previousNumOfPages, int currentNumOfPages) {
+          return currentNumOfPages >= 0;
+        },
+        builder: (BuildContext context, int numOfPages) {
           return ListView(
+            shrinkWrap: true,
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
             children: List.generate(
-              numOfPages,
+              numOfPages >= 0 ? numOfPages : 0,
               (index) {
                 Key? key;
                 if (!isIndexItemKeySet) {
@@ -62,10 +65,10 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
                   key: key,
                   pageIndex: index,
                   initialSelectedPageIndex: widget.selectedPageIndexHolder.data,
-                  selectedPageIndexBloc: _selectedPageIndexBloc,
+                  selectedPageIndexCubit: _selectedPageIndexCubit,
                   onPagePressed: (selectedPage) {
                     widget.selectedPageIndexHolder.data = selectedPage;
-                    _selectedPageIndexBloc.updateData(selectedPage);
+                    _selectedPageIndexCubit.emit(selectedPage);
                     widget.onPagePressed(selectedPage);
                   },
                 );
@@ -78,6 +81,6 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
   @override
   void dispose() {
     super.dispose();
-    _selectedPageIndexBloc.dispose();
+    _selectedPageIndexCubit.dispose();
   }
 }

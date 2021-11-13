@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/bloc/DoujinshiListBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/doujinshi/DoujinshiThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 
 class HorizontalDoujinshiList extends StatefulWidget {
-  final DoujinshiListBloc doujinshiListBloc;
+  final DataCubit<List<Doujinshi>> doujinshiListCubit;
   final Function(Doujinshi) onDoujinshiSelected;
 
   const HorizontalDoujinshiList(
       {Key? key,
-      required this.doujinshiListBloc,
+      required this.doujinshiListCubit,
       required this.onDoujinshiSelected})
       : super(key: key);
 
@@ -22,11 +23,9 @@ class HorizontalDoujinshiList extends StatefulWidget {
 class _HorizontalDoujinshiListState extends State<HorizontalDoujinshiList> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: widget.doujinshiListBloc.output,
-        initialData: <Doujinshi>[],
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          List<Doujinshi> doujinshiList = snapshot.data;
+    return BlocBuilder(
+        bloc: widget.doujinshiListCubit,
+        builder: (BuildContext context, List<Doujinshi> doujinshiList) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

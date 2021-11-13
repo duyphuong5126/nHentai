@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/bloc/IntegerBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 
 class ReaderThumbnail extends StatefulWidget {
   final String thumbnailUrl;
@@ -8,7 +9,7 @@ class ReaderThumbnail extends StatefulWidget {
   final double height;
   final int thumbnailIndex;
   final Function(int) onThumbnailSelected;
-  final IntegerBloc selectedIndexBloc;
+  final DataCubit<int> selectedIndexBloc;
 
   const ReaderThumbnail(
       {Key? key,
@@ -28,11 +29,9 @@ class _ReaderThumbnailState extends State<ReaderThumbnail> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      child: StreamBuilder(
-        stream: widget.selectedIndexBloc.output,
-        initialData: 0,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          int selectedIndex = snapshot.data;
+      child: BlocBuilder(
+        bloc: widget.selectedIndexBloc,
+        builder: (BuildContext context, int selectedIndex) {
           Widget thumbnail = Stack(
             alignment: AlignmentDirectional.bottomCenter,
             children: [

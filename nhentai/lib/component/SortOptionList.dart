@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/bloc/SortOptionBloc.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 
 class SortOptionList extends StatefulWidget {
-  final SortOptionBloc sortOptionBloc;
+  final DataCubit<SortOption> sortOptionCubit;
   final Function(SortOption) onSortOptionSelected;
 
   const SortOptionList(
       {Key? key,
-      required this.sortOptionBloc,
+      required this.sortOptionCubit,
       required this.onSortOptionSelected})
       : super(key: key);
 
@@ -20,11 +21,9 @@ class SortOptionList extends StatefulWidget {
 class _SortOptionListState extends State<SortOptionList> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: widget.sortOptionBloc.output,
-        initialData: SortOption.MostRecent,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          SortOption sortOption = snapshot.data;
+    return BlocBuilder(
+        bloc: widget.sortOptionCubit,
+        builder: (BuildContext context, SortOption sortOption) {
           bool isRecent = sortOption == SortOption.MostRecent;
           bool isPopularToday = sortOption == SortOption.PopularToday;
           bool isPopularThisWeek = sortOption == SortOption.PopularThisWeek;
@@ -38,7 +37,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isRecent) {
-                    widget.sortOptionBloc.updateData(SortOption.MostRecent);
+                    widget.sortOptionCubit.emit(SortOption.MostRecent);
                     widget.onSortOptionSelected(SortOption.MostRecent);
                   }
                 },
@@ -81,7 +80,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isPopularToday) {
-                    widget.sortOptionBloc.updateData(SortOption.PopularToday);
+                    widget.sortOptionCubit.emit(SortOption.PopularToday);
                     widget.onSortOptionSelected(SortOption.PopularToday);
                   }
                 },
@@ -105,8 +104,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isPopularThisWeek) {
-                    widget.sortOptionBloc
-                        .updateData(SortOption.PopularThisWeek);
+                    widget.sortOptionCubit.emit(SortOption.PopularThisWeek);
                     widget.onSortOptionSelected(SortOption.PopularThisWeek);
                   }
                 },
@@ -130,7 +128,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isPopularAllTime) {
-                    widget.sortOptionBloc.updateData(SortOption.PopularAllTime);
+                    widget.sortOptionCubit.emit(SortOption.PopularAllTime);
                     widget.onSortOptionSelected(SortOption.PopularAllTime);
                   }
                 },

@@ -31,6 +31,8 @@ class Constant {
   static const String NUNITO_SEMI_BOLD = 'NunitoSemiBold';
   static const String NUNITO_LIGHT = 'NunitoLight';
 
+  static const String DB_ID = '_id';
+
   static const Map<ReaderType, String> READER_TYPES = {
     ReaderType.LeftToRight: 'Left to right',
     ReaderType.TopDown: 'Top down',

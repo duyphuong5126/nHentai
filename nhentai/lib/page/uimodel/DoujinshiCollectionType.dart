@@ -1,0 +1,1 @@
+enum DoujinshiCollectionType { Favorite, Recent }
