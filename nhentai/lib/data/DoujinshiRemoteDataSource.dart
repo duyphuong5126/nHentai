@@ -28,9 +28,9 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
         ? 'https://nhentai.net/api/galleries/all?page=$page' + sortString
         : 'https://nhentai.net/api/galleries/search?query=$searchTerm&page=$page' +
             sortString;
-    Response response = await get(Uri.parse(url));
     Future<DoujinshiList> result;
     try {
+      Response response = await get(Uri.parse(url));
       DoujinshiList doujinshiList =
           DoujinshiList.fromJson(jsonDecode(response.body));
       print(
@@ -47,16 +47,24 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
   Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(
       int doujinshiId) async {
     String url = 'https://nhentai.net/api/gallery/$doujinshiId/related';
-    Response response = await get(Uri.parse(url));
     Future<RecommendedDoujinshiList> result;
     try {
+      Response response = await get(Uri.parse(url));
       RecommendedDoujinshiList doujinshiList =
           RecommendedDoujinshiList.fromJson(jsonDecode(response.body));
       print(
-          '-------------------\nGET $url\nResult: ${response.statusCode} - ${doujinshiList.result.map((e) => e.id)}\n-------------------');
+          '----------------------------------------------------------------------------');
+      print(
+          '\nGET $url\nResult: ${response.statusCode} - ${doujinshiList.result.map((e) => e.id)}\n');
+      print(
+          '----------------------------------------------------------------------------');
       result = Future.value(doujinshiList);
     } catch (e) {
-      print('-------------------\nGET $url\nError: $e\n-------------------');
+      print(
+          '----------------------------------------------------------------------------');
+      print('\nGET $url\nError: $e');
+      print(
+          '----------------------------------------------------------------------------');
       result = Future.value(RecommendedDoujinshiList(result: []));
     }
     return result;

@@ -55,7 +55,17 @@ class _CoverImageState extends State<CoverImage> {
                 Object error,
                 StackTrace? stackTrace,
               ) {
-                return Image.network(widget.backUpCoverImageUrl);
+                return Image.network(
+                  widget.backUpCoverImageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'images/ic_nothing_here_grey.png',
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                );
               },
             )
           ],

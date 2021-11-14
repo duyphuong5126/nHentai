@@ -44,7 +44,7 @@ class _MorePageState extends State<MorePage> {
         child: ListView(
           children: [
             Container(
-              margin: EdgeInsets.all(5),
+              margin: EdgeInsets.all(10),
               child: BlocBuilder(
                   bloc: _isCensoredCubit,
                   builder: (BuildContext c, bool isCensored) {
