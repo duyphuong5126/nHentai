@@ -12,6 +12,7 @@ import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/component/SortOptionList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/support/Extensions.dart';
@@ -75,8 +76,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _goToPage(int page) {
-    if (page < 0 || (page > 0 && page >= numOfPages)) {
-    } else {
+    if (page >= 0 && page < numOfPages) {
       _changeToPage(page);
       _scrollController.jumpTo(0);
     }
@@ -103,7 +103,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   void _onSearchTermChanged(String newTerm) {
     if (newTerm != _searchTerm) {
+      _scrollController.jumpTo(0);
       doujinshiMap.clear();
+      _sortOption = SortOption.MostRecent;
+      _sortOptionCubit.emit(_sortOption);
       _searchTerm = newTerm;
       _searchTermCubit.emit(newTerm);
       selectedPageHolder.data = 0;
@@ -120,9 +123,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     }
   }
 
-  void _openDoujinshi(Doujinshi doujinshi) {
-    Navigator.of(context)
+  void _openDoujinshi(Doujinshi doujinshi) async {
+    final openDoujinshiResult = await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
+    if (openDoujinshiResult is Tag) {
+      _onSearchTermChanged(openDoujinshiResult.name);
+    }
   }
 
   @override

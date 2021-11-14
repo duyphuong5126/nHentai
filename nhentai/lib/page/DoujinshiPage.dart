@@ -141,8 +141,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         (first, second) => first.toLowerCase().compareTo(second.toLowerCase()));
     tagNames.forEach((tagName) {
       List<Tag>? tags = tagMap[tagName];
-      itemList.add(
-          TagsSection(tagName: tagName, tagList: tags != null ? tags : []));
+      itemList.add(TagsSection(
+        tagName: tagName,
+        tagList: tags != null ? tags : [],
+        onTagSelected: this._onTagSelected,
+      ));
       itemList.add(SizedBox(
         height: 10,
       ));
@@ -199,7 +202,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                   thumbnailUrl: thumbnailUrl,
                   imagePosition: lastReadPageIndex,
                   onThumbnailSelected: (int selectedIndex) {
-                    _openDoujinshi(doujinshi, selectedIndex);
+                    _readDoujinshi(doujinshi, selectedIndex);
                   }),
             ));
           }
@@ -218,7 +221,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(PreviewSection(
       pages: doujinshi.previewThumbnailList,
       onPageSelected: (pageIndex) {
-        _openDoujinshi(doujinshi, pageIndex);
+        _readDoujinshi(doujinshi, pageIndex);
       },
     ));
     itemList.add(SizedBox(
@@ -241,7 +244,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     );
   }
 
-  void _openDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
+  void _readDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
     lastReadPageCubit.emit(-1);
     final needToUpdateStatuses = await Navigator.of(context).pushNamed(
         MainNavigator.DOUJINSHI_READER_PAGE,
@@ -250,5 +253,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     if (needToUpdateStatuses is bool && needToUpdateStatuses) {
       _updateDoujinshiStatuses(doujinshi.id);
     }
+  }
+
+  void _onTagSelected(Tag tag) {
+    Navigator.of(context).pop(tag);
   }
 }
