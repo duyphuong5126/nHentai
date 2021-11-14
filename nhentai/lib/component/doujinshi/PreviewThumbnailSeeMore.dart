@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
 class PreviewThumbnailSeeMore extends StatefulWidget {
   final String thumbnailUrl;
@@ -21,8 +24,16 @@ class PreviewThumbnailSeeMore extends StatefulWidget {
 }
 
 class _PreviewThumbnailSeeMoreState extends State<PreviewThumbnailSeeMore> {
+  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
+
+  void _initCensoredStatus() async {
+    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+  }
+
   @override
   Widget build(BuildContext context) {
+    _initCensoredStatus();
     return GestureDetector(
       child: ClipRRect(
         borderRadius: BorderRadius.all(Radius.circular(5)),
@@ -31,25 +42,36 @@ class _PreviewThumbnailSeeMoreState extends State<PreviewThumbnailSeeMore> {
           child: Stack(
             alignment: AlignmentDirectional.bottomCenter,
             children: [
-              Image.network(
-                widget.thumbnailUrl,
-                height: double.infinity,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (BuildContext context, Object error,
-                    StackTrace? stackTrace) {
-                  return Container(
-                    color: Constant.getNothingColor(),
-                    padding: EdgeInsets.all(5),
-                    child: Image.asset(
-                      Constant.IMAGE_NOTHING,
-                      height: double.infinity,
-                      width: double.infinity,
-                      fit: BoxFit.fitWidth,
-                    ),
-                  );
-                },
-              ),
+              BlocBuilder(
+                  bloc: _isCensoredCubit,
+                  builder: (BuildContext context, bool isCensored) {
+                    print('Test>>> isCensored=$isCensored');
+                    return isCensored
+                        ? Container(
+                            height: double.infinity,
+                            width: double.infinity,
+                            color: Constant.grey4D4D4D,
+                          )
+                        : Image.network(
+                            widget.thumbnailUrl,
+                            height: double.infinity,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (BuildContext context, Object error,
+                                StackTrace? stackTrace) {
+                              return Container(
+                                color: Constant.getNothingColor(),
+                                padding: EdgeInsets.all(5),
+                                child: Image.asset(
+                                  Constant.IMAGE_NOTHING,
+                                  height: double.infinity,
+                                  width: double.infinity,
+                                  fit: BoxFit.fitWidth,
+                                ),
+                              );
+                            },
+                          );
+                  }),
               Container(
                 decoration: BoxDecoration(
                     color: Constant.black96000000,

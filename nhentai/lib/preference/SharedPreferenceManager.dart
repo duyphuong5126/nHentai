@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SharedPreferenceManager {
   static const String _READER_TYPE = 'reader_type';
   static const String _READER_TRANSPARENCY = 'reader_transparency';
+  static const String _CENSORED = 'censored';
 
   Future<ReaderType> getReaderType() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
@@ -24,5 +25,15 @@ class SharedPreferenceManager {
   Future saveReaderTransparency(double readerTransparency) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     sharedPreferences.setDouble(_READER_TRANSPARENCY, readerTransparency);
+  }
+
+  Future<bool> isCensored() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.getBool(_CENSORED) ?? false;
+  }
+
+  Future<bool> saveCensored(bool isCensored) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.setBool(_CENSORED, isCensored);
   }
 }

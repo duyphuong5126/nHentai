@@ -47,6 +47,12 @@ class _ReaderPageState extends State<ReaderPage>
       DataCubit<ReaderType>(ReaderType.LeftToRight);
   DataCubit<double>? _screenTransparencyCubit = DataCubit<double>(0);
 
+  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
+
+  void _initCensoredStatus() async {
+    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+  }
+
   void _iniReaderType() async {
     _readerTypeCubit?.emit(await _preferenceManager.getReaderType());
     _screenTransparencyCubit
@@ -61,6 +67,7 @@ class _ReaderPageState extends State<ReaderPage>
   void initState() {
     super.initState();
     _iniReaderType();
+    _initCensoredStatus();
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
     _topSlideAnimation =
@@ -76,34 +83,36 @@ class _ReaderPageState extends State<ReaderPage>
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
     Doujinshi doujinshi = readingModel.doujinshi;
-    return WillPopScope(child: Scaffold(
-      body: SafeArea(
-          child: Stack(
+    return WillPopScope(
+        child: Scaffold(
+          body: SafeArea(
+              child: Stack(
             children: [
               Positioned.fill(
                   child: Align(
-                    child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
-                            (visiblePage) {
-                          _currentPageCubit?.emit(visiblePage);
-                          _thumbnailScrollController.scrollToIndex(visiblePage);
-                          _storeReadDoujinshi(doujinshi, visiblePage);
-                        }),
-                    alignment: Alignment.topLeft,
-                  )),
+                child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
+                    (visiblePage) {
+                  _currentPageCubit?.emit(visiblePage);
+                  _thumbnailScrollController.scrollToIndex(visiblePage);
+                  _storeReadDoujinshi(doujinshi, visiblePage);
+                }),
+                alignment: Alignment.topLeft,
+              )),
               Positioned.fill(
                   child: Align(
-                    child: _buildReaderHeader(doujinshi.title.english),
-                    alignment: Alignment.topLeft,
-                  )),
+                child: _buildReaderHeader(doujinshi.title.english),
+                alignment: Alignment.topLeft,
+              )),
               Positioned.fill(
                   child: Align(
-                    child: _buildReaderFooter(doujinshi),
-                    alignment: Alignment.bottomLeft,
-                  ))
+                child: _buildReaderFooter(doujinshi),
+                alignment: Alignment.bottomLeft,
+              ))
             ],
           )),
-      backgroundColor: Constant.grey1f1f1f,
-    ), onWillPop: () => _onWillPop(context));
+          backgroundColor: Constant.grey1f1f1f,
+        ),
+        onWillPop: () => _onWillPop(context));
   }
 
   @override
@@ -381,7 +390,7 @@ class _ReaderPageState extends State<ReaderPage>
         controller: _pageController,
         onPageChanged: onPageVisible,
         itemBuilder: (BuildContext c, int index) {
-          return Container(
+          Widget pageWidget = Container(
             child: CachedNetworkImage(
               imageUrl: doujinshi.fullSizePageUrlList[index],
               errorWidget: (context, url, error) => Image.asset(
@@ -406,8 +415,24 @@ class _ReaderPageState extends State<ReaderPage>
                 );
               },
             ),
-            margin: EdgeInsets.only(bottom: 10),
           );
+          return BlocBuilder(
+              bloc: _isCensoredCubit,
+              builder: (BuildContext context, bool isCensored) {
+                print('Test>>> isCensored=$isCensored');
+                return isCensored
+                    ? Container(
+                        constraints: BoxConstraints.expand(),
+                        color: Constant.grey4D4D4D,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.block,
+                          size: 100,
+                          color: Constant.mainColor,
+                        ),
+                      )
+                    : pageWidget;
+              });
         });
   }
 
@@ -431,33 +456,50 @@ class _ReaderPageState extends State<ReaderPage>
             onVisibilityChanged: (VisibilityInfo info) {
               onPageVisible((info.key as ValueKey).value);
             },
-            child: Container(
-              child: CachedNetworkImage(
-                imageUrl: doujinshi.fullSizePageUrlList[index],
-                errorWidget: (context, url, error) => Image.asset(
-                  Constant.IMAGE_NOTHING,
-                  fit: BoxFit.fitWidth,
-                ),
-                fit: BoxFit.fitWidth,
-                placeholder: (BuildContext context, String url) {
-                  return Container(
-                    color: Colors.transparent,
-                    child: Center(
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                            fontSize: 24,
-                            fontFamily: Constant.NUNITO_BLACK,
-                            color: Colors.white),
-                      ),
-                    ),
-                    constraints:
-                        BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
-                  );
-                },
-              ),
-              margin: EdgeInsets.only(bottom: 10),
-            ),
+            child: BlocBuilder(
+                bloc: _isCensoredCubit,
+                builder: (BuildContext context, bool isCensored) {
+                  print('Test>>> isCensored=$isCensored');
+                  return isCensored
+                      ? Container(
+                          constraints: BoxConstraints.expand(height: 300),
+                          color: Constant.grey4D4D4D,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.block,
+                            size: 50,
+                            color: Constant.mainColor,
+                          ),
+                          margin: EdgeInsets.only(bottom: 10),
+                        )
+                      : Container(
+                          child: CachedNetworkImage(
+                            imageUrl: doujinshi.fullSizePageUrlList[index],
+                            errorWidget: (context, url, error) => Image.asset(
+                              Constant.IMAGE_NOTHING,
+                              fit: BoxFit.fitWidth,
+                            ),
+                            fit: BoxFit.fitWidth,
+                            placeholder: (BuildContext context, String url) {
+                              return Container(
+                                color: Colors.transparent,
+                                child: Center(
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                        fontSize: 24,
+                                        fontFamily: Constant.NUNITO_BLACK,
+                                        color: Colors.white),
+                                  ),
+                                ),
+                                constraints: BoxConstraints.expand(
+                                    height: _DEFAULT_ITEM_HEIGHT),
+                              );
+                            },
+                          ),
+                          margin: EdgeInsets.only(bottom: 10),
+                        );
+                }),
           ),
         );
       },

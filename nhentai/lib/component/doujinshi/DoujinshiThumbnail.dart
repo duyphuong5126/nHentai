@@ -6,6 +6,7 @@ import 'package:nhentai/component/custom_widget/TriangleBackgroundWidget.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
+import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
 class DoujinshiThumbnail extends StatefulWidget {
   final Doujinshi doujinshi;
@@ -32,15 +33,23 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
   final DataCubit<DoujinshiStatuses> _statusesCubit =
       DataCubit(DoujinshiStatuses());
 
+  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
+
   void _refreshDoujinshiStatus(int doujinshiId) async {
     DoujinshiStatuses statuses =
         await _getDoujinshiStatusesUseCase.execute(doujinshiId);
     _statusesCubit.emit(statuses);
   }
 
+  void _initCensoredStatus() async {
+    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+  }
+
   @override
   Widget build(BuildContext context) {
     Doujinshi doujinshi = widget.doujinshi;
+    _initCensoredStatus();
     _refreshDoujinshiStatus(doujinshi.id);
     List<InlineSpan> spans = [];
     if (doujinshi.languageIcon.isNotEmpty) {
@@ -79,25 +88,42 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                 child: Stack(
                   alignment: Alignment.bottomCenter,
                   children: [
-                    Image.network(
-                      doujinshi.thumbnailImage,
-                      height: double.infinity,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (BuildContext context, Object error,
-                          StackTrace? stackTrace) {
-                        return Container(
-                          color: Constant.getNothingColor(),
-                          padding: EdgeInsets.all(5),
-                          child: Image.asset(
-                            Constant.IMAGE_NOTHING,
-                            height: double.infinity,
-                            width: double.infinity,
-                            fit: BoxFit.fitWidth,
-                          ),
-                        );
-                      },
-                    ),
+                    BlocBuilder(
+                        bloc: _isCensoredCubit,
+                        builder: (BuildContext context, bool isCensored) {
+                          print('Test>>> isCensored=$isCensored');
+                          return isCensored
+                              ? Container(
+                                  width: 300,
+                                  height: 300,
+                                  color: Constant.grey767676,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.block,
+                                    size: 50,
+                                    color: Constant.mainColor,
+                                  ),
+                                )
+                              : Image.network(
+                                  doujinshi.thumbnailImage,
+                                  height: double.infinity,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (BuildContext context,
+                                      Object error, StackTrace? stackTrace) {
+                                    return Container(
+                                      color: Constant.getNothingColor(),
+                                      padding: EdgeInsets.all(5),
+                                      child: Image.asset(
+                                        Constant.IMAGE_NOTHING,
+                                        height: double.infinity,
+                                        width: double.infinity,
+                                        fit: BoxFit.fitWidth,
+                                      ),
+                                    );
+                                  },
+                                );
+                        }),
                     Row(
                       children: [
                         Expanded(
@@ -172,21 +198,38 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                 child: Stack(
                   alignment: Alignment.bottomCenter,
                   children: [
-                    Image.network(
-                      doujinshi.thumbnailImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (BuildContext context, Object error,
-                          StackTrace? stackTrace) {
-                        return Container(
-                          color: Constant.getNothingColor(),
-                          padding: EdgeInsets.all(5),
-                          child: Image.asset(
-                            Constant.IMAGE_NOTHING,
-                            fit: BoxFit.cover,
-                          ),
-                        );
-                      },
-                    ),
+                    BlocBuilder(
+                        bloc: _isCensoredCubit,
+                        builder: (BuildContext context, bool isCensored) {
+                          print('Test>>> isCensored=$isCensored');
+                          return isCensored
+                              ? Container(
+                                  width: 300,
+                                  height: 300,
+                                  color: Constant.grey767676,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.block,
+                                    size: 50,
+                                    color: Constant.mainColor,
+                                  ),
+                                )
+                              : Image.network(
+                                  doujinshi.thumbnailImage,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (BuildContext context,
+                                      Object error, StackTrace? stackTrace) {
+                                    return Container(
+                                      color: Constant.getNothingColor(),
+                                      padding: EdgeInsets.all(5),
+                                      child: Image.asset(
+                                        Constant.IMAGE_NOTHING,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    );
+                                  },
+                                );
+                        }),
                     Row(
                       children: [
                         Expanded(

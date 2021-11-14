@@ -17,19 +17,23 @@ class CoverImage extends StatefulWidget {
 }
 
 class _CoverImageState extends State<CoverImage> {
-  final ScrollController _scrollController = ScrollController();
-
   bool isUp = false;
-  late Timer _eternalScrollTimer;
+  Timer? _eternalScrollTimer;
+  ScrollController? _scrollController;
 
   void _startEternalScroll() {
+    if (_scrollController == null) {
+      _scrollController = ScrollController();
+    }
     _eternalScrollTimer = Timer.periodic(Duration(seconds: 3), (timer) {
       double offset = isUp
-          ? _scrollController.position.maxScrollExtent
-          : _scrollController.position.minScrollExtent;
-      isUp = !isUp;
-      _scrollController.animateTo(offset,
-          duration: Duration(seconds: 2), curve: Curves.ease);
+          ? _scrollController?.position.maxScrollExtent ?? -1
+          : _scrollController?.position.minScrollExtent ?? -1;
+      if (offset >= 0) {
+        isUp = !isUp;
+        _scrollController!.animateTo(offset,
+            duration: Duration(seconds: 2), curve: Curves.ease);
+      }
     });
   }
 
@@ -64,7 +68,10 @@ class _CoverImageState extends State<CoverImage> {
   @override
   void dispose() {
     super.dispose();
-    _eternalScrollTimer.cancel();
-    _scrollController.dispose();
+    print('Test>>> dispose cover image');
+    _eternalScrollTimer?.cancel();
+    _eternalScrollTimer = null;
+    _scrollController?.dispose();
+    _scrollController = null;
   }
 }

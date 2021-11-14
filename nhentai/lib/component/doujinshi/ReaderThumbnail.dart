@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
 class ReaderThumbnail extends StatefulWidget {
   final String thumbnailUrl;
@@ -26,8 +27,16 @@ class ReaderThumbnail extends StatefulWidget {
 }
 
 class _ReaderThumbnailState extends State<ReaderThumbnail> {
+  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
+
+  void _initCensoredStatus() async {
+    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+  }
+
   @override
   Widget build(BuildContext context) {
+    _initCensoredStatus();
     return GestureDetector(
       child: BlocBuilder(
         bloc: widget.selectedIndexBloc,
@@ -35,25 +44,42 @@ class _ReaderThumbnailState extends State<ReaderThumbnail> {
           Widget thumbnail = Stack(
             alignment: AlignmentDirectional.bottomCenter,
             children: [
-              Image.network(
-                widget.thumbnailUrl,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (BuildContext context, Object error,
-                    StackTrace? stackTrace) {
-                  return Container(
-                    color: Constant.getNothingColor(),
-                    padding: EdgeInsets.all(5),
-                    child: Image.asset(
-                      Constant.IMAGE_NOTHING,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.fitWidth,
-                    ),
-                  );
-                },
-              ),
+              BlocBuilder(
+                  bloc: _isCensoredCubit,
+                  builder: (BuildContext context, bool isCensored) {
+                    print('Test>>> isCensored=$isCensored');
+                    return isCensored
+                        ? Container(
+                            width: widget.width,
+                            height: widget.height,
+                            color: Constant.grey4D4D4D,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.block,
+                              size: 20,
+                              color: Constant.mainColor,
+                            ),
+                          )
+                        : Image.network(
+                            widget.thumbnailUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (BuildContext context, Object error,
+                                StackTrace? stackTrace) {
+                              return Container(
+                                color: Constant.getNothingColor(),
+                                padding: EdgeInsets.all(5),
+                                child: Image.asset(
+                                  Constant.IMAGE_NOTHING,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.fitWidth,
+                                ),
+                              );
+                            },
+                          );
+                  }),
               Container(
                 decoration: BoxDecoration(
                     color: Constant.black96000000,

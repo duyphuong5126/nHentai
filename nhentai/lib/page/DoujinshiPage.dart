@@ -22,6 +22,7 @@ import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
+import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
 class DoujinshiPage extends StatefulWidget {
   const DoujinshiPage({Key? key}) : super(key: key);
@@ -33,13 +34,15 @@ class DoujinshiPage extends StatefulWidget {
 class _DoujinshiPageState extends State<DoujinshiPage> {
   late List<Widget> itemList;
   late DataCubit<Doujinshi> doujinshiCubit;
-  late DataCubit<int> lastReadPageCubit = DataCubit<int>(-1);
+  late DataCubit<int> lastReadPageCubit = DataCubit(-1);
   final DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
-      DataCubit<List<Doujinshi>>([]);
+      DataCubit([]);
   final GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
       GetRecommendedDoujinshiListUseCaseImpl();
   final GetDoujinshiStatusesUseCase _getDoujinshiStatusesUseCase =
       GetDoujinshiStatusesUseCaseImpl();
+  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
 
   void _getRecommendedList(int doujinshiId) async {
     RecommendedDoujinshiList recommendedDoujinshiList =
@@ -54,9 +57,14 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     lastReadPageCubit.emit(statuses.lastReadPageIndex);
   }
 
+  void _initCensoredStatus() async {
+    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Test>>> DoujinshiPage build');
+    _initCensoredStatus();
     doujinshiCubit = DataCubit<Doujinshi>(
         ModalRoute.of(context)?.settings.arguments as Doujinshi);
     return Scaffold(
@@ -88,10 +96,25 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(CoverImage(
-      coverImageUrl: doujinshi.coverImage,
-      backUpCoverImageUrl: doujinshi.backUpCoverImage,
-    ));
+    itemList.add(BlocBuilder(
+        bloc: _isCensoredCubit,
+        builder: (BuildContext context, bool isCensored) {
+          return isCensored
+              ? Container(
+                  constraints: BoxConstraints.expand(height: 300),
+                  color: Constant.grey1f1f1f,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.block,
+                    size: 50,
+                    color: Constant.mainColor,
+                  ),
+                )
+              : CoverImage(
+                  coverImageUrl: doujinshi.coverImage,
+                  backUpCoverImageUrl: doujinshi.backUpCoverImage,
+                );
+        }));
     itemList.add(SizedBox(
       height: 10,
     ));
@@ -154,38 +177,37 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     ));
     itemList.add(BlocBuilder(
         bloc: lastReadPageCubit,
-        buildWhen: (int previousLastReadPage, int currentLastReadPage) {
-          return currentLastReadPage >= 0;
-        },
         builder: (BuildContext c, int lastReadPageIndex) {
-          String thumbnailUrl = lastReadPageIndex >= 0
-              ? doujinshi.previewThumbnailList[lastReadPageIndex]
-              : '';
+          List<Widget> lastReadPageWidgets = [];
+          if (lastReadPageIndex >= 0) {
+            String thumbnailUrl =
+                doujinshi.previewThumbnailList[lastReadPageIndex];
+            lastReadPageWidgets.add(Text(
+              'Last read page',
+              style: TextStyle(
+                  fontFamily: Constant.NUNITO_EXTRA_BOLD,
+                  fontSize: 18,
+                  color: Colors.white),
+            ));
+            lastReadPageWidgets.add(SizedBox(
+              height: 5,
+            ));
+            lastReadPageWidgets.add(SizedBox(
+              height: 197.5,
+              width: 148.125,
+              child: PreviewThumbnail(
+                  thumbnailUrl: thumbnailUrl,
+                  imagePosition: lastReadPageIndex,
+                  onThumbnailSelected: (int selectedIndex) {
+                    _openDoujinshi(doujinshi, selectedIndex);
+                  }),
+            ));
+          }
+
           return Visibility(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Last read page',
-                  style: TextStyle(
-                      fontFamily: Constant.NUNITO_EXTRA_BOLD,
-                      fontSize: 18,
-                      color: Colors.white),
-                ),
-                SizedBox(
-                  height: 5,
-                ),
-                SizedBox(
-                  height: 197.5,
-                  width: 148.125,
-                  child: PreviewThumbnail(
-                      thumbnailUrl: thumbnailUrl,
-                      imagePosition: lastReadPageIndex,
-                      onThumbnailSelected: (int selectedIndex) {
-                        _openDoujinshi(doujinshi, selectedIndex);
-                      }),
-                )
-              ],
+              children: lastReadPageWidgets,
             ),
             visible: lastReadPageIndex >= 0,
           );
@@ -220,10 +242,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   }
 
   void _openDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
+    lastReadPageCubit.emit(-1);
     final needToUpdateStatuses = await Navigator.of(context).pushNamed(
-            MainNavigator.DOUJINSHI_READER_PAGE,
-            arguments: ReadingModel(
-                doujinshi: doujinshi, startPageIndex: startPageIndex));
+        MainNavigator.DOUJINSHI_READER_PAGE,
+        arguments:
+            ReadingModel(doujinshi: doujinshi, startPageIndex: startPageIndex));
     if (needToUpdateStatuses is bool && needToUpdateStatuses) {
       _updateDoujinshiStatuses(doujinshi.id);
     }
