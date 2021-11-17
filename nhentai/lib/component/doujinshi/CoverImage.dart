@@ -78,7 +78,6 @@ class _CoverImageState extends State<CoverImage> {
   @override
   void dispose() {
     super.dispose();
-    print('Test>>> dispose cover image');
     _eternalScrollTimer?.cancel();
     _eternalScrollTimer = null;
     _scrollController?.dispose();

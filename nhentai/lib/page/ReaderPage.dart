@@ -419,7 +419,6 @@ class _ReaderPageState extends State<ReaderPage>
           return BlocBuilder(
               bloc: _isCensoredCubit,
               builder: (BuildContext context, bool isCensored) {
-                print('Test>>> isCensored=$isCensored');
                 return isCensored
                     ? Container(
                         constraints: BoxConstraints.expand(),
@@ -459,7 +458,6 @@ class _ReaderPageState extends State<ReaderPage>
             child: BlocBuilder(
                 bloc: _isCensoredCubit,
                 builder: (BuildContext context, bool isCensored) {
-                  print('Test>>> isCensored=$isCensored');
                   return isCensored
                       ? Container(
                           constraints: BoxConstraints.expand(height: 300),

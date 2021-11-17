@@ -42,7 +42,6 @@ class _PreviewThumbnailState extends State<PreviewThumbnail> {
               BlocBuilder(
                   bloc: _isCensoredCubit,
                   builder: (BuildContext context, bool isCensored) {
-                    print('Test>>> isCensored=$isCensored');
                     return isCensored
                         ? Container(
                             height: double.infinity,

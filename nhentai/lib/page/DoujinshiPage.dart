@@ -53,7 +53,6 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   void _updateDoujinshiStatuses(int doujinshiId) async {
     DoujinshiStatuses statuses =
         await _getDoujinshiStatusesUseCase.execute(doujinshiId);
-    print('Test>>> lastReadPageIndex=${statuses.lastReadPageIndex}');
     lastReadPageCubit.emit(statuses.lastReadPageIndex);
   }
 
@@ -63,7 +62,6 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('Test>>> DoujinshiPage build');
     _initCensoredStatus();
     doujinshiCubit = DataCubit<Doujinshi>(
         ModalRoute.of(context)?.settings.arguments as Doujinshi);

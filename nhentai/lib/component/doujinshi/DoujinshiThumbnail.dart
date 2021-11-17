@@ -91,7 +91,6 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                     BlocBuilder(
                         bloc: _isCensoredCubit,
                         builder: (BuildContext context, bool isCensored) {
-                          print('Test>>> isCensored=$isCensored');
                           return isCensored
                               ? Container(
                                   width: 300,
@@ -201,7 +200,6 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                     BlocBuilder(
                         bloc: _isCensoredCubit,
                         builder: (BuildContext context, bool isCensored) {
-                          print('Test>>> isCensored=$isCensored');
                           return isCensored
                               ? Container(
                                   width: 300,

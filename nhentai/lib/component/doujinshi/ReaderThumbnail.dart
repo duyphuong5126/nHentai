@@ -47,7 +47,6 @@ class _ReaderThumbnailState extends State<ReaderThumbnail> {
               BlocBuilder(
                   bloc: _isCensoredCubit,
                   builder: (BuildContext context, bool isCensored) {
-                    print('Test>>> isCensored=$isCensored');
                     return isCensored
                         ? Container(
                             width: widget.width,
