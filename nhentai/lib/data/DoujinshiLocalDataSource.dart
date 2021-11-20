@@ -10,6 +10,8 @@ abstract class DoujinshiLocalDataSource {
   Future<List<Doujinshi>> getRecentlyReadDoujinshis(int skip, int take);
 
   Future<int> getRecentlyReadDoujinshiCount();
+
+  Future<bool> clearLastReadPage(int doujinshiId);
 }
 
 class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
@@ -32,5 +34,10 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
 
   Future<int> getRecentlyReadDoujinshiCount() {
     return _database.getRecentlyReadDoujinshiCount();
+  }
+
+  @override
+  Future<bool> clearLastReadPage(int doujinshiId) {
+    return _database.clearLastReadPage(doujinshiId);
   }
 }

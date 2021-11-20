@@ -10,6 +10,7 @@ import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiCountUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/DoujinshiCollectionType.dart';
 import 'package:nhentai/component/DefaultScreenTitle.dart';
@@ -29,6 +30,9 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   final GetRecentlyReadDoujinshiListUseCase
       _getRecentlyReadDoujinshiListUseCase =
       GetRecentlyReadDoujinshiListUseCaseImpl();
+  final GetRecentlyReadDoujinshiCountUseCase
+      _getRecentlyReadDoujinshiCountUseCase =
+      GetRecentlyReadDoujinshiCountUseCaseImpl();
   final DataCubit<int> _numOfPagesCubit = DataCubit(-1);
   final DataCubit<List<Doujinshi>> _doujinshiListCubit = DataCubit([]);
   final DataCubit<String> _pageIndicatorCubit = DataCubit('');
@@ -38,6 +42,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
 
   final ScrollController _scrollController = ScrollController();
 
+  int collectionSize = 0;
   int numOfPages = 0;
   int currentPage = -1;
   Map<int, List<Doujinshi>> doujinshiMap = {};
@@ -45,17 +50,12 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
 
   @override
-  void initState() {
-    super.initState();
-    _changeToPage(0);
-  }
-
-  @override
   Widget build(BuildContext context) {
     Future.delayed(Duration(milliseconds: 1)).then((value) =>
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
             statusBarColor: Constant.mainDarkColor,
             systemStatusBarContrastEnforced: true)));
+    _initDoujinshiCollection();
     return Scaffold(
       appBar: AppBar(
         title: BlocBuilder(
@@ -178,9 +178,20 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
     );
   }
 
-  void _openDoujinshi(Doujinshi doujinshi) {
-    Navigator.of(context)
+  void _initDoujinshiCollection() async {
+    int recentlyReadCount =
+        await _getRecentlyReadDoujinshiCountUseCase.execute();
+    if (recentlyReadCount != collectionSize) {
+      collectionSize = recentlyReadCount;
+      _resetCollection();
+      _changeToPage(0);
+    }
+  }
+
+  void _openDoujinshi(Doujinshi doujinshi) async {
+    await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
+    _initDoujinshiCollection();
   }
 
   void _goToPage(int page) {
@@ -249,13 +260,14 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
     _loadingCubit.close();
   }
 
-  void _reset() {
+  void _resetCollection() {
+    numOfPages = 0;
+    currentPage = -1;
+    doujinshiMap.clear();
     _scrollController.jumpTo(0);
     _numOfPagesCubit.emit(0);
     _doujinshiListCubit.emit([]);
     _pageIndicatorCubit.emit('');
     _loadingCubit.emit(false);
-    numOfPages = 0;
-    currentPage = -1;
   }
 }

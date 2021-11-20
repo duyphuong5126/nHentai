@@ -121,12 +121,13 @@ class DoujinshiDatabase {
         whereArgs: [doujinshi.id]);
   }
 
-  Future clearLastReadPage(int doujinshiId) async {
+  Future<bool> clearLastReadPage(int doujinshiId) async {
     await _openDataBase();
     int currentTimeMillis = DateTime.now().microsecondsSinceEpoch;
-    _database!.update(_DOUJINSHI_TABLE,
+    int updatedRows = await _database!.update(_DOUJINSHI_TABLE,
         {_LAST_READ_PAGE: -1, _UPDATED_TIME: currentTimeMillis},
         where: '$_DOUJINSHI_ID = ?', whereArgs: [doujinshiId]);
+    return updatedRows > 0;
   }
 
   Future _insertDoujinshi(Doujinshi doujinshi,

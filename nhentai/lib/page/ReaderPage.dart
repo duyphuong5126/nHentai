@@ -69,12 +69,12 @@ class _ReaderPageState extends State<ReaderPage>
     _iniReaderType();
     _initCensoredStatus();
     _animationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
     _topSlideAnimation =
-        Tween<Offset>(begin: Offset.zero, end: Offset(0.0, -1.0))
+        Tween<Offset>(begin: Offset.zero, end: Offset(0.0, -5.0))
             .animate(_animationController);
     _bottomSlideAnimation =
-        Tween<Offset>(begin: Offset.zero, end: Offset(0.0, 1.0))
+        Tween<Offset>(begin: Offset.zero, end: Offset(0.0, 5.0))
             .animate(_animationController);
   }
 
@@ -83,36 +83,34 @@ class _ReaderPageState extends State<ReaderPage>
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
     Doujinshi doujinshi = readingModel.doujinshi;
-    return WillPopScope(
-        child: Scaffold(
-          body: SafeArea(
-              child: Stack(
-            children: [
-              Positioned.fill(
-                  child: Align(
-                child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
-                    (visiblePage) {
-                  _currentPageCubit?.emit(visiblePage);
-                  _thumbnailScrollController.scrollToIndex(visiblePage);
-                  _storeReadDoujinshi(doujinshi, visiblePage);
-                }),
-                alignment: Alignment.topLeft,
-              )),
-              Positioned.fill(
-                  child: Align(
-                child: _buildReaderHeader(doujinshi.title.english),
-                alignment: Alignment.topLeft,
-              )),
-              Positioned.fill(
-                  child: Align(
-                child: _buildReaderFooter(doujinshi),
-                alignment: Alignment.bottomLeft,
-              ))
-            ],
+    return Scaffold(
+      body: SafeArea(
+          child: Stack(
+        children: [
+          Positioned.fill(
+              child: Align(
+            child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
+                (visiblePage) {
+              _currentPageCubit?.emit(visiblePage);
+              _thumbnailScrollController.scrollToIndex(visiblePage);
+              _storeReadDoujinshi(doujinshi, visiblePage);
+            }),
+            alignment: Alignment.topLeft,
           )),
-          backgroundColor: Constant.grey1f1f1f,
-        ),
-        onWillPop: () => _onWillPop(context));
+          Positioned.fill(
+              child: Align(
+            child: _buildReaderHeader(doujinshi.title.english),
+            alignment: Alignment.topLeft,
+          )),
+          Positioned.fill(
+              child: Align(
+            child: _buildReaderFooter(doujinshi),
+            alignment: Alignment.bottomLeft,
+          ))
+        ],
+      )),
+      backgroundColor: Constant.grey1f1f1f,
+    );
   }
 
   @override
@@ -598,10 +596,5 @@ class _ReaderPageState extends State<ReaderPage>
               fontSize: 16,
               color: itemColor),
         ));
-  }
-
-  Future<bool> _onWillPop(BuildContext context) async {
-    Navigator.of(context).pop(true);
-    return false;
   }
 }

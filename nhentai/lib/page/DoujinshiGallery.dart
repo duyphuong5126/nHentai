@@ -24,7 +24,7 @@ class DoujinshiGallery extends StatefulWidget {
 }
 
 class _DoujinshiGalleryState extends State<DoujinshiGallery> {
-  GetDoujinshiListUseCase _getBookListByPage =
+  final GetDoujinshiListUseCase _getBookListByPage =
       new GetDoujinshiListUseCaseImpl();
 
   final DataCubit<int> _numOfPagesCubit = DataCubit<int>(-1);

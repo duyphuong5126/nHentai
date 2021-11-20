@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
 import 'package:nhentai/component/doujinshi/DateTimeSection.dart';
 import 'package:nhentai/component/doujinshi/DownloadButton.dart';
@@ -19,6 +21,7 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
+import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
@@ -41,6 +44,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       GetRecommendedDoujinshiListUseCaseImpl();
   final GetDoujinshiStatusesUseCase _getDoujinshiStatusesUseCase =
       GetDoujinshiStatusesUseCaseImpl();
+  final ClearLastReadPageUseCase _clearLastReadPageUseCase =
+      ClearLastReadPageUseCaseImpl();
   final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   final DataCubit<bool> _isCensoredCubit = DataCubit(false);
 
@@ -183,12 +188,45 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           if (lastReadPageIndex >= 0) {
             String thumbnailUrl =
                 doujinshi.previewThumbnailList[lastReadPageIndex];
-            lastReadPageWidgets.add(Text(
-              'Last read page',
-              style: TextStyle(
-                  fontFamily: Constant.NUNITO_EXTRA_BOLD,
-                  fontSize: 18,
-                  color: Colors.white),
+            lastReadPageWidgets.add(Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Last read page',
+                  style: TextStyle(
+                      fontFamily: Constant.NUNITO_EXTRA_BOLD,
+                      fontSize: 18,
+                      color: Colors.white),
+                ),
+                SizedBox(
+                  width: 5,
+                ),
+                InkWell(
+                  onTap: () => showDialog(
+                      context: context,
+                      builder: (content) {
+                        return YesNoActionsAlertDialog(
+                            title: 'Forget this doujinshi',
+                            content:
+                                'This doujinshi is in your reading list. Do you want to remove it?',
+                            yesLabel: 'Yes',
+                            noLabel: 'No',
+                            yesAction: () => _forgetDoujinshi(doujinshi.id),
+                            noAction: () {});
+                      }),
+                  child: Ink(
+                    width: 40,
+                    height: 40,
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      child: SvgPicture.asset(
+                        Constant.ICON_UN_SEEN,
+                      ),
+                    ),
+                  ),
+                )
+              ],
             ));
             lastReadPageWidgets.add(SizedBox(
               height: 5,
@@ -244,16 +282,20 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   void _readDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
     lastReadPageCubit.emit(-1);
-    final needToUpdateStatuses = await Navigator.of(context).pushNamed(
-        MainNavigator.DOUJINSHI_READER_PAGE,
+    await Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_READER_PAGE,
         arguments:
             ReadingModel(doujinshi: doujinshi, startPageIndex: startPageIndex));
-    if (needToUpdateStatuses is bool && needToUpdateStatuses) {
-      _updateDoujinshiStatuses(doujinshi.id);
-    }
+    _updateDoujinshiStatuses(doujinshi.id);
   }
 
   void _onTagSelected(Tag tag) {
     Navigator.of(context).pop(tag);
+  }
+
+  void _forgetDoujinshi(int doujinshiId) async {
+    bool updated = await _clearLastReadPageUseCase.execute(doujinshiId);
+    if (updated) {
+      _updateDoujinshiStatuses(doujinshiId);
+    }
   }
 }

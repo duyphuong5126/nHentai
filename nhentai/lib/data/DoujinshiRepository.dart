@@ -17,6 +17,10 @@ abstract class DoujinshiRepository {
   Future<DoujinshiStatuses> getDoujinshiStatuses(int doujinshiId);
 
   Future<DoujinshiList> getRecentlyReadDoujinshiList(int page, int perPage);
+
+  Future<int> getRecentlyReadDoujinshiCount();
+
+  Future<bool> clearLastReadPage(int doujinshiId);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -62,5 +66,15 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
     }
     return DoujinshiList(
         result: doujinshiList, numPages: numPages, perPage: pageSize);
+  }
+
+  @override
+  Future<int> getRecentlyReadDoujinshiCount() {
+    return _local.getRecentlyReadDoujinshiCount();
+  }
+
+  @override
+  Future<bool> clearLastReadPage(int doujinshiId) {
+    return _local.clearLastReadPage(doujinshiId);
   }
 }
