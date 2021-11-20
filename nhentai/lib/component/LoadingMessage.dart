@@ -28,7 +28,7 @@ class LoadingMessage extends StatelessWidget {
                 loadingMessage,
                 style: TextStyle(
                     fontSize: 20,
-                    fontFamily: Constant.NUNITO_BOLD,
+                    fontFamily: Constant.BOLD,
                     color: Colors.black),
               )
             ],

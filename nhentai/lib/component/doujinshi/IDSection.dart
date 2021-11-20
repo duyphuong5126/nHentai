@@ -20,7 +20,7 @@ class _IDSectionState extends State<IDSection> {
         Text(
           'ID:',
           style: TextStyle(
-              fontFamily: Constant.NUNITO_BLACK,
+              fontFamily: Constant.BOLD,
               fontSize: 16,
               color: Colors.white),
         ),
@@ -32,7 +32,7 @@ class _IDSectionState extends State<IDSection> {
           child: Text(
             '${widget.id}',
             style: TextStyle(
-                fontFamily: Constant.NUNITO_BLACK,
+                fontFamily: Constant.BOLD,
                 fontSize: 14,
                 color: Colors.white),
           ),

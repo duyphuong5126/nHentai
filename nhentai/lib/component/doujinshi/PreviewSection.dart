@@ -31,7 +31,7 @@ class _PreviewSectionState extends State<PreviewSection> {
         Text(
           'Preview',
           style: TextStyle(
-              fontFamily: Constant.NUNITO_EXTRA_BOLD,
+              fontFamily: Constant.BOLD,
               fontSize: 18,
               color: Colors.white),
         ),

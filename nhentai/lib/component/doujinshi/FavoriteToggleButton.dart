@@ -29,7 +29,7 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
             Text(
               'Favorite',
               style: TextStyle(
-                  fontFamily: Constant.NUNITO_BLACK,
+                  fontFamily: Constant.BOLD,
                   fontSize: 18,
                   color: Colors.white),
             )

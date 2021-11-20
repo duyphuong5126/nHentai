@@ -39,7 +39,7 @@ class YesNoActionsAlertDialog extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-                fontFamily: Constant.NUNITO_BLACK,
+                fontFamily: Constant.BOLD,
                 fontSize: 20,
                 color: Constant.mainColor),
           )
@@ -56,7 +56,7 @@ class YesNoActionsAlertDialog extends StatelessWidget {
         text: TextSpan(
             text: content,
             style: TextStyle(
-                fontFamily: Constant.NUNITO_REGULAR,
+                fontFamily: Constant.REGULAR,
                 fontSize: 15,
                 color: Colors.black)),
         overflow: TextOverflow.ellipsis,
@@ -77,7 +77,7 @@ class YesNoActionsAlertDialog extends StatelessWidget {
               child: Text(
                 yesLabel,
                 style: TextStyle(
-                    fontFamily: Constant.NUNITO_SEMI_BOLD,
+                    fontFamily: Constant.BOLD,
                     fontSize: 15,
                     color: Colors.white),
               ),
@@ -97,7 +97,7 @@ class YesNoActionsAlertDialog extends StatelessWidget {
                     child: Text(
                       noLabel,
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_SEMI_BOLD,
+                          fontFamily: Constant.BOLD,
                           fontSize: 15,
                           color: Constant.mainColor),
                     ))),

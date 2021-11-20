@@ -216,7 +216,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   Widget _getTitle() {
     TextEditingController editingController = TextEditingController();
     TextStyle searchTextStyle = TextStyle(
-        fontFamily: Constant.NUNITO_REGULAR,
+        fontFamily: Constant.REGULAR,
         fontSize: 16,
         color: Constant.mainColor);
     return Row(

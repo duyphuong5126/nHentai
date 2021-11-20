@@ -90,7 +90,7 @@ class _ReaderThumbnailState extends State<ReaderThumbnail> {
                   child: Text(
                     '${widget.thumbnailIndex + 1}',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_REGULAR,
+                        fontFamily: Constant.REGULAR,
                         fontSize: 10,
                         color: Colors.white),
                   ),

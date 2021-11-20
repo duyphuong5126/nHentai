@@ -24,7 +24,7 @@ class DownloadButton extends StatelessWidget {
             Text(
               'Download',
               style: TextStyle(
-                  fontFamily: Constant.NUNITO_BLACK,
+                  fontFamily: Constant.BOLD,
                   fontSize: 18,
                   color: Colors.white),
             )

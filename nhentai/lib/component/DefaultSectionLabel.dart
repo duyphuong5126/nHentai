@@ -12,7 +12,7 @@ class SectionLabel extends StatelessWidget {
     return Text(
       label,
       style: TextStyle(
-          fontSize: 16.0, fontFamily: Constant.NUNITO_BOLD, color: textColor),
+          fontSize: 16.0, fontFamily: Constant.BOLD, color: textColor),
     );
   }
 }

@@ -47,7 +47,7 @@ class _SortOptionListState extends State<SortOptionList> {
                     child: Text(
                       'Recent',
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_BLACK,
+                          fontFamily: Constant.BOLD,
                           fontSize: 16,
                           color: Colors.white),
                     ),
@@ -65,7 +65,7 @@ class _SortOptionListState extends State<SortOptionList> {
                   child: Text(
                     'Popular:',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_BLACK,
+                        fontFamily: Constant.BOLD,
                         fontSize: 16,
                         color: Colors.white),
                   ),
@@ -90,7 +90,7 @@ class _SortOptionListState extends State<SortOptionList> {
                     child: Text(
                       'Today',
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_BLACK,
+                          fontFamily: Constant.BOLD,
                           fontSize: 16,
                           color: Colors.white),
                     ),
@@ -114,7 +114,7 @@ class _SortOptionListState extends State<SortOptionList> {
                     child: Text(
                       'This week',
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_BLACK,
+                          fontFamily: Constant.BOLD,
                           fontSize: 16,
                           color: Colors.white),
                     ),
@@ -138,7 +138,7 @@ class _SortOptionListState extends State<SortOptionList> {
                     child: Text(
                       'All time',
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_BLACK,
+                          fontFamily: Constant.BOLD,
                           fontSize: 16,
                           color: Colors.white),
                     ),

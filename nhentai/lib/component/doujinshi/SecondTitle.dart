@@ -16,7 +16,7 @@ class _SecondTitleState extends State<SecondTitle> {
     return Text(
       widget.text,
       style: TextStyle(
-          fontFamily: Constant.NUNITO_BOLD, fontSize: 18, color: Colors.white),
+          fontFamily: Constant.BOLD, fontSize: 18, color: Colors.white),
     );
   }
 }

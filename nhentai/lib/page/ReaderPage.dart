@@ -167,7 +167,7 @@ class _ReaderPageState extends State<ReaderPage>
                 child: Marquee(
               text: doujinshiTitle,
               style: TextStyle(
-                  fontFamily: Constant.NUNITO_SEMI_BOLD,
+                  fontFamily: Constant.ITALIC,
                   fontSize: 20,
                   color: Colors.white),
             )),
@@ -257,7 +257,7 @@ class _ReaderPageState extends State<ReaderPage>
                               'Page ${currentPage + 1} of ${doujinshi.numPages}',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                  fontFamily: Constant.REGULAR,
                                   fontSize: 18,
                                   color: Colors.white),
                             ),
@@ -265,7 +265,7 @@ class _ReaderPageState extends State<ReaderPage>
                               'Current direction: ${Constant.READER_TYPES[readerType]}',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                  fontFamily: Constant.BOLD,
                                   fontSize: 14,
                                   color: Colors.white),
                             )
@@ -404,7 +404,7 @@ class _ReaderPageState extends State<ReaderPage>
                       '${index + 1}',
                       style: TextStyle(
                           fontSize: 24,
-                          fontFamily: Constant.NUNITO_BLACK,
+                          fontFamily: Constant.BOLD,
                           color: Colors.white),
                     ),
                   ),
@@ -484,7 +484,7 @@ class _ReaderPageState extends State<ReaderPage>
                                     '${index + 1}',
                                     style: TextStyle(
                                         fontSize: 24,
-                                        fontFamily: Constant.NUNITO_BLACK,
+                                        fontFamily: Constant.BOLD,
                                         color: Colors.white),
                                   ),
                                 ),
@@ -516,7 +516,7 @@ class _ReaderPageState extends State<ReaderPage>
                   Text(
                     'Reading type',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_SEMI_BOLD,
+                        fontFamily: Constant.BOLD,
                         fontSize: 16,
                         color: Colors.white),
                   ),
@@ -549,7 +549,7 @@ class _ReaderPageState extends State<ReaderPage>
                   Text(
                     'Eye comfort',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_SEMI_BOLD,
+                        fontFamily: Constant.BOLD,
                         fontSize: 16,
                         color: Colors.white),
                   ),
@@ -592,7 +592,7 @@ class _ReaderPageState extends State<ReaderPage>
         child: Text(
           Constant.READER_TYPES[readerType]!,
           style: TextStyle(
-              fontFamily: Constant.NUNITO_SEMI_BOLD,
+              fontFamily: Constant.BOLD,
               fontSize: 16,
               color: itemColor),
         ));

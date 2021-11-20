@@ -195,7 +195,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                 Text(
                   'Last read page',
                   style: TextStyle(
-                      fontFamily: Constant.NUNITO_EXTRA_BOLD,
+                      fontFamily: Constant.BOLD,
                       fontSize: 18,
                       color: Colors.white),
                 ),

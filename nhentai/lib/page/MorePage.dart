@@ -56,7 +56,7 @@ class _MorePageState extends State<MorePage> {
                           child: Text(
                             'Enable censorship',
                             style: TextStyle(
-                                fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                fontFamily: Constant.BOLD,
                                 fontSize: 15,
                                 color: Constant.grey1f1f1f),
                           ),

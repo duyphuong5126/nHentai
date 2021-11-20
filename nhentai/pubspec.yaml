@@ -84,60 +84,20 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: NunitoBlack
+    - family: NotoSans_Bold
       fonts:
-        - asset: fonts/nunito_black.ttf
+        - asset: fonts/NotoSans_Bold.ttf
 
-    - family: NunitoBlackItalic
+    - family: NotoSans_BoldItalic
       fonts:
-        - asset: fonts/nunito_blackItalic.ttf
+        - asset: fonts/NotoSans_BoldItalic.ttf
 
-    - family: NunitoBold
+    - family: NotoSans_Italic
       fonts:
-        - asset: fonts/nunito_bold.ttf
+        - asset: fonts/NotoSans_Italic.ttf
 
-    - family: NunitoBoldItalic
+    - family: NotoSans_Regular
       fonts:
-        - asset: fonts/nunito_boldItalic.ttf
-
-    - family: NunitoExtraBold
-      fonts:
-        - asset: fonts/nunito_extra_bold.ttf
-
-    - family: NunitoExtraBoldItalic
-      fonts:
-        - asset: fonts/nunito_extra_bold_italic.ttf
-
-    - family: NunitoExtraLight
-      fonts:
-        - asset: fonts/nunito_extra_light.ttf
-
-    - family: NunitoExtraLightItalic
-      fonts:
-        - asset: fonts/nunito_extra_light_italic.ttf
-
-    - family: NunitoItalic
-      fonts:
-        - asset: fonts/nunito_italic.ttf
-
-    - family: NunitoLight
-      fonts:
-        - asset: fonts/nunito_light.ttf
-
-    - family: NunitoLightItalic
-      fonts:
-        - asset: fonts/nunito_light_italic.ttf
-
-    - family: NunitoRegular
-      fonts:
-        - asset: fonts/nunito_regular.ttf
-
-    - family: NunitoSemiBold
-      fonts:
-        - asset: fonts/nunito_semi_bold.ttf
-
-    - family: NunitoSemiBoldItalic
-      fonts:
-        - asset: fonts/nunito_semi_bold_italic.ttf
+        - asset: fonts/NotoSans_Regular.ttf
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

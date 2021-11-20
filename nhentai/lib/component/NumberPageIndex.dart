@@ -33,8 +33,8 @@ class _NumberPageIndexState extends State<NumberPageIndex> {
         },
         builder: (BuildContext context, int currentPage) {
           String fontFamily = index == currentPage
-              ? Constant.NUNITO_BOLD
-              : Constant.NUNITO_LIGHT;
+              ? Constant.BOLD
+              : Constant.REGULAR;
           Color textColor =
               index == currentPage ? Constant.mainColor : Colors.white;
           return Container(

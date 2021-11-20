@@ -19,7 +19,7 @@ class _DateTimeSectionState extends State<DateTimeSection> {
     return Text(
       'Uploaded at: ${DateFormat('hh:mm aaa - EEE, MMM d, yyyy').format(uploadedDate)}',
       style: TextStyle(
-          fontFamily: Constant.NUNITO_REGULAR,
+          fontFamily: Constant.REGULAR,
           fontSize: 16,
           color: Colors.white),
     );

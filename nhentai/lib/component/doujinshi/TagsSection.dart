@@ -33,7 +33,7 @@ class _TagsSectionState extends State<TagsSection> {
         Text(
           '${widget.tagName.capitalize()}:',
           style: TextStyle(
-              fontFamily: Constant.NUNITO_BLACK,
+              fontFamily: Constant.BOLD,
               fontSize: 16,
               color: Colors.white),
         ),
@@ -58,7 +58,7 @@ class _TagsSectionState extends State<TagsSection> {
                     TextSpan(
                       text: '${tag.name.capitalize()}',
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_BLACK,
+                          fontFamily: Constant.BOLD,
                           fontSize: 14,
                           color: Colors.white),
                     ),
@@ -70,7 +70,7 @@ class _TagsSectionState extends State<TagsSection> {
                       text:
                           '(${tag.count >= 100000 ? compactFormat.format(tag.count) : decimalFormat.format(tag.count)})',
                       style: TextStyle(
-                          fontFamily: Constant.NUNITO_SEMI_BOLD,
+                          fontFamily: Constant.BOLD,
                           fontSize: 14,
                           color: Constant.grey767676),
                     ),

@@ -140,7 +140,7 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                             overflow: TextOverflow.ellipsis,
                             text: TextSpan(
                                 style: TextStyle(
-                                    fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                    fontFamily: Constant.BOLD,
                                     fontSize: 14,
                                     color: Colors.white),
                                 children: titleSpans),
@@ -245,7 +245,7 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                             overflow: TextOverflow.ellipsis,
                             text: TextSpan(
                                 style: TextStyle(
-                                    fontFamily: Constant.NUNITO_SEMI_BOLD,
+                                    fontFamily: Constant.BOLD,
                                     fontSize: 14,
                                     color: Colors.white),
                                 children: titleSpans),

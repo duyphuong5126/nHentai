@@ -82,7 +82,7 @@ class _PreviewThumbnailSeeMoreState extends State<PreviewThumbnailSeeMore> {
                   child: Text(
                     '+${widget.remainsCount}',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_BLACK,
+                        fontFamily: Constant.BOLD,
                         fontSize: 25,
                         color: Colors.white),
                   ),

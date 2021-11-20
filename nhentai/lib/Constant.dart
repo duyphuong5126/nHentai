@@ -25,12 +25,10 @@ class Constant {
   static const String LOADING_GIF = 'images/ic_loading_cat_transparent.gif';
   static const String ICON_UN_SEEN = 'images/ic_un_seen.svg';
 
-  static const String NUNITO_BLACK = 'NunitoBlack';
-  static const String NUNITO_REGULAR = 'NunitoRegular';
-  static const String NUNITO_BOLD = 'NunitoBold';
-  static const String NUNITO_EXTRA_BOLD = 'NunitoExtraBold';
-  static const String NUNITO_SEMI_BOLD = 'NunitoSemiBold';
-  static const String NUNITO_LIGHT = 'NunitoLight';
+  static const String REGULAR = 'NotoSans_Regular';
+  static const String BOLD = 'NotoSans_Bold';
+  static const String ITALIC = 'NotoSans_Italic';
+  static const String BOLD_ITALIC = 'NotoSans_BoldItalic';
 
   static const String DB_ID = '_id';
 

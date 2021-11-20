@@ -16,7 +16,7 @@ class _FirstTitleState extends State<FirstTitle> {
     return Text(
       widget.text,
       style: TextStyle(
-          fontFamily: Constant.NUNITO_EXTRA_BOLD,
+          fontFamily: Constant.BOLD,
           fontSize: 20,
           color: Colors.white),
     );

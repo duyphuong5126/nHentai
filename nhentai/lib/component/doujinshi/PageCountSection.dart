@@ -16,7 +16,7 @@ class _PageCountSectionState extends State<PageCountSection> {
     return Text(
       '${widget.pageCount} pages',
       style: TextStyle(
-          fontFamily: Constant.NUNITO_REGULAR,
+          fontFamily: Constant.REGULAR,
           fontSize: 16,
           color: Colors.white),
     );

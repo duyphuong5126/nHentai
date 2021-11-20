@@ -63,9 +63,9 @@ class _HomePageState extends State<HomePage> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         selectedLabelStyle:
-            TextStyle(fontFamily: Constant.NUNITO_BLACK, fontSize: 18),
+            TextStyle(fontFamily: Constant.BOLD, fontSize: 18),
         unselectedLabelStyle:
-            TextStyle(fontFamily: Constant.NUNITO_REGULAR, fontSize: 16),
+            TextStyle(fontFamily: Constant.REGULAR, fontSize: 16),
         onTap: _onTabSelected,
       ),
     );

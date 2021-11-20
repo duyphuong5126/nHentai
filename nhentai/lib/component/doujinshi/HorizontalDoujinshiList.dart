@@ -32,7 +32,7 @@ class _HorizontalDoujinshiListState extends State<HorizontalDoujinshiList> {
               Text(
                 'More like this',
                 style: TextStyle(
-                    fontFamily: Constant.NUNITO_EXTRA_BOLD,
+                    fontFamily: Constant.BOLD,
                     fontSize: 18,
                     color: Colors.white),
               ),

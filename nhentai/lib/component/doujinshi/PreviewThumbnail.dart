@@ -85,7 +85,7 @@ class _PreviewThumbnailState extends State<PreviewThumbnail> {
                   child: Text(
                     '${widget.imagePosition + 1}',
                     style: TextStyle(
-                        fontFamily: Constant.NUNITO_REGULAR,
+                        fontFamily: Constant.REGULAR,
                         fontSize: 14,
                         color: Colors.white),
                   ),
