@@ -8,11 +8,13 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 class DoujinshiGridGallery extends StatefulWidget {
   final DataCubit<List<Doujinshi>> doujinshiListCubit;
   final Function(Doujinshi) onDoujinshiSelected;
+  final DataCubit<bool>? refreshStatusesSignalCubit;
 
   const DoujinshiGridGallery(
       {Key? key,
       required this.doujinshiListCubit,
-      required this.onDoujinshiSelected})
+      required this.onDoujinshiSelected,
+      this.refreshStatusesSignalCubit})
       : super(key: key);
 
   @override
@@ -43,6 +45,7 @@ class _DoujinshiGridGalleryState extends State<DoujinshiGridGallery> {
         return DoujinshiThumbnail(
           doujinshi: _doujinshiList[index],
           onDoujinshiSelected: widget.onDoujinshiSelected,
+          refreshStatusesSignalCubit: widget.refreshStatusesSignalCubit,
         );
       },
     );

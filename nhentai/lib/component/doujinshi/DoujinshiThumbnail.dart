@@ -13,13 +13,15 @@ class DoujinshiThumbnail extends StatefulWidget {
   final Function(Doujinshi) onDoujinshiSelected;
   final double? width;
   final double? height;
+  final DataCubit<bool>? refreshStatusesSignalCubit;
 
   const DoujinshiThumbnail(
       {Key? key,
       required this.doujinshi,
       required this.onDoujinshiSelected,
       this.width,
-      this.height})
+      this.height,
+      this.refreshStatusesSignalCubit})
       : super(key: key);
 
   @override
@@ -51,6 +53,12 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
     Doujinshi doujinshi = widget.doujinshi;
     _initCensoredStatus();
     _refreshDoujinshiStatus(doujinshi.id);
+    widget.refreshStatusesSignalCubit?.stream.listen((needRefreshStatuses) {
+      if (needRefreshStatuses) {
+        _refreshDoujinshiStatus(doujinshi.id);
+        widget.refreshStatusesSignalCubit?.emit(false);
+      }
+    });
     List<InlineSpan> spans = [];
     if (doujinshi.languageIcon.isNotEmpty) {
       spans.add(WidgetSpan(

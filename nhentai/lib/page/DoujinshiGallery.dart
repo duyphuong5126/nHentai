@@ -36,6 +36,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   final DataCubit<SortOption> _sortOptionCubit =
       DataCubit<SortOption>(SortOption.MostRecent);
   final DataCubit<bool> _loadingCubit = DataCubit<bool>(false);
+  final DataCubit<bool> _refreshStatusesSignalCubit = DataCubit<bool>(false);
   String _searchTerm = '';
   SortOption _sortOption = SortOption.MostRecent;
 
@@ -130,6 +131,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     if (openDoujinshiResult is Tag) {
       _onSearchTermChanged(openDoujinshiResult.name);
     }
+    _refreshStatusesSignalCubit.emit(true);
   }
 
   @override
@@ -212,6 +214,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     _searchTermCubit.dispose();
     _sortOptionCubit.dispose();
     _loadingCubit.dispose();
+    _refreshStatusesSignalCubit.dispose();
   }
 
   Widget _getTitle() {
@@ -348,6 +351,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
         DoujinshiGridGallery(
           doujinshiListCubit: _doujinshiListCubit,
           onDoujinshiSelected: this._openDoujinshi,
+          refreshStatusesSignalCubit: _refreshStatusesSignalCubit,
         ),
         Center(
           child: Container(
