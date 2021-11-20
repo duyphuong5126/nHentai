@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:nhentai/Constant.dart';
 
 class FavoriteToggleButton extends StatefulWidget {
-  const FavoriteToggleButton({Key? key}) : super(key: key);
+  final int favoriteCount;
+
+  const FavoriteToggleButton({Key? key, required this.favoriteCount})
+      : super(key: key);
 
   @override
   _FavoriteToggleButtonState createState() => _FavoriteToggleButtonState();
@@ -11,6 +15,13 @@ class FavoriteToggleButton extends StatefulWidget {
 class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
   @override
   Widget build(BuildContext context) {
+    NumberFormat decimalFormat = NumberFormat.decimalPattern();
+    NumberFormat compactFormat = NumberFormat.compact();
+    String favoriteCountLabel = widget.favoriteCount <= 0
+        ? ''
+        : widget.favoriteCount >= 100000
+            ? ' (${compactFormat.format(widget.favoriteCount)})'
+            : ' (${decimalFormat.format(widget.favoriteCount)})';
     return MaterialButton(
       padding: EdgeInsets.all(0),
       onPressed: () {},
@@ -27,11 +38,9 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
               width: 5,
             ),
             Text(
-              'Favorite',
+              'Favorite$favoriteCountLabel',
               style: TextStyle(
-                  fontFamily: Constant.BOLD,
-                  fontSize: 18,
-                  color: Colors.white),
+                  fontFamily: Constant.BOLD, fontSize: 18, color: Colors.white),
             )
           ],
         ),

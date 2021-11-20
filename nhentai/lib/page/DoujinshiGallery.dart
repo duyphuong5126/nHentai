@@ -24,6 +24,7 @@ class DoujinshiGallery extends StatefulWidget {
 }
 
 class _DoujinshiGalleryState extends State<DoujinshiGallery> {
+  static const String HINT = 'nakadashi';
   final GetDoujinshiListUseCase _getBookListByPage =
       new GetDoujinshiListUseCaseImpl();
 
@@ -216,18 +217,22 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   Widget _getTitle() {
     TextEditingController editingController = TextEditingController();
     TextStyle searchTextStyle = TextStyle(
-        fontFamily: Constant.REGULAR,
-        fontSize: 16,
-        color: Constant.mainColor);
+        fontFamily: Constant.REGULAR, fontSize: 16, color: Constant.mainColor);
     return Row(
       children: [
         Expanded(
           child: Row(
             children: [
-              SvgPicture.asset(
-                Constant.IMAGE_LOGO,
-                width: 30,
-                height: 15,
+              InkResponse(
+                highlightColor: Colors.transparent,
+                onTap: () {
+                  _onSearchTermChanged('');
+                },
+                child: SvgPicture.asset(
+                  Constant.IMAGE_LOGO,
+                  width: 30,
+                  height: 15,
+                ),
               ),
               Expanded(
                 child: Container(
@@ -249,13 +254,17 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           controller: editingController,
                           decoration: InputDecoration(
                               border: InputBorder.none,
-                              hintText: 'e.g. tag: "big breast"',
+                              hintText: 'e.g. tag: "$HINT"',
                               hintStyle: searchTextStyle,
                               contentPadding: EdgeInsets.only(bottom: 10)),
                           style: searchTextStyle,
                           maxLines: 1,
                           textInputAction: TextInputAction.search,
-                          onSubmitted: _onSearchTermChanged,
+                          onSubmitted: (searchText) {
+                            String searchTerm =
+                                searchText.isNotEmpty ? searchText : HINT;
+                            _onSearchTermChanged(searchTerm);
+                          },
                         ),
                       )),
                       Container(
@@ -275,7 +284,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       Container(
                         child: IconButton(
                           onPressed: () {
-                            _onSearchTermChanged(editingController.text);
+                            String searchTerm =
+                                editingController.text.isNotEmpty
+                                    ? editingController.text
+                                    : HINT;
+                            _onSearchTermChanged(searchTerm);
                             context.closeSoftKeyBoard();
                           },
                           icon: Icon(Icons.search),

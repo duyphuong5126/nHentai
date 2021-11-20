@@ -1,20 +1,26 @@
 import 'dart:convert';
 
+import 'package:nhentai/Constant.dart';
+import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:http/http.dart';
+import 'package:nhentai/domain/entity/DoujinshiResult.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 
 abstract class DoujinshiRemoteDataSource {
-  Future<DoujinshiList> getDoujinshiList(
+  Future<DoujinshiList> fetchDoujinshiList(
       int page, String searchTerm, SortOption sortOption);
 
-  Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(int doujinshiId);
+  Future<RecommendedDoujinshiList> fetchRecommendedDoujinshiList(
+      int doujinshiId);
+
+  Future<DoujinshiResult> fetchDoujinshi(int doujinshiId);
 }
 
 class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
   @override
-  Future<DoujinshiList> getDoujinshiList(
+  Future<DoujinshiList> fetchDoujinshiList(
       int page, String searchTerm, SortOption sortOption) async {
     String sortString = '';
     if (sortOption == SortOption.PopularToday) {
@@ -25,8 +31,8 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
       sortString = '&sort=popular';
     }
     String url = searchTerm.isEmpty
-        ? 'https://nhentai.net/api/galleries/all?page=$page' + sortString
-        : 'https://nhentai.net/api/galleries/search?query=$searchTerm&page=$page' +
+        ? '${Constant.NHENTAI_HOME}/api/galleries/all?page=$page' + sortString
+        : '${Constant.NHENTAI_HOME}/api/galleries/search?query=$searchTerm&page=$page' +
             sortString;
     Future<DoujinshiList> result;
     try {
@@ -44,9 +50,9 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
   }
 
   @override
-  Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(
+  Future<RecommendedDoujinshiList> fetchRecommendedDoujinshiList(
       int doujinshiId) async {
-    String url = 'https://nhentai.net/api/gallery/$doujinshiId/related';
+    String url = '${Constant.NHENTAI_HOME}/api/gallery/$doujinshiId/related';
     Future<RecommendedDoujinshiList> result;
     try {
       Response response = await get(Uri.parse(url));
@@ -66,6 +72,27 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
       print(
           '----------------------------------------------------------------------------');
       result = Future.value(RecommendedDoujinshiList(result: []));
+    }
+    return result;
+  }
+
+  @override
+  Future<DoujinshiResult> fetchDoujinshi(int doujinshiId) async {
+    String url = '${Constant.NHENTAI_HOME}/api/gallery/$doujinshiId';
+    Future<DoujinshiResult> result;
+    try {
+      Response response = await get(Uri.parse(url));
+      Doujinshi doujinshi = Doujinshi.fromJson(jsonDecode(response.body));
+      print(
+          '-------------------\nGET $url\nResult: ${response.statusCode} - ${doujinshi.id}\n-------------------');
+      result = Future.value(DoujinshiResult.success(doujinshi));
+    } on Exception catch (exception) {
+      print(
+          '-------------------\nGET $url\nError: $exception\n-------------------');
+      result = Future.value(DoujinshiResult.error(exception));
+    } catch (e) {
+      print('-------------------\nGET $url\nError: $e\n-------------------');
+      result = Future.value(DoujinshiResult.error(null));
     }
     return result;
   }

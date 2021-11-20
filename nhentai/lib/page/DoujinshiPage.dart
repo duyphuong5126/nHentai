@@ -24,6 +24,7 @@ import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
+import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
@@ -38,16 +39,18 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   late List<Widget> itemList;
   late DataCubit<Doujinshi> doujinshiCubit;
   late DataCubit<int> lastReadPageCubit = DataCubit(-1);
-  final DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
+  late DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
       DataCubit([]);
-  final GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
+  late GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
       GetRecommendedDoujinshiListUseCaseImpl();
-  final GetDoujinshiStatusesUseCase _getDoujinshiStatusesUseCase =
+  late GetDoujinshiStatusesUseCase _getDoujinshiStatusesUseCase =
       GetDoujinshiStatusesUseCaseImpl();
-  final ClearLastReadPageUseCase _clearLastReadPageUseCase =
+  late ClearLastReadPageUseCase _clearLastReadPageUseCase =
       ClearLastReadPageUseCaseImpl();
-  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
-  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
+  late UpdateDoujinshiDetailsUseCase _updateDoujinshiDetailsUseCase =
+      UpdateDoujinshiDetailsUseCaseImpl();
+  late SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+  late DataCubit<bool> _isCensoredCubit = DataCubit(false);
 
   void _getRecommendedList(int doujinshiId) async {
     RecommendedDoujinshiList recommendedDoujinshiList =
@@ -59,6 +62,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     DoujinshiStatuses statuses =
         await _getDoujinshiStatusesUseCase.execute(doujinshiId);
     lastReadPageCubit.emit(statuses.lastReadPageIndex);
+    if (statuses.isDownloaded ||
+        statuses.isFavorite ||
+        statuses.lastReadPageIndex >= 0) {
+      _updateDoujinshiDetailsUseCase.execute(doujinshiId);
+    }
   }
 
   void _initCensoredStatus() async {
@@ -171,7 +179,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        FavoriteToggleButton(),
+        FavoriteToggleButton(
+          favoriteCount: doujinshi.numFavorites,
+        ),
         SizedBox(
           width: 10,
         ),

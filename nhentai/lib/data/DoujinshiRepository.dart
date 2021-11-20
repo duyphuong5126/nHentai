@@ -2,6 +2,7 @@ import 'package:nhentai/data/DoujinshiLocalDataSource.dart';
 import 'package:nhentai/data/DoujinshiRemoteDataSource.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/entity/DoujinshiResult.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
@@ -21,6 +22,8 @@ abstract class DoujinshiRepository {
   Future<int> getRecentlyReadDoujinshiCount();
 
   Future<bool> clearLastReadPage(int doujinshiId);
+
+  Future<bool> updateDoujinshiDetails(int doujinshiId);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -30,13 +33,13 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
   @override
   Future<DoujinshiList> getDoujinshiList(
       int page, String searchTerm, SortOption sortOption) {
-    return _remote.getDoujinshiList(page + 1, searchTerm, sortOption);
+    return _remote.fetchDoujinshiList(page + 1, searchTerm, sortOption);
   }
 
   @override
   Future<RecommendedDoujinshiList> getRecommendedDoujinshiList(
       int doujinshiId) {
-    return _remote.getRecommendedDoujinshiList(doujinshiId);
+    return _remote.fetchRecommendedDoujinshiList(doujinshiId);
   }
 
   @override
@@ -76,5 +79,13 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
   @override
   Future<bool> clearLastReadPage(int doujinshiId) {
     return _local.clearLastReadPage(doujinshiId);
+  }
+
+  @override
+  Future<bool> updateDoujinshiDetails(int doujinshiId) async {
+    DoujinshiResult remoteResult = await _remote.fetchDoujinshi(doujinshiId);
+    return remoteResult is Success
+        ? await _local.updateDoujinshiDetails(remoteResult.doujinshi)
+        : false;
   }
 }

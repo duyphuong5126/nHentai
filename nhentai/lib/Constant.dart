@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 
 class Constant {
+  static const String NHENTAI_HOME = 'https://nhentai.net';
   static const String NHENTAI_I = 'https://i.nhentai.net';
   static const String NHENTAI_T = 'https://t.nhentai.net';
 

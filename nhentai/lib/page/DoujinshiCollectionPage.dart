@@ -63,7 +63,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
           builder: (context, collectionType) {
             return DefaultScreenTitle(
                 collectionType == DoujinshiCollectionType.Recent
-                    ? 'Recent'
+                    ? 'Recently read'
                     : 'Favorite');
           },
         ),

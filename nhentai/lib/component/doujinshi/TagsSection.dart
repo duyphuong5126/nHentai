@@ -33,9 +33,7 @@ class _TagsSectionState extends State<TagsSection> {
         Text(
           '${widget.tagName.capitalize()}:',
           style: TextStyle(
-              fontFamily: Constant.BOLD,
-              fontSize: 16,
-              color: Colors.white),
+              fontFamily: Constant.BOLD, fontSize: 16, color: Colors.white),
         ),
         SizedBox(
           width: 10,
@@ -47,7 +45,7 @@ class _TagsSectionState extends State<TagsSection> {
           direction: Axis.horizontal,
           children: List.generate(tagList.length, (index) {
             Tag tag = tagList[index];
-            return InkWell(
+            return GestureDetector(
               onTap: () {
                 widget.onTagSelected(tag);
               },
@@ -56,7 +54,7 @@ class _TagsSectionState extends State<TagsSection> {
                 child: RichText(
                   text: TextSpan(children: [
                     TextSpan(
-                      text: '${tag.name.capitalize()}',
+                      text: '${tag.name}',
                       style: TextStyle(
                           fontFamily: Constant.BOLD,
                           fontSize: 14,
