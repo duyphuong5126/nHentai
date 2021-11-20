@@ -110,7 +110,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     itemList.add(BlocBuilder(
         bloc: _isCensoredCubit,
         builder: (BuildContext context, bool isCensored) {
-          return isCensored
+          Widget cover = isCensored
               ? Container(
                   constraints: BoxConstraints.expand(height: 300),
                   color: Constant.grey1f1f1f,
@@ -125,6 +125,10 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                   coverImageUrl: doujinshi.coverImage,
                   backUpCoverImageUrl: doujinshi.backUpCoverImage,
                 );
+          return GestureDetector(
+            child: cover,
+            onTap: () => _readDoujinshi(doujinshi, 0),
+          );
         }));
     itemList.add(SizedBox(
       height: 10,
@@ -212,7 +216,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                 SizedBox(
                   width: 5,
                 ),
-                InkWell(
+                InkResponse(
+                  highlightColor: Colors.transparent,
                   onTap: () => showDialog(
                       context: context,
                       builder: (content) {
@@ -225,14 +230,12 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                             yesAction: () => _forgetDoujinshi(doujinshi.id),
                             noAction: () {});
                       }),
-                  child: Ink(
-                    width: 40,
-                    height: 40,
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      child: SvgPicture.asset(
-                        Constant.ICON_UN_SEEN,
-                      ),
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    child: SvgPicture.asset(
+                      Constant.ICON_UN_SEEN,
+                      width: 30,
+                      height: 20,
                     ),
                   ),
                 )
@@ -262,7 +265,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           );
         }));
     itemList.add(SizedBox(
-      height: 10,
+      height: 15,
     ));
     itemList.add(PreviewSection(
       pages: doujinshi.previewThumbnailList,
@@ -271,7 +274,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       },
     ));
     itemList.add(SizedBox(
-      height: 10,
+      height: 15,
     ));
     itemList.add(HorizontalDoujinshiList(
         doujinshiListCubit: _recommendedDoujinshiListCubit,

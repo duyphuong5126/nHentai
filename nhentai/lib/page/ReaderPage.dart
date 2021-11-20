@@ -592,9 +592,7 @@ class _ReaderPageState extends State<ReaderPage>
         child: Text(
           Constant.READER_TYPES[readerType]!,
           style: TextStyle(
-              fontFamily: Constant.BOLD,
-              fontSize: 16,
-              color: itemColor),
+              fontFamily: Constant.BOLD, fontSize: 16, color: itemColor),
         ));
   }
 }

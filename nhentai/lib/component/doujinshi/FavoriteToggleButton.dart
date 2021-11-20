@@ -23,6 +23,10 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
             ? ' (${compactFormat.format(widget.favoriteCount)})'
             : ' (${decimalFormat.format(widget.favoriteCount)})';
     return MaterialButton(
+      color: Constant.mainColor,
+      highlightColor: Constant.mainDarkColor,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(3))),
       padding: EdgeInsets.all(0),
       onPressed: () {},
       child: Container(
@@ -44,9 +48,6 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
             )
           ],
         ),
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(3)),
-            color: Constant.mainColor),
       ),
     );
   }

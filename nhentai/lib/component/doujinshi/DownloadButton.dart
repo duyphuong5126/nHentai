@@ -7,6 +7,10 @@ class DownloadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialButton(
+      color: Constant.grey4D4D4D,
+      highlightColor: Constant.grey1f1f1f,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(3))),
       padding: EdgeInsets.all(0),
       onPressed: () {},
       child: Container(
@@ -24,15 +28,10 @@ class DownloadButton extends StatelessWidget {
             Text(
               'Download',
               style: TextStyle(
-                  fontFamily: Constant.BOLD,
-                  fontSize: 18,
-                  color: Colors.white),
+                  fontFamily: Constant.BOLD, fontSize: 18, color: Colors.white),
             )
           ],
         ),
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(3)),
-            color: Colors.grey[500]),
       ),
     );
   }
