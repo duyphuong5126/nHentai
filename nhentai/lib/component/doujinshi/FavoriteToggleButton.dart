@@ -4,8 +4,14 @@ import 'package:nhentai/Constant.dart';
 
 class FavoriteToggleButton extends StatefulWidget {
   final int favoriteCount;
+  final bool isFavorite;
+  final Function onPressed;
 
-  const FavoriteToggleButton({Key? key, required this.favoriteCount})
+  const FavoriteToggleButton(
+      {Key? key,
+      required this.favoriteCount,
+      required this.isFavorite,
+      required this.onPressed})
       : super(key: key);
 
   @override
@@ -22,20 +28,23 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
         : widget.favoriteCount >= 100000
             ? ' (${compactFormat.format(widget.favoriteCount)})'
             : ' (${decimalFormat.format(widget.favoriteCount)})';
+    bool isFavorite = widget.isFavorite;
     return MaterialButton(
-      color: Constant.mainColor,
-      highlightColor: Constant.mainDarkColor,
+      color: isFavorite ? Colors.white : Constant.mainColor,
+      highlightColor: isFavorite ? Colors.white : Constant.grey767676,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(3))),
       padding: EdgeInsets.all(0),
-      onPressed: () {},
+      onPressed: () {
+        widget.onPressed();
+      },
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         child: Row(
           children: [
             Icon(
               Icons.favorite,
-              color: Colors.white,
+              color: isFavorite ? Constant.mainColor : Colors.white,
               size: 20,
             ),
             SizedBox(
@@ -44,7 +53,9 @@ class _FavoriteToggleButtonState extends State<FavoriteToggleButton> {
             Text(
               'Favorite$favoriteCountLabel',
               style: TextStyle(
-                  fontFamily: Constant.BOLD, fontSize: 18, color: Colors.white),
+                  fontFamily: Constant.BOLD,
+                  fontSize: 18,
+                  color: isFavorite ? Constant.mainColor : Colors.white),
             )
           ],
         ),

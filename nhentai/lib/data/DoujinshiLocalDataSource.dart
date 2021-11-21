@@ -14,6 +14,12 @@ abstract class DoujinshiLocalDataSource {
   Future<bool> clearLastReadPage(int doujinshiId);
 
   Future<bool> updateDoujinshiDetails(Doujinshi doujinshi);
+
+  Future<bool> updateFavoriteDoujinshi(Doujinshi doujinshi, bool isFavorite);
+
+  Future<int> getFavoriteDoujinshiCount();
+
+  Future<List<Doujinshi>> getFavoriteDoujinshis(int skip, int take);
 }
 
 class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
@@ -46,5 +52,20 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
   @override
   Future<bool> updateDoujinshiDetails(Doujinshi doujinshi) {
     return _database.updateDoujinshiDetails(doujinshi);
+  }
+
+  @override
+  Future<bool> updateFavoriteDoujinshi(Doujinshi doujinshi, bool isFavorite) {
+    return _database.updateFavoriteDoujinshi(doujinshi, isFavorite);
+  }
+
+  @override
+  Future<int> getFavoriteDoujinshiCount() {
+    return _database.getFavoriteDoujinshiCount();
+  }
+
+  @override
+  Future<List<Doujinshi>> getFavoriteDoujinshis(int skip, int take) {
+    return _database.getFavoriteDoujinshis(skip, take);
   }
 }

@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
               tooltip: 'Gallery'),
           BottomNavigationBarItem(
               backgroundColor: Colors.white,
-              icon: Icon(Icons.favorite),
+              icon: Icon(Icons.collections),
               label: 'Favorite',
               tooltip: 'Favorite'),
           BottomNavigationBarItem(
@@ -62,8 +62,7 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Colors.grey[900],
         showSelectedLabels: false,
         showUnselectedLabels: false,
-        selectedLabelStyle:
-            TextStyle(fontFamily: Constant.BOLD, fontSize: 18),
+        selectedLabelStyle: TextStyle(fontFamily: Constant.BOLD, fontSize: 18),
         unselectedLabelStyle:
             TextStyle(fontFamily: Constant.REGULAR, fontSize: 16),
         onTap: _onTabSelected,

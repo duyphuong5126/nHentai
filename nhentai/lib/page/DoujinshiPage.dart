@@ -25,6 +25,7 @@ import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
+import 'package:nhentai/domain/usecase/UpdateFavoriteDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
@@ -36,9 +37,9 @@ class DoujinshiPage extends StatefulWidget {
 }
 
 class _DoujinshiPageState extends State<DoujinshiPage> {
-  late List<Widget> itemList;
-  late DataCubit<Doujinshi> doujinshiCubit;
-  late DataCubit<int> lastReadPageCubit = DataCubit(-1);
+  late List<Widget> _itemList;
+  late DataCubit<Doujinshi> _doujinshiCubit;
+  late DataCubit<int> _lastReadPageCubit = DataCubit(-1);
   late DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
       DataCubit([]);
   late GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
@@ -49,8 +50,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       ClearLastReadPageUseCaseImpl();
   late UpdateDoujinshiDetailsUseCase _updateDoujinshiDetailsUseCase =
       UpdateDoujinshiDetailsUseCaseImpl();
+  final UpdateFavoriteDoujinshiUseCase _updateFavoriteDoujinshiUseCase =
+      UpdateFavoriteDoujinshiUseCaseImpl();
   late SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
+  late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
 
   void _getRecommendedList(int doujinshiId) async {
     RecommendedDoujinshiList recommendedDoujinshiList =
@@ -61,7 +65,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   void _updateDoujinshiStatuses(int doujinshiId) async {
     DoujinshiStatuses statuses =
         await _getDoujinshiStatusesUseCase.execute(doujinshiId);
-    lastReadPageCubit.emit(statuses.lastReadPageIndex);
+    _lastReadPageCubit.emit(statuses.lastReadPageIndex);
+    _isFavoriteCubit.emit(statuses.isFavorite);
     if (statuses.isDownloaded ||
         statuses.isFavorite ||
         statuses.lastReadPageIndex >= 0) {
@@ -76,13 +81,13 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   @override
   Widget build(BuildContext context) {
     _initCensoredStatus();
-    doujinshiCubit = DataCubit<Doujinshi>(
+    _doujinshiCubit = DataCubit<Doujinshi>(
         ModalRoute.of(context)?.settings.arguments as Doujinshi);
     return Scaffold(
       body: SafeArea(
         child: Container(
           child: BlocBuilder(
-            bloc: doujinshiCubit,
+            bloc: _doujinshiCubit,
             builder: (BuildContext context, Doujinshi doujinshi) {
               return _generateDetailSections(doujinshi);
             },
@@ -103,11 +108,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       tagMap[tag.type]?.add(tag);
     });
 
-    itemList = [];
-    itemList.add(SizedBox(
+    _itemList = [];
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(BlocBuilder(
+    _itemList.add(BlocBuilder(
         bloc: _isCensoredCubit,
         builder: (BuildContext context, bool isCensored) {
           Widget cover = isCensored
@@ -130,25 +135,25 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             onTap: () => _readDoujinshi(doujinshi, 0),
           );
         }));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(FirstTitle(
+    _itemList.add(FirstTitle(
       text: doujinshi.title.english,
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(SecondTitle(
+    _itemList.add(SecondTitle(
       text: doujinshi.title.japanese,
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(IDSection(
+    _itemList.add(IDSection(
       id: doujinshi.id,
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
     List<String> tagNames = tagMap.keys.toList(growable: false);
@@ -156,47 +161,53 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         (first, second) => first.toLowerCase().compareTo(second.toLowerCase()));
     tagNames.forEach((tagName) {
       List<Tag>? tags = tagMap[tagName];
-      itemList.add(TagsSection(
+      _itemList.add(TagsSection(
         tagName: tagName,
         tagList: tags != null ? tags : [],
         onTagSelected: this._onTagSelected,
       ));
-      itemList.add(SizedBox(
+      _itemList.add(SizedBox(
         height: 10,
       ));
     });
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 5,
     ));
-    itemList.add(PageCountSection(
+    _itemList.add(PageCountSection(
       pageCount: doujinshi.numPages,
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(DateTimeSection(
+    _itemList.add(DateTimeSection(
       timeMillis: doujinshi.uploadDate * 1000,
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(Row(
+    _itemList.add(Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        FavoriteToggleButton(
-          favoriteCount: doujinshi.numFavorites,
-        ),
+        BlocBuilder(
+            bloc: _isFavoriteCubit,
+            builder: (BuildContext b, bool isFavorite) {
+              return FavoriteToggleButton(
+                favoriteCount: doujinshi.numFavorites,
+                isFavorite: isFavorite,
+                onPressed: () => _updateFavoriteStatus(doujinshi, !isFavorite),
+              );
+            }),
         SizedBox(
           width: 10,
         ),
         DownloadButton()
       ],
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 10,
     ));
-    itemList.add(BlocBuilder(
-        bloc: lastReadPageCubit,
+    _itemList.add(BlocBuilder(
+        bloc: _lastReadPageCubit,
         builder: (BuildContext c, int lastReadPageIndex) {
           List<Widget> lastReadPageWidgets = [];
           if (lastReadPageIndex >= 0) {
@@ -264,37 +275,37 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             visible: lastReadPageIndex >= 0,
           );
         }));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 15,
     ));
-    itemList.add(PreviewSection(
+    _itemList.add(PreviewSection(
       pages: doujinshi.previewThumbnailList,
       onPageSelected: (pageIndex) {
         _readDoujinshi(doujinshi, pageIndex);
       },
     ));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 15,
     ));
-    itemList.add(HorizontalDoujinshiList(
+    _itemList.add(HorizontalDoujinshiList(
         doujinshiListCubit: _recommendedDoujinshiListCubit,
         onDoujinshiSelected: (doujinshi) {
-          doujinshiCubit.emit(doujinshi);
+          _doujinshiCubit.emit(doujinshi);
         }));
-    itemList.add(SizedBox(
+    _itemList.add(SizedBox(
       height: 50,
     ));
     _getRecommendedList(doujinshi.id);
     _updateDoujinshiStatuses(doujinshi.id);
     return ListView(
-      children: List.generate(itemList.length, (index) {
-        return itemList[index];
+      children: List.generate(_itemList.length, (index) {
+        return _itemList[index];
       }),
     );
   }
 
   void _readDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
-    lastReadPageCubit.emit(-1);
+    _lastReadPageCubit.emit(-1);
     await Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_READER_PAGE,
         arguments:
             ReadingModel(doujinshi: doujinshi, startPageIndex: startPageIndex));
@@ -309,6 +320,16 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     bool updated = await _clearLastReadPageUseCase.execute(doujinshiId);
     if (updated) {
       _updateDoujinshiStatuses(doujinshiId);
+    }
+  }
+
+  void _updateFavoriteStatus(Doujinshi doujinshi, bool isFavorite) async {
+    bool updateSuccessfully =
+        await _updateFavoriteDoujinshiUseCase.execute(doujinshi, isFavorite);
+    print(
+        'Debug: isFavorite=$isFavorite, updateSuccessfully=$updateSuccessfully');
+    if (updateSuccessfully) {
+      _isFavoriteCubit.emit(isFavorite);
     }
   }
 }

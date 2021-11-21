@@ -24,6 +24,12 @@ abstract class DoujinshiRepository {
   Future<bool> clearLastReadPage(int doujinshiId);
 
   Future<bool> updateDoujinshiDetails(int doujinshiId);
+
+  Future<bool> updateFavoriteDoujinshi(Doujinshi doujinshi, bool isFavorite);
+
+  Future<int> getFavoriteDoujinshiCount();
+
+  Future<DoujinshiList> getFavoriteDoujinshiList(int page, int perPage);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -87,5 +93,30 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
     return remoteResult is Success
         ? await _local.updateDoujinshiDetails(remoteResult.doujinshi)
         : false;
+  }
+
+  @override
+  Future<bool> updateFavoriteDoujinshi(Doujinshi doujinshi, bool isFavorite) {
+    return _local.updateFavoriteDoujinshi(doujinshi, isFavorite);
+  }
+
+  @override
+  Future<int> getFavoriteDoujinshiCount() {
+    return _local.getFavoriteDoujinshiCount();
+  }
+
+  @override
+  Future<DoujinshiList> getFavoriteDoujinshiList(int page, int perPage) async {
+    List<Doujinshi> doujinshiList =
+        await _local.getFavoriteDoujinshis(page * perPage, perPage);
+    int favoriteDoujinshiCount = await _local.getFavoriteDoujinshiCount();
+    int pageSize =
+        favoriteDoujinshiCount > perPage ? perPage : favoriteDoujinshiCount;
+    int numPages = favoriteDoujinshiCount ~/ perPage;
+    if (favoriteDoujinshiCount % perPage > 0) {
+      numPages++;
+    }
+    return DoujinshiList(
+        result: doujinshiList, numPages: numPages, perPage: pageSize);
   }
 }

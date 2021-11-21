@@ -10,6 +10,8 @@ import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/usecase/GetFavoriteDoujinshiCountUseCase.dart';
+import 'package:nhentai/domain/usecase/GetFavoriteDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiCountUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/DoujinshiCollectionType.dart';
@@ -33,21 +35,36 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   final GetRecentlyReadDoujinshiCountUseCase
       _getRecentlyReadDoujinshiCountUseCase =
       GetRecentlyReadDoujinshiCountUseCaseImpl();
+  final GetFavoriteDoujinshiCountUseCase _getFavoriteDoujinshiCountUseCase =
+      GetFavoriteDoujinshiCountUseCaseImpl();
+  final GetFavoriteDoujinshiListUseCase _getFavoriteDoujinshiListUseCase =
+      GetFavoriteDoujinshiListUseCaseImpl();
   final DataCubit<int> _numOfPagesCubit = DataCubit(-1);
   final DataCubit<List<Doujinshi>> _doujinshiListCubit = DataCubit([]);
   final DataCubit<String> _pageIndicatorCubit = DataCubit('');
   final DataCubit<DoujinshiCollectionType> _collectionTypeCubit =
       DataCubit(DoujinshiCollectionType.Recent);
   final DataCubit<bool> _loadingCubit = DataCubit(false);
+  final DataCubit<bool> refreshStatusesSignalCubit = DataCubit(false);
 
   final ScrollController _scrollController = ScrollController();
 
-  int collectionSize = 0;
+  int _recentlyReadCount = 0;
+  int _favoriteCount = 0;
   int numOfPages = 0;
   int currentPage = -1;
   Map<int, List<Doujinshi>> doujinshiMap = {};
 
   StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    _collectionTypeCubit.stream.listen((collectionType) {
+      _resetCollection();
+      _changeToPage(0);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +93,14 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
                 Icon icon = collectionType == DoujinshiCollectionType.Recent
                     ? Icon(Icons.favorite)
                     : Icon(Icons.history);
-                return IconButton(onPressed: () {}, icon: icon);
+                return IconButton(
+                    onPressed: () {
+                      _collectionTypeCubit.emit(
+                          collectionType == DoujinshiCollectionType.Recent
+                              ? DoujinshiCollectionType.Favorite
+                              : DoujinshiCollectionType.Recent);
+                    },
+                    icon: icon);
               })
         ],
       ),
@@ -140,6 +164,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
         DoujinshiGridGallery(
           doujinshiListCubit: _doujinshiListCubit,
           onDoujinshiSelected: this._openDoujinshi,
+          refreshStatusesSignalCubit: refreshStatusesSignalCubit,
         ),
         Center(
           child: Container(
@@ -181,10 +206,30 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   void _initDoujinshiCollection() async {
     int recentlyReadCount =
         await _getRecentlyReadDoujinshiCountUseCase.execute();
-    if (recentlyReadCount != collectionSize) {
-      collectionSize = recentlyReadCount;
-      _resetCollection();
-      _changeToPage(0);
+    int favoriteCount = await _getFavoriteDoujinshiCountUseCase.execute();
+    switch (_collectionTypeCubit.state) {
+      case DoujinshiCollectionType.Favorite:
+        {
+          if (favoriteCount != _favoriteCount) {
+            _favoriteCount = favoriteCount;
+            _resetCollection();
+            _changeToPage(0);
+          }
+          break;
+        }
+
+      case DoujinshiCollectionType.Recent:
+        {
+          if (recentlyReadCount != _recentlyReadCount) {
+            _recentlyReadCount = recentlyReadCount;
+            _resetCollection();
+            _changeToPage(0);
+          } else if (favoriteCount != _favoriteCount) {
+            _favoriteCount = favoriteCount;
+            refreshStatusesSignalCubit.emit(true);
+          }
+          break;
+        }
     }
   }
 
@@ -211,8 +256,10 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
       _pageIndicatorCubit.emit(_pageIndicator());
     } else {
       _loadingCubit.emit(true);
-      DoujinshiList doujinshiList =
-          await _getRecentlyReadDoujinshiListUseCase.execute(page, _PER_PAGE);
+      DoujinshiList doujinshiList = _collectionTypeCubit.state ==
+              DoujinshiCollectionType.Recent
+          ? await _getRecentlyReadDoujinshiListUseCase.execute(page, _PER_PAGE)
+          : await _getFavoriteDoujinshiListUseCase.execute(page, _PER_PAGE);
       currentPage = page;
       numOfPages = doujinshiList.numPages;
       doujinshiMap[currentPage] = doujinshiList.result;

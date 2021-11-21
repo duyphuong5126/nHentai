@@ -165,10 +165,9 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                     bool isRecentlyRead = statuses.lastReadPageIndex >= 0;
                     bool isFavorite = statuses.isFavorite;
                     IconData iconData =
-                        isRecentlyRead ? Icons.history : Icons.favorite;
-                    Color color = isRecentlyRead
-                        ? Constant.blue0673B7
-                        : Constant.mainColor;
+                        isFavorite ? Icons.favorite : Icons.history;
+                    Color color =
+                        isFavorite ? Constant.mainColor : Constant.blue0673B7;
                     return Visibility(
                       child: TriangleBackgroundWidget(
                         width: 40,
@@ -270,10 +269,9 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                     bool isRecentlyRead = statuses.lastReadPageIndex >= 0;
                     bool isFavorite = statuses.isFavorite;
                     IconData iconData =
-                        isRecentlyRead ? Icons.history : Icons.favorite;
-                    Color color = isRecentlyRead
-                        ? Constant.blue0673B7
-                        : Constant.mainColor;
+                        isFavorite ? Icons.favorite : Icons.history;
+                    Color color =
+                        isFavorite ? Constant.mainColor : Constant.blue0673B7;
                     return Visibility(
                       child: TriangleBackgroundWidget(
                         width: 40,

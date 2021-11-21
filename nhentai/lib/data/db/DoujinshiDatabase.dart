@@ -108,6 +108,57 @@ class DoujinshiDatabase {
     }
   }
 
+  Future<bool> updateFavoriteDoujinshi(
+      Doujinshi doujinshi, bool isFavorite) async {
+    await _openDataBase();
+    List<Map> favoriteDoujinshisList = await _database!.query(_DOUJINSHI_TABLE,
+        columns: [_IS_FAVORITE_DOUJINSHI],
+        where: '$_DOUJINSHI_ID = ?',
+        whereArgs: [doujinshi.id]);
+    int currentTimeMillis = DateTime.now().microsecondsSinceEpoch;
+    if (favoriteDoujinshisList.isNotEmpty) {
+      return await _database!.update(
+              _DOUJINSHI_TABLE,
+              {
+                _IS_FAVORITE_DOUJINSHI: isFavorite ? 1 : 0,
+                _UPDATED_TIME: currentTimeMillis
+              },
+              where: '$_DOUJINSHI_ID = ?',
+              whereArgs: [doujinshi.id]) >
+          0;
+    } else {
+      return await _insertDoujinshi(doujinshi,
+              isFavorite: isFavorite, currentTimeMillis: currentTimeMillis) !=
+          0;
+    }
+  }
+
+  Future<int> getFavoriteDoujinshiCount() async {
+    int result = 0;
+    await _openDataBase();
+    result = Sqflite.firstIntValue(await _database!.rawQuery(
+            'select count($_DOUJINSHI_ID) from $_DOUJINSHI_TABLE where $_IS_FAVORITE_DOUJINSHI = 1')) ??
+        0;
+    return result;
+  }
+
+  Future<List<Doujinshi>> getFavoriteDoujinshis(int skip, int take) async {
+    List<Doujinshi> resultList = [];
+    await _openDataBase();
+    List<Map> recentlyReadDoujinshisList = await _database!.query(
+        _DOUJINSHI_TABLE,
+        columns: [_DOUJINSHI_JSON],
+        where: '$_IS_FAVORITE_DOUJINSHI = 1',
+        orderBy: '$_UPDATED_TIME desc',
+        offset: skip,
+        limit: take);
+    recentlyReadDoujinshisList.forEach((doujinshiMap) {
+      String doujinshiJson = doujinshiMap[_DOUJINSHI_JSON];
+      resultList.add(Doujinshi.fromJson(jsonDecode(doujinshiJson)));
+    });
+    return resultList;
+  }
+
   Future<bool> updateDoujinshiDetails(Doujinshi doujinshi) async {
     await _openDataBase();
     int currentTimeMillis = DateTime.now().microsecondsSinceEpoch;
@@ -132,12 +183,12 @@ class DoujinshiDatabase {
     return updatedRows > 0;
   }
 
-  Future _insertDoujinshi(Doujinshi doujinshi,
+  Future<int> _insertDoujinshi(Doujinshi doujinshi,
       {int lastReadPageIndex = -1,
       bool isFavorite = false,
       bool isDownloaded = false,
-      int currentTimeMillis = -1}) async {
-    await _database!.insert(_DOUJINSHI_TABLE, {
+      int currentTimeMillis = -1}) {
+    return _database!.insert(_DOUJINSHI_TABLE, {
       _DOUJINSHI_ID: doujinshi.id,
       _DOUJINSHI_JSON: jsonEncode(doujinshi),
       _LAST_READ_PAGE: lastReadPageIndex,
