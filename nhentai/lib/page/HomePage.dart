@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nhentai/Constant.dart';
+import 'package:nhentai/analytics/AnalyticsUtils.dart';
 import 'package:nhentai/page/DoujinshiGallery.dart';
 import 'package:nhentai/page/DownloadPage.dart';
 import 'package:nhentai/page/DoujinshiCollectionPage.dart';
@@ -9,7 +10,10 @@ class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _HomePageState createState() {
+    AnalyticsUtils.setScreen('DoujinshiGallery');
+    return _HomePageState();
+  }
 }
 
 class _HomePageState extends State<HomePage> {
@@ -18,6 +22,28 @@ class _HomePageState extends State<HomePage> {
   void _onTabSelected(int index) {
     setState(() {
       _selectedIndex = index;
+      switch (index) {
+        case 0:
+          {
+            AnalyticsUtils.setScreen('DoujinshiGallery');
+            break;
+          }
+        case 1:
+          {
+            AnalyticsUtils.setScreen('DoujinshiCollectionPage');
+            break;
+          }
+        case 2:
+          {
+            AnalyticsUtils.setScreen('DownloadPage');
+            break;
+          }
+        case 3:
+          {
+            AnalyticsUtils.setScreen('MorePage');
+            break;
+          }
+      }
     });
   }
 

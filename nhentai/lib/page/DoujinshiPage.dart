@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
+import 'package:nhentai/analytics/AnalyticsUtils.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
@@ -33,7 +34,10 @@ class DoujinshiPage extends StatefulWidget {
   const DoujinshiPage({Key? key}) : super(key: key);
 
   @override
-  _DoujinshiPageState createState() => _DoujinshiPageState();
+  _DoujinshiPageState createState() {
+    AnalyticsUtils.setScreen('DoujinshiPage');
+    return _DoujinshiPageState();
+  }
 }
 
 class _DoujinshiPageState extends State<DoujinshiPage> {
@@ -194,7 +198,15 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
               return FavoriteToggleButton(
                 favoriteCount: doujinshi.numFavorites,
                 isFavorite: isFavorite,
-                onPressed: () => _updateFavoriteStatus(doujinshi, !isFavorite),
+                onPressed: () {
+                  bool newFavoriteStatus = !isFavorite;
+                  if (newFavoriteStatus) {
+                    AnalyticsUtils.addFavorite(doujinshi.id);
+                  } else {
+                    AnalyticsUtils.removeFavorite(doujinshi.id);
+                  }
+                  _updateFavoriteStatus(doujinshi, newFavoriteStatus);
+                },
               );
             }),
         SizedBox(
@@ -290,6 +302,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _itemList.add(HorizontalDoujinshiList(
         doujinshiListCubit: _recommendedDoujinshiListCubit,
         onDoujinshiSelected: (doujinshi) {
+          AnalyticsUtils.openDoujinshi(doujinshi.id);
           _doujinshiCubit.emit(doujinshi);
         }));
     _itemList.add(SizedBox(
@@ -306,6 +319,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   void _readDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
     _lastReadPageCubit.emit(-1);
+    AnalyticsUtils.readDoujinshi(doujinshi.id);
     await Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_READER_PAGE,
         arguments:
             ReadingModel(doujinshi: doujinshi, startPageIndex: startPageIndex));

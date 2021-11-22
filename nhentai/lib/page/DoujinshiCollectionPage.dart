@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/StateHolder.dart';
+import 'package:nhentai/analytics/AnalyticsUtils.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/DoujinshiGridGallery.dart';
 import 'package:nhentai/component/LoadingMessage.dart';
@@ -234,6 +235,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   }
 
   void _openDoujinshi(Doujinshi doujinshi) async {
+    AnalyticsUtils.openDoujinshi(doujinshi.id);
     await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
     _initDoujinshiCollection();
