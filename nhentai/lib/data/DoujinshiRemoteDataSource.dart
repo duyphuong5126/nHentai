@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:io';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
@@ -7,6 +7,8 @@ import 'package:http/http.dart';
 import 'package:nhentai/domain/entity/DoujinshiResult.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:rxdart/rxdart.dart';
 
 abstract class DoujinshiRemoteDataSource {
   Future<DoujinshiList> fetchDoujinshiList(
@@ -16,6 +18,9 @@ abstract class DoujinshiRemoteDataSource {
       int doujinshiId);
 
   Future<DoujinshiResult> fetchDoujinshi(int doujinshiId);
+
+  Stream<String> downloadPageAndReturnLocalPath(
+      int doujinshiId, String pageUrl, String fileName);
 }
 
 class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
@@ -95,5 +100,35 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
       result = Future.value(DoujinshiResult.error(null));
     }
     return result;
+  }
+
+  @override
+  Stream<String> downloadPageAndReturnLocalPath(
+      int doujinshiId, String pageUrl, String fileName) {
+    return Rx.fromCallable(() => getApplicationDocumentsDirectory())
+        .flatMap((Directory appDir) {
+      String doujinshiFolderPath = appDir.path + '/download/$doujinshiId';
+      String filePath = doujinshiFolderPath + '/$fileName';
+      Directory(doujinshiFolderPath).createSync(recursive: true);
+      File localFile = File(filePath);
+
+      return Rx.fromCallable(() => get(Uri.parse(pageUrl)))
+          .flatMap((remoteFile) {
+        print(
+            'DoujinshiRemoteDataSource: pageUrl=$pageUrl - file size=${remoteFile.bodyBytes.length}');
+        return Rx.fromCallable(
+            () => localFile.writeAsBytes(remoteFile.bodyBytes));
+      }).map((File file) => file.path);
+    }).doOnError((error, stacktrace) {
+      if (error is Exception) {
+        print(
+            '-------------------\nGET $pageUrl\nError: $error\n-------------------');
+        print('$stacktrace');
+      } else {
+        print(
+            '-------------------\nGET $pageUrl\nError: $error\n-------------------');
+        print('$stacktrace');
+      }
+    });
   }
 }

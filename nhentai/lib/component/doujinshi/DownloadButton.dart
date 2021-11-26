@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nhentai/Constant.dart';
 
 class DownloadButton extends StatelessWidget {
-  const DownloadButton({Key? key}) : super(key: key);
+  final Function onPressed;
+
+  const DownloadButton({Key? key, required this.onPressed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +14,7 @@ class DownloadButton extends StatelessWidget {
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(3))),
       padding: EdgeInsets.all(0),
-      onPressed: () {},
+      onPressed: () => onPressed(),
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         child: Row(

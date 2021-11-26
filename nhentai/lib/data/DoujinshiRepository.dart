@@ -6,6 +6,7 @@ import 'package:nhentai/domain/entity/DoujinshiResult.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
+import 'package:rxdart/rxdart.dart';
 
 abstract class DoujinshiRepository {
   Future<DoujinshiList> getDoujinshiList(
@@ -30,6 +31,8 @@ abstract class DoujinshiRepository {
   Future<int> getFavoriteDoujinshiCount();
 
   Future<DoujinshiList> getFavoriteDoujinshiList(int page, int perPage);
+
+  Stream<String> downloadDoujinshi(Doujinshi doujinshi);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -118,5 +121,49 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
     }
     return DoujinshiList(
         result: doujinshiList, numPages: numPages, perPage: pageSize);
+  }
+
+  @override
+  Stream<String> downloadDoujinshi(Doujinshi doujinshi) {
+    return Rx.fromCallable(() => Future.value(doujinshi.fullSizePageUrlList))
+        .map((fullSizePageUrlList) {
+          List<String> pageUrlList = [];
+          pageUrlList.add(doujinshi.coverImage);
+          pageUrlList.add(doujinshi.backUpCoverImage);
+          pageUrlList.addAll(fullSizePageUrlList);
+          return pageUrlList;
+        })
+        .flatMap((pageUrlList) => Stream.fromIterable(pageUrlList))
+        .flatMap((pageUrl) {
+          print('DoujinshiRepository: try to download page $pageUrl');
+          return _downloadPage(doujinshi.id, pageUrl);
+        })
+        .map((pageLocalPath) {
+          print('DoujinshiRepository: downloaded file $pageLocalPath');
+          return pageLocalPath;
+        })
+        .doOnDone(() async {
+          bool localUpdateSuccess =
+              await _local.updateDownloadedDoujinshi(doujinshi, true);
+          print(
+              'DoujinshiRepository: is doujinshi ${doujinshi.id} downloaded: $localUpdateSuccess');
+        })
+        .doOnError((error, stackTrace) {
+          print(
+              'DoujinshiRepository: could not download doujinshi ${doujinshi.id}, error: $error');
+        });
+  }
+
+  Stream<String> _downloadPage(int doujinshiId, String pageUrl) {
+    return Rx.fromCallable(() => Future.value(pageUrl.split('/').last))
+        .flatMap((pageName) {
+      print(
+          'DoujinshiRepository: try to download page image $pageName - $pageUrl');
+      return _remote.downloadPageAndReturnLocalPath(
+          doujinshiId, pageUrl, pageName);
+    }).doOnError((error, stackTrace) {
+      print(
+          'DoujinshiRepository: could not download page $pageUrl with error $error');
+    });
   }
 }

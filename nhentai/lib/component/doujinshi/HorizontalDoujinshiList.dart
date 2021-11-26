@@ -37,6 +37,9 @@ class _HorizontalDoujinshiListState extends State<HorizontalDoujinshiList> {
                     color: Colors.white),
               ),
               SizedBox(
+                height: 5,
+              ),
+              SizedBox(
                 height: 300,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,

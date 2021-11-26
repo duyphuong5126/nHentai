@@ -13,7 +13,7 @@ class AnalyticsUtils {
 
   static void setScreen(String screenName) async {
     print('AnalyticsUtils: setScreen - $screenName');
-    //FirebaseAnalytics().setCurrentScreen(screenName: screenName);
+    FirebaseAnalytics().setCurrentScreen(screenName: screenName);
   }
 
   static void search(String searchTerm) async {

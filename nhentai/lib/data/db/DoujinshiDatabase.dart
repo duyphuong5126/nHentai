@@ -183,6 +183,33 @@ class DoujinshiDatabase {
     return updatedRows > 0;
   }
 
+  Future<bool> updateDownloadedDoujinshi(
+      Doujinshi doujinshi, bool isDownloaded) async {
+    await _openDataBase();
+    List<Map> downloadedDoujinshisList = await _database!.query(
+        _DOUJINSHI_TABLE,
+        columns: [_IS_DOWNLOADED_DOUJINSHI],
+        where: '$_DOUJINSHI_ID = ?',
+        whereArgs: [doujinshi.id]);
+    int currentTimeMillis = DateTime.now().microsecondsSinceEpoch;
+    if (downloadedDoujinshisList.isNotEmpty) {
+      return await _database!.update(
+              _DOUJINSHI_TABLE,
+              {
+                _IS_DOWNLOADED_DOUJINSHI: isDownloaded ? 1 : 0,
+                _UPDATED_TIME: currentTimeMillis
+              },
+              where: '$_DOUJINSHI_ID = ?',
+              whereArgs: [doujinshi.id]) >
+          0;
+    } else {
+      return await _insertDoujinshi(doujinshi,
+              isDownloaded: isDownloaded,
+              currentTimeMillis: currentTimeMillis) !=
+          0;
+    }
+  }
+
   Future<int> _insertDoujinshi(Doujinshi doujinshi,
       {int lastReadPageIndex = -1,
       bool isFavorite = false,

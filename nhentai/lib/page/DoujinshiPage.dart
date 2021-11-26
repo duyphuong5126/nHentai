@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:core';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nhentai/Constant.dart';
@@ -19,6 +20,7 @@ import 'package:nhentai/component/doujinshi/PreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/SecondTitle.dart';
 import 'package:nhentai/component/doujinshi/TagsSection.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/domain/entity/DoujinshiDownloadProgress.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
@@ -27,17 +29,16 @@ import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateFavoriteDoujinshiUseCase.dart';
+import 'package:nhentai/manager/DownloadManager.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 class DoujinshiPage extends StatefulWidget {
   const DoujinshiPage({Key? key}) : super(key: key);
 
   @override
-  _DoujinshiPageState createState() {
-    AnalyticsUtils.setScreen('DoujinshiPage');
-    return _DoujinshiPageState();
-  }
+  _DoujinshiPageState createState() => _DoujinshiPageState();
 }
 
 class _DoujinshiPageState extends State<DoujinshiPage> {
@@ -101,6 +102,13 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       ),
       backgroundColor: Constant.grey1f1f1f,
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _isCensoredCubit.close();
+    _isFavoriteCubit.close();
   }
 
   Widget _generateDetailSections(Doujinshi doujinshi) {
@@ -212,9 +220,63 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         SizedBox(
           width: 10,
         ),
-        DownloadButton()
+        DownloadButton(
+          onPressed: () {
+            DownloadManager.downloadDoujinshi(doujinshi);
+          },
+        )
       ],
     ));
+    _itemList.add(BlocBuilder(
+        bloc: DownloadManager.downloadProgressCubit,
+        builder:
+            (BuildContext context, DoujinshiDownloadProgress downloadProcess) {
+          print(
+              'Test: id=${downloadProcess.doujinshiId} - progress: ${downloadProcess.pagesDownloadProgress}, failed: ${downloadProcess.isFailed}, finished: ${downloadProcess.isFinished}');
+          double absoluteProgress = downloadProcess.doujinshiId == doujinshi.id
+              ? downloadProcess.pagesDownloadProgress.abs()
+              : 0.0;
+          if (absoluteProgress > 1.0) {
+            absoluteProgress = 1.0;
+          }
+          return Visibility(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 10,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                        child: LinearPercentIndicator(
+                      padding: EdgeInsets.all(0.0),
+                      percent: absoluteProgress,
+                      backgroundColor: Constant.grey4D4D4D,
+                      progressColor: _getProgressColor(absoluteProgress),
+                    )),
+                    Container(
+                      width: 60,
+                      child: Center(
+                        child: Text(
+                          '${(absoluteProgress * 100).toInt()}%',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontFamily: Constant.BOLD,
+                              color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+            visible: downloadProcess.doujinshiId == doujinshi.id &&
+                !downloadProcess.isFailed &&
+                !downloadProcess.isFinished &&
+                absoluteProgress > 0.0 &&
+                absoluteProgress <= 1.0,
+          );
+        }));
     _itemList.add(SizedBox(
       height: 10,
     ));
@@ -277,6 +339,10 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                     _readDoujinshi(doujinshi, selectedIndex);
                   }),
             ));
+
+            lastReadPageWidgets.add(SizedBox(
+              height: 15,
+            ));
           }
 
           return Visibility(
@@ -287,9 +353,6 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             visible: lastReadPageIndex >= 0,
           );
         }));
-    _itemList.add(SizedBox(
-      height: 15,
-    ));
     _itemList.add(PreviewSection(
       pages: doujinshi.previewThumbnailList,
       onPageSelected: (pageIndex) {
@@ -315,6 +378,14 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         return _itemList[index];
       }),
     );
+  }
+
+  Color _getProgressColor(double progress) {
+    return progress < 0.5
+        ? Constant.mainColor
+        : progress < 0.8
+            ? Constant.yellowECC031
+            : Constant.green53A105;
   }
 
   void _readDoujinshi(Doujinshi doujinshi, int startPageIndex) async {

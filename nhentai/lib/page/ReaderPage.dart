@@ -4,7 +4,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/analytics/AnalyticsUtils.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
@@ -19,10 +18,7 @@ class ReaderPage extends StatefulWidget {
   const ReaderPage({Key? key}) : super(key: key);
 
   @override
-  _ReaderPageState createState() {
-    AnalyticsUtils.setScreen('ReaderPage');
-    return _ReaderPageState();
-  }
+  _ReaderPageState createState() => _ReaderPageState();
 }
 
 class _ReaderPageState extends State<ReaderPage>

@@ -31,9 +31,10 @@ class _PreviewSectionState extends State<PreviewSection> {
         Text(
           'Preview',
           style: TextStyle(
-              fontFamily: Constant.BOLD,
-              fontSize: 18,
-              color: Colors.white),
+              fontFamily: Constant.BOLD, fontSize: 18, color: Colors.white),
+        ),
+        SizedBox(
+          height: 5,
         ),
         SizedBox(
             height: 400,
