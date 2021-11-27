@@ -420,45 +420,18 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       ));
       _itemList.add(Visibility(
         child: DeleteDownloadedDoujinshiButton(
-          onPressed: () {
-            _deleteSubscription = _deleteDownloadedDoujinshiUseCase
-                .execute(doujinshi)
-                .listen((bool isDeletedSuccessfully) {
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    String title = isDeletedSuccessfully
-                        ? 'Deleted Successfully'
-                        : 'Failed To Delete';
-
-                    String content = isDeletedSuccessfully
-                        ? 'Doujinshi ${doujinshi.id} was deleted successfully'
-                        : 'Failed to delete doujinshi ${doujinshi.id}';
-                    return ConfirmationAlertDialog(
-                        title: title,
-                        content: content,
-                        confirmLabel: 'OK',
-                        confirmAction: () {
-                          Navigator.of(context).pop(DeletedDoujinshi());
-                        });
-                  });
-            }, onError: (error) {
-              print(
-                  'Could not delete doujinshi ${doujinshi.id} with error $error');
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return ConfirmationAlertDialog(
-                        title: 'Failed To Delete',
-                        content:
-                            'Failed to delete doujinshi ${doujinshi.id} was deleted successfully',
-                        confirmLabel: 'OK',
-                        confirmAction: () {
-                          Navigator.of(context).pop(DeletedDoujinshi());
-                        });
-                  });
-            });
-          },
+          onPressed: () => showDialog(
+              context: context,
+              builder: (context) {
+                return YesNoActionsAlertDialog(
+                    title: 'Delete this doujinshi',
+                    content:
+                        'This doujinshi is in your downloaded list. Do you want to remove it?',
+                    yesLabel: 'Yes',
+                    noLabel: 'No',
+                    yesAction: () => _deleteDownloadedDoujinshi(doujinshi),
+                    noAction: () {});
+              }),
         ),
         visible: doujinshi is DownloadedDoujinshi,
       ));
@@ -560,5 +533,44 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                 });
           });
     }
+  }
+
+  void _deleteDownloadedDoujinshi(DownloadedDoujinshi doujinshi) {
+    _deleteSubscription = _deleteDownloadedDoujinshiUseCase
+        .execute(doujinshi)
+        .listen((bool isDeletedSuccessfully) {
+      showDialog(
+          context: context,
+          builder: (context) {
+            String title = isDeletedSuccessfully
+                ? 'Deleted Successfully'
+                : 'Failed To Delete';
+
+            String content = isDeletedSuccessfully
+                ? 'Doujinshi ${doujinshi.id} was deleted successfully'
+                : 'Failed to delete doujinshi ${doujinshi.id}';
+            return ConfirmationAlertDialog(
+                title: title,
+                content: content,
+                confirmLabel: 'OK',
+                confirmAction: () {
+                  Navigator.of(context).pop(DeletedDoujinshi());
+                });
+          });
+    }, onError: (error) {
+      print('Could not delete doujinshi ${doujinshi.id} with error $error');
+      showDialog(
+          context: context,
+          builder: (context) {
+            return ConfirmationAlertDialog(
+                title: 'Failed To Delete',
+                content:
+                    'Failed to delete doujinshi ${doujinshi.id} was deleted successfully',
+                confirmLabel: 'OK',
+                confirmAction: () {
+                  Navigator.of(context).pop(DeletedDoujinshi());
+                });
+          });
+    });
   }
 }

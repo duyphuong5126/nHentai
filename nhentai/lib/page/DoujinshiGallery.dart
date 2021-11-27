@@ -234,6 +234,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
               InkResponse(
                 highlightColor: Colors.transparent,
                 onTap: () {
+                  editingController.clear();
                   _onSearchTermChanged('');
                 },
                 child: SvgPicture.asset(
