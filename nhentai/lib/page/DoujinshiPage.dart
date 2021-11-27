@@ -6,6 +6,7 @@ import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/analytics/AnalyticsUtils.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/component/ConfirmationAlertDialog.dart';
 import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
 import 'package:nhentai/component/doujinshi/DateTimeSection.dart';
@@ -62,6 +63,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
 
+  int _doujinshiId = -1;
+
   void _getRecommendedList(int doujinshiId) async {
     RecommendedDoujinshiList recommendedDoujinshiList =
         await _recommendedDoujinshiListUseCase.execute(doujinshiId);
@@ -87,8 +90,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   @override
   Widget build(BuildContext context) {
     _initCensoredStatus();
-    _doujinshiCubit = DataCubit<Doujinshi>(
-        ModalRoute.of(context)?.settings.arguments as Doujinshi);
+    Doujinshi doujinshi =
+        ModalRoute.of(context)?.settings.arguments as Doujinshi;
+    _doujinshiCubit = DataCubit<Doujinshi>(doujinshi);
+    _doujinshiId = doujinshi.id;
+
     return Scaffold(
       body: SafeArea(
         child: Container(
@@ -110,6 +116,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     super.dispose();
     _isCensoredCubit.close();
     _isFavoriteCubit.close();
+    _doujinshiId = -1;
+    DownloadManager.unsubscribeOnFinishObserver(this._onDownloadFinished);
   }
 
   Widget _generateDetailSections(Doujinshi doujinshi) {
@@ -222,7 +230,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     if (!(doujinshi is DownloadedDoujinshi)) {
       favoriteDownloadRow.add(DownloadButton(
         onPressed: () {
-          DownloadManager.downloadDoujinshi(doujinshi);
+          DownloadManager.downloadDoujinshi(
+              doujinshi: doujinshi,
+              onPending: this._onDownloadPending,
+              onDownloadStarted: this._onDownloadStarted,
+              onFinished: this._onDownloadFinished);
         },
       ));
     }
@@ -236,6 +248,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             (BuildContext context, DoujinshiDownloadProgress downloadProcess) {
           print(
               'Test: id=${downloadProcess.doujinshiId} - progress: ${downloadProcess.pagesDownloadProgress}, failed: ${downloadProcess.isFailed}, finished: ${downloadProcess.isFinished}');
+          DownloadManager.subscribeOnFinishObserver(this._onDownloadFinished);
           double absoluteProgress = downloadProcess.doujinshiId == doujinshi.id
               ? downloadProcess.pagesDownloadProgress.abs()
               : 0.0;
@@ -308,7 +321,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                   highlightColor: Colors.transparent,
                   onTap: () => showDialog(
                       context: context,
-                      builder: (content) {
+                      builder: (context) {
                         return YesNoActionsAlertDialog(
                             title: 'Forget this doujinshi',
                             content:
@@ -418,6 +431,53 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         'Debug: isFavorite=$isFavorite, updateSuccessfully=$updateSuccessfully');
     if (updateSuccessfully) {
       _isFavoriteCubit.emit(isFavorite);
+    }
+  }
+
+  void _onDownloadPending(int currentDownloadId) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return ConfirmationAlertDialog(
+              title: 'Download started',
+              content:
+                  'This doujinshi will be downloaded after the doujinshi $currentDownloadId',
+              confirmLabel: 'OK',
+              confirmAction: () {
+                print('DoujinshiPage: download confirmation dialog was closed');
+              });
+        });
+  }
+
+  void _onDownloadStarted() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return ConfirmationAlertDialog(
+              title: 'Download started',
+              content: 'This doujinshi is being downloaded',
+              confirmLabel: 'OK',
+              confirmAction: () {
+                print('DoujinshiPage: download confirmation dialog was closed');
+              });
+        });
+  }
+
+  void _onDownloadFinished(int downloadedDoujinshiId) {
+    if (_doujinshiId >= 0 && _doujinshiId == downloadedDoujinshiId) {
+      showDialog(
+          context: context,
+          builder: (context) {
+            return ConfirmationAlertDialog(
+                title: 'Download finished',
+                content:
+                    'This doujinshi was downloaded successfully, you can read it in offline. Go to Home -> Download tab to find it.',
+                confirmLabel: 'OK',
+                confirmAction: () {
+                  print(
+                      'DoujinshiPage: download confirmation dialog was closed');
+                });
+          });
     }
   }
 }
