@@ -37,7 +37,7 @@ class _DownloadPageState extends State<DownloadPage> {
       GetRecentlyReadDoujinshiCountUseCaseImpl();
   final GetFavoriteDoujinshiCountUseCase _getFavoriteDoujinshiCountUseCase =
       GetFavoriteDoujinshiCountUseCaseImpl();
-  final DataCubit<int> _numOfPagesCubit = DataCubit(-1);
+  final DataCubit<int> _numOfPagesCubit = DataCubit(0);
   final DataCubit<List<DownloadedDoujinshi>> _doujinshiListCubit =
       DataCubit([]);
   final DataCubit<String> _pageIndicatorCubit = DataCubit('');

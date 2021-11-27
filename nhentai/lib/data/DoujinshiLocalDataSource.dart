@@ -4,6 +4,7 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rxdart/rxdart.dart';
 
 abstract class DoujinshiLocalDataSource {
   Future saveRecentlyReadDoujinshi(Doujinshi doujinshi, int lastReadPageIndex);
@@ -30,6 +31,9 @@ abstract class DoujinshiLocalDataSource {
   Future<int> getDownloadedDoujinshiCount();
 
   Future<List<DownloadedDoujinshi>> getDownloadedDoujinshis(int skip, int take);
+
+  Stream<bool> deleteDownloadedDoujinshi(
+      DownloadedDoujinshi downloadedDoujinshi);
 }
 
 class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
@@ -111,5 +115,28 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
           downloadedBackupCover: doujinshiFolderPath +
               '/${doujinshi.backUpCoverImage.split('/').last}');
     }).toList();
+  }
+
+  @override
+  Stream<bool> deleteDownloadedDoujinshi(
+      DownloadedDoujinshi downloadedDoujinshi) {
+    return Rx.fromCallable(() => Future.value(downloadedDoujinshi)).flatMap(
+        (downloadedDoujinshi) {
+      List<String> downloadedPaths = [];
+      downloadedPaths.addAll(downloadedDoujinshi.downloadedPathList);
+      downloadedPaths.add(downloadedDoujinshi.downloadedCover);
+      downloadedPaths.add(downloadedDoujinshi.downloadedBackupCover);
+      downloadedPaths.add(downloadedDoujinshi.downloadedThumbnail);
+      return Stream.value(downloadedPaths);
+    }).doOnData((downloadedPaths) {
+      downloadedPaths.map((downloadedPath) {
+        try {
+          File(downloadedPath).delete();
+        } catch (error) {
+          print('Could not delete file $downloadedPath with error $error');
+        }
+      });
+    }).flatMap((downloadedPaths) => Rx.fromCallable(() =>
+        _database.deleteDownloadedDoujinshi(downloadedDoujinshi.id, false)));
   }
 }

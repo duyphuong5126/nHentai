@@ -210,6 +210,21 @@ class DoujinshiDatabase {
     }
   }
 
+  Future<bool> deleteDownloadedDoujinshi(
+      int doujinshiId, bool isDownloaded) async {
+    await _openDataBase();
+    int currentTimeMillis = DateTime.now().microsecondsSinceEpoch;
+    return await _database!.update(
+            _DOUJINSHI_TABLE,
+            {
+              _IS_DOWNLOADED_DOUJINSHI: isDownloaded ? 1 : 0,
+              _UPDATED_TIME: currentTimeMillis
+            },
+            where: '$_DOUJINSHI_ID = ?',
+            whereArgs: [doujinshiId]) >
+        0;
+  }
+
   Future<int> getDownloadedDoujinshiCount() async {
     int result = 0;
     await _openDataBase();

@@ -40,6 +40,9 @@ abstract class DoujinshiRepository {
 
   Future<DownloadedDoujinshiList> getDownloadedDoujinshis(
       int page, int perPage);
+
+  Stream<bool> deleteDownloadedDoujinshi(
+      DownloadedDoujinshi downloadedDoujinshi);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -181,6 +184,12 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
     }
     return DownloadedDoujinshiList(
         result: downloadedList, numPages: numPages, perPage: pageSize);
+  }
+
+  @override
+  Stream<bool> deleteDownloadedDoujinshi(
+      DownloadedDoujinshi downloadedDoujinshi) {
+    return _local.deleteDownloadedDoujinshi(downloadedDoujinshi);
   }
 
   Stream<String> _downloadPage(int doujinshiId, String pageUrl) {

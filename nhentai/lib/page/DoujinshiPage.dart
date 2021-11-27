@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'dart:core';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,6 +12,7 @@ import 'package:nhentai/component/ConfirmationAlertDialog.dart';
 import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
 import 'package:nhentai/component/doujinshi/DateTimeSection.dart';
+import 'package:nhentai/component/doujinshi/DeleteDownloadedDoujinshiButton.dart';
 import 'package:nhentai/component/doujinshi/DownloadButton.dart';
 import 'package:nhentai/component/doujinshi/DownloadedPreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/FavoriteToggleButton.dart';
@@ -21,6 +24,7 @@ import 'package:nhentai/component/doujinshi/PreviewSection.dart';
 import 'package:nhentai/component/doujinshi/PreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/SecondTitle.dart';
 import 'package:nhentai/component/doujinshi/TagsSection.dart';
+import 'package:nhentai/domain/entity/DeletedDoujinshi.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiDownloadProgress.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
@@ -28,6 +32,7 @@ import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
+import 'package:nhentai/domain/usecase/DeleteDownloadedDoujinshiUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
@@ -60,11 +65,15 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       UpdateDoujinshiDetailsUseCaseImpl();
   final UpdateFavoriteDoujinshiUseCase _updateFavoriteDoujinshiUseCase =
       UpdateFavoriteDoujinshiUseCaseImpl();
+  final DeleteDownloadedDoujinshiUseCase _deleteDownloadedDoujinshiUseCase =
+      DeleteDownloadedDoujinshiUseCaseImpl();
   late SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
 
   int _doujinshiId = -1;
+
+  StreamSubscription? _deleteSubscription;
 
   void _getRecommendedList(int doujinshiId) async {
     RecommendedDoujinshiList recommendedDoujinshiList =
@@ -119,6 +128,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _isFavoriteCubit.close();
     _doujinshiId = -1;
     DownloadManager.unsubscribeOnFinishObserver(this._onDownloadFinished);
+    _deleteSubscription?.cancel();
+    _deleteSubscription = null;
   }
 
   Widget _generateDetailSections(Doujinshi doujinshi) {
@@ -403,6 +414,55 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             visible: list.isNotEmpty,
           );
         }));
+    if (doujinshi is DownloadedDoujinshi) {
+      _itemList.add(SizedBox(
+        height: 10,
+      ));
+      _itemList.add(Visibility(
+        child: DeleteDownloadedDoujinshiButton(
+          onPressed: () {
+            _deleteSubscription = _deleteDownloadedDoujinshiUseCase
+                .execute(doujinshi)
+                .listen((bool isDeletedSuccessfully) {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    String title = isDeletedSuccessfully
+                        ? 'Deleted Successfully'
+                        : 'Failed To Delete';
+
+                    String content = isDeletedSuccessfully
+                        ? 'Doujinshi ${doujinshi.id} was deleted successfully'
+                        : 'Failed to delete doujinshi ${doujinshi.id}';
+                    return ConfirmationAlertDialog(
+                        title: title,
+                        content: content,
+                        confirmLabel: 'OK',
+                        confirmAction: () {
+                          Navigator.of(context).pop(DeletedDoujinshi());
+                        });
+                  });
+            }, onError: (error) {
+              print(
+                  'Could not delete doujinshi ${doujinshi.id} with error $error');
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return ConfirmationAlertDialog(
+                        title: 'Failed To Delete',
+                        content:
+                            'Failed to delete doujinshi ${doujinshi.id} was deleted successfully',
+                        confirmLabel: 'OK',
+                        confirmAction: () {
+                          Navigator.of(context).pop(DeletedDoujinshi());
+                        });
+                  });
+            });
+          },
+        ),
+        visible: doujinshi is DownloadedDoujinshi,
+      ));
+    }
     _itemList.add(SizedBox(
       height: 50,
     ));

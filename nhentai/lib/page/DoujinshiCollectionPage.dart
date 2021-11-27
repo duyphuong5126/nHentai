@@ -40,7 +40,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
       GetFavoriteDoujinshiCountUseCaseImpl();
   final GetFavoriteDoujinshiListUseCase _getFavoriteDoujinshiListUseCase =
       GetFavoriteDoujinshiListUseCaseImpl();
-  final DataCubit<int> _numOfPagesCubit = DataCubit(-1);
+  final DataCubit<int> _numOfPagesCubit = DataCubit(0);
   final DataCubit<List<Doujinshi>> _doujinshiListCubit = DataCubit([]);
   final DataCubit<String> _pageIndicatorCubit = DataCubit('');
   final DataCubit<DoujinshiCollectionType> _collectionTypeCubit =
