@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/StateHolder.dart';
@@ -6,14 +7,14 @@ import 'package:nhentai/component/NumberPageIndex.dart';
 
 class NumberPageIndicesList<T extends StateHolder<int>> extends StatefulWidget {
   final DataCubit<int> numOfPagesCubit;
-  final Function(int) onPagePressed;
+  final Function(int) onPageSelected;
   final T selectedPageIndexHolder;
 
   const NumberPageIndicesList({
     Key? key,
     required this.numOfPagesCubit,
     required this.selectedPageIndexHolder,
-    required this.onPagePressed,
+    required this.onPageSelected,
   }) : super(key: key);
 
   @override
@@ -69,7 +70,7 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
                   onPagePressed: (selectedPage) {
                     widget.selectedPageIndexHolder.data = selectedPage;
                     _selectedPageIndexCubit.emit(selectedPage);
-                    widget.onPagePressed(selectedPage);
+                    widget.onPageSelected(selectedPage);
                   },
                 );
               },

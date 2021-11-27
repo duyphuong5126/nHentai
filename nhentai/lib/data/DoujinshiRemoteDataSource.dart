@@ -24,6 +24,8 @@ abstract class DoujinshiRemoteDataSource {
 }
 
 class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
+  static const int REQUEST_TIME_OUT = 10;
+
   @override
   Future<DoujinshiList> fetchDoujinshiList(
       int page, String searchTerm, SortOption sortOption) async {
@@ -41,7 +43,8 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
             sortString;
     Future<DoujinshiList> result;
     try {
-      Response response = await get(Uri.parse(url));
+      Response response = await get(Uri.parse(url))
+          .timeout(Duration(seconds: REQUEST_TIME_OUT));
       DoujinshiList doujinshiList =
           DoujinshiList.fromJson(jsonDecode(response.body));
       print(
@@ -60,7 +63,8 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
     String url = '${Constant.NHENTAI_HOME}/api/gallery/$doujinshiId/related';
     Future<RecommendedDoujinshiList> result;
     try {
-      Response response = await get(Uri.parse(url));
+      Response response = await get(Uri.parse(url))
+          .timeout(Duration(seconds: REQUEST_TIME_OUT));
       RecommendedDoujinshiList doujinshiList =
           RecommendedDoujinshiList.fromJson(jsonDecode(response.body));
       print(
@@ -86,7 +90,8 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
     String url = '${Constant.NHENTAI_HOME}/api/gallery/$doujinshiId';
     Future<DoujinshiResult> result;
     try {
-      Response response = await get(Uri.parse(url));
+      Response response = await get(Uri.parse(url))
+          .timeout(Duration(seconds: REQUEST_TIME_OUT));
       Doujinshi doujinshi = Doujinshi.fromJson(jsonDecode(response.body));
       print(
           '-------------------\nGET $url\nResult: ${response.statusCode} - ${doujinshi.id}\n-------------------');
@@ -112,8 +117,8 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
       Directory(doujinshiFolderPath).createSync(recursive: true);
       File localFile = File(filePath);
 
-      return Rx.fromCallable(() => get(Uri.parse(pageUrl)))
-          .flatMap((remoteFile) {
+      return Rx.fromCallable(() => get(Uri.parse(pageUrl))
+          .timeout(Duration(seconds: REQUEST_TIME_OUT))).flatMap((remoteFile) {
         print(
             'DoujinshiRemoteDataSource: pageUrl=$pageUrl - file size=${remoteFile.bodyBytes.length}');
         return Rx.fromCallable(

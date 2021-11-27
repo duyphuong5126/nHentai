@@ -2,9 +2,16 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 
 class DownloadedDoujinshi extends Doujinshi {
   final List<String> downloadedPathList;
+  final String downloadedCover;
+  final String downloadedBackupCover;
+  final String downloadedThumbnail;
 
   DownloadedDoujinshi(
-      {required Doujinshi doujinshi, required this.downloadedPathList})
+      {required Doujinshi doujinshi,
+      required this.downloadedPathList,
+      required this.downloadedCover,
+      required this.downloadedBackupCover,
+      required this.downloadedThumbnail})
       : super(
             id: doujinshi.id,
             mediaId: doujinshi.mediaId,

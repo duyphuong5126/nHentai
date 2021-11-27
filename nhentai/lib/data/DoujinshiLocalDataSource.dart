@@ -103,7 +103,13 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
           downloadedPathList: doujinshi.fullSizePageUrlList
               .map((pageUrl) =>
                   doujinshiFolderPath + '/${pageUrl.split('/').last}')
-              .toList());
+              .toList(),
+          downloadedThumbnail: doujinshiFolderPath +
+              '/${doujinshi.thumbnailImage.split('/').last}',
+          downloadedCover:
+              doujinshiFolderPath + '/${doujinshi.coverImage.split('/').last}',
+          downloadedBackupCover: doujinshiFolderPath +
+              '/${doujinshi.backUpCoverImage.split('/').last}');
     }).toList();
   }
 }

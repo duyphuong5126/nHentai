@@ -137,6 +137,7 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
           List<String> pageUrlList = [];
           pageUrlList.add(doujinshi.coverImage);
           pageUrlList.add(doujinshi.backUpCoverImage);
+          pageUrlList.add(doujinshi.thumbnailImage);
           pageUrlList.addAll(fullSizePageUrlList);
           return pageUrlList;
         })

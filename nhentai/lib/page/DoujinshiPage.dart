@@ -11,6 +11,7 @@ import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/CoverImage.dart';
 import 'package:nhentai/component/doujinshi/DateTimeSection.dart';
 import 'package:nhentai/component/doujinshi/DownloadButton.dart';
+import 'package:nhentai/component/doujinshi/DownloadedPreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/FavoriteToggleButton.dart';
 import 'package:nhentai/component/doujinshi/FirstTitle.dart';
 import 'package:nhentai/component/doujinshi/HorizontalDoujinshiList.dart';
@@ -148,8 +149,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                   ),
                 )
               : CoverImage(
-                  coverImageUrl: doujinshi.coverImage,
-                  backUpCoverImageUrl: doujinshi.backUpCoverImage,
+                  doujinshi: doujinshi,
                 );
           return GestureDetector(
             child: cover,
@@ -301,8 +301,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         builder: (BuildContext c, int lastReadPageIndex) {
           List<Widget> lastReadPageWidgets = [];
           if (lastReadPageIndex >= 0) {
-            String thumbnailUrl =
-                doujinshi.previewThumbnailList[lastReadPageIndex];
+            String thumbnail = doujinshi is DownloadedDoujinshi
+                ? doujinshi.downloadedPathList[lastReadPageIndex]
+                : doujinshi.previewThumbnailList[lastReadPageIndex];
             lastReadPageWidgets.add(Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -348,12 +349,19 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             lastReadPageWidgets.add(SizedBox(
               height: 197.5,
               width: 148.125,
-              child: PreviewThumbnail(
-                  thumbnailUrl: thumbnailUrl,
-                  imagePosition: lastReadPageIndex,
-                  onThumbnailSelected: (int selectedIndex) {
-                    _readDoujinshi(doujinshi, selectedIndex);
-                  }),
+              child: doujinshi is DownloadedDoujinshi
+                  ? DownloadedPreviewThumbnail(
+                      thumbnailLocalPath: thumbnail,
+                      imagePosition: lastReadPageIndex,
+                      onThumbnailSelected: (int selectedIndex) {
+                        _readDoujinshi(doujinshi, selectedIndex);
+                      })
+                  : PreviewThumbnail(
+                      thumbnailUrl: thumbnail,
+                      imagePosition: lastReadPageIndex,
+                      onThumbnailSelected: (int selectedIndex) {
+                        _readDoujinshi(doujinshi, selectedIndex);
+                      }),
             ));
 
             lastReadPageWidgets.add(SizedBox(
@@ -370,19 +378,30 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           );
         }));
     _itemList.add(PreviewSection(
-      pages: doujinshi.previewThumbnailList,
+      doujinshi: doujinshi,
       onPageSelected: (pageIndex) {
         _readDoujinshi(doujinshi, pageIndex);
       },
     ));
-    _itemList.add(SizedBox(
-      height: 15,
-    ));
-    _itemList.add(HorizontalDoujinshiList(
-        doujinshiListCubit: _recommendedDoujinshiListCubit,
-        onDoujinshiSelected: (doujinshi) {
-          AnalyticsUtils.openDoujinshi(doujinshi.id);
-          _doujinshiCubit.emit(doujinshi);
+    _itemList.add(BlocBuilder(
+        bloc: _recommendedDoujinshiListCubit,
+        builder: (context, List<Doujinshi> list) {
+          return Visibility(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 15,
+                ),
+                HorizontalDoujinshiList(
+                    doujinshiListCubit: _recommendedDoujinshiListCubit,
+                    onDoujinshiSelected: (doujinshi) {
+                      AnalyticsUtils.openDoujinshi(doujinshi.id);
+                      _doujinshiCubit.emit(doujinshi);
+                    })
+              ],
+            ),
+            visible: list.isNotEmpty,
+          );
         }));
     _itemList.add(SizedBox(
       height: 50,
@@ -463,15 +482,17 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         });
   }
 
-  void _onDownloadFinished(int downloadedDoujinshiId) {
+  void _onDownloadFinished(int downloadedDoujinshiId, bool isFailed) {
     if (_doujinshiId >= 0 && _doujinshiId == downloadedDoujinshiId) {
+      String content = isFailed
+          ? 'Could not download this doujinshi'
+          : 'This doujinshi was downloaded successfully, you can read it in offline. Go to Home -> Download tab to find it.';
       showDialog(
           context: context,
           builder: (context) {
             return ConfirmationAlertDialog(
                 title: 'Download finished',
-                content:
-                    'This doujinshi was downloaded successfully, you can read it in offline. Go to Home -> Download tab to find it.',
+                content: content,
                 confirmLabel: 'OK',
                 confirmAction: () {
                   print(

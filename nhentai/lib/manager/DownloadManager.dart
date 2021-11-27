@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:nhentai/bloc/DataCubit.dart';
@@ -15,13 +16,15 @@ class DownloadManager {
 
   static final Queue<Doujinshi> _downloadQueue = Queue();
 
-  static final List<Function(int)> _finishDownloadObservers = [];
+  static final List<Function(int, bool)> _finishDownloadObservers = [];
+
+  static StreamSubscription? downloadSubscription;
 
   static void downloadDoujinshi(
       {required Doujinshi doujinshi,
       Function(int doujinshiId)? onPending,
       Function()? onDownloadStarted,
-      Function(int doujinshiId)? onFinished}) {
+      Function(int doujinshiId, bool isFailed)? onFinished}) {
     if (onFinished != null && !_finishDownloadObservers.contains(onFinished)) {
       print('DownloadManager: adding onFinishObserver $onFinished');
       _finishDownloadObservers.add(onFinished);
@@ -46,8 +49,9 @@ class DownloadManager {
     DownloadDoujinshiUseCase _downloadDoujinshiUseCase =
         DownloadDoujinshiUseCaseImpl();
     int progress = 0;
-    int total = doujinshi.fullSizePageUrlList.length + 3;
-    _downloadDoujinshiUseCase.execute(doujinshi).listen((savedPageLocalPath) {
+    int total = doujinshi.fullSizePageUrlList.length + 4;
+    downloadSubscription = _downloadDoujinshiUseCase.execute(doujinshi).listen(
+        (savedPageLocalPath) {
       print(
           'DownloadManager: doujinshi ${doujinshi.id} - savedPageLocalPath=$savedPageLocalPath');
       progress++;
@@ -57,6 +61,8 @@ class DownloadManager {
           isFailed: false,
           isFinished: false));
     }, onError: (error) {
+      downloadSubscription?.cancel();
+      downloadSubscription = null;
       print(
           'DownloadManager: failed to download doujinshi ${doujinshi.id} with error $error');
       DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
@@ -64,7 +70,20 @@ class DownloadManager {
           pagesDownloadProgress: (progress / total),
           isFailed: true,
           isFinished: true));
+
+      print('DownloadManager: observers=${_finishDownloadObservers.length}');
+      _finishDownloadObservers.forEach(
+          (onFinishObserver) => onFinishObserver.call(doujinshi.id, true));
+      _finishDownloadObservers.clear();
+
+      DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
+          doujinshiId: -1,
+          pagesDownloadProgress: 0,
+          isFailed: false,
+          isFinished: false));
     }, onDone: () async {
+      downloadSubscription?.cancel();
+      downloadSubscription = null;
       print('DownloadManager: downloaded doujinshi ${doujinshi.id}');
       await Future.delayed(Duration(seconds: 1), () {
         progress++;
@@ -82,8 +101,8 @@ class DownloadManager {
                     isFinished: true));
             print(
                 'DownloadManager: observers=${_finishDownloadObservers.length}');
-            _finishDownloadObservers.forEach(
-                (onFinishObserver) => onFinishObserver.call(doujinshi.id));
+            _finishDownloadObservers.forEach((onFinishObserver) =>
+                onFinishObserver.call(doujinshi.id, false));
             _finishDownloadObservers.clear();
 
             DownloadManager.downloadProgressCubit.emit(
@@ -102,19 +121,22 @@ class DownloadManager {
                 print(
                     'DownloadManager: failed to start download next doujinshi with error $error');
               }
+            } else {
+              print('DownloadManager: no more doujinshi');
             }
           }));
     });
   }
 
-  static void subscribeOnFinishObserver(Function(int) onFinishObserver) async {
+  static void subscribeOnFinishObserver(
+      Function(int, bool) onFinishObserver) async {
     if (!_finishDownloadObservers.contains(onFinishObserver)) {
       _finishDownloadObservers.add(onFinishObserver);
     }
   }
 
   static void unsubscribeOnFinishObserver(
-      Function(int) onFinishObserver) async {
+      Function(int, bool) onFinishObserver) async {
     _finishDownloadObservers.remove(onFinishObserver);
   }
 }

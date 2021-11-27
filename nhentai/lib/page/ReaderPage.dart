@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/component/doujinshi/DownloadedReaderThumbnail.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
@@ -215,23 +216,38 @@ class _ReaderPageState extends State<ReaderPage>
                         );
                       },
                       itemBuilder: (BuildContext c, int index) {
-                        String thumbnailUrl =
-                            doujinshi.previewThumbnailList[index];
+                        String thumbnailPath = doujinshi is DownloadedDoujinshi
+                            ? doujinshi.downloadedPathList[index]
+                            : doujinshi.previewThumbnailList[index];
                         return AutoScrollTag(
                           key: ValueKey(index),
                           controller: _thumbnailScrollController,
                           index: index,
-                          child: ReaderThumbnail(
-                              thumbnailUrl: thumbnailUrl,
-                              width: _DEFAULT_THUMBNAIL_WIDTH,
-                              height: _DEFAULT_THUMBNAIL_HEIGHT,
-                              thumbnailIndex: index,
-                              onThumbnailSelected: (selectedIndex) {
-                                _scrollController?.scrollToIndex(selectedIndex);
-                                _pageController?.jumpToPage(selectedIndex);
-                                _currentPageCubit?.emit(selectedIndex);
-                              },
-                              selectedIndexBloc: _currentPageCubit!),
+                          child: doujinshi is DownloadedDoujinshi
+                              ? DownloadedReaderThumbnail(
+                                  thumbnailPath: thumbnailPath,
+                                  width: _DEFAULT_THUMBNAIL_WIDTH,
+                                  height: _DEFAULT_THUMBNAIL_HEIGHT,
+                                  thumbnailIndex: index,
+                                  onThumbnailSelected: (selectedIndex) {
+                                    _scrollController
+                                        ?.scrollToIndex(selectedIndex);
+                                    _pageController?.jumpToPage(selectedIndex);
+                                    _currentPageCubit?.emit(selectedIndex);
+                                  },
+                                  selectedIndexBloc: _currentPageCubit!)
+                              : ReaderThumbnail(
+                                  thumbnailUrl: thumbnailPath,
+                                  width: _DEFAULT_THUMBNAIL_WIDTH,
+                                  height: _DEFAULT_THUMBNAIL_HEIGHT,
+                                  thumbnailIndex: index,
+                                  onThumbnailSelected: (selectedIndex) {
+                                    _scrollController
+                                        ?.scrollToIndex(selectedIndex);
+                                    _pageController?.jumpToPage(selectedIndex);
+                                    _currentPageCubit?.emit(selectedIndex);
+                                  },
+                                  selectedIndexBloc: _currentPageCubit!),
                         );
                       }),
                   constraints:

@@ -1,16 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 
 class CoverImage extends StatefulWidget {
-  final String coverImageUrl;
-  final String backUpCoverImageUrl;
+  final Doujinshi doujinshi;
 
-  const CoverImage(
-      {Key? key,
-      required this.coverImageUrl,
-      required this.backUpCoverImageUrl})
-      : super(key: key);
+  const CoverImage({Key? key, required this.doujinshi}) : super(key: key);
 
   @override
   _CoverImageState createState() => _CoverImageState();
@@ -40,34 +38,52 @@ class _CoverImageState extends State<CoverImage> {
   @override
   Widget build(BuildContext context) {
     _startEternalScroll();
+    Doujinshi doujinshi = widget.doujinshi;
     return Container(
       child: SingleChildScrollView(
         physics: NeverScrollableScrollPhysics(),
         controller: _scrollController,
         child: Column(
           children: [
-            Image.network(
-              widget.coverImageUrl,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (
-                BuildContext context,
-                Object error,
-                StackTrace? stackTrace,
-              ) {
-                return Image.network(
-                  widget.backUpCoverImageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.asset(
-                      'images/ic_nothing_here_grey.png',
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    );
-                  },
-                );
-              },
-            )
+            doujinshi is DownloadedDoujinshi
+                ? Image.file(File(doujinshi.downloadedCover),
+                    width: double.infinity, fit: BoxFit.cover, errorBuilder: (
+                    BuildContext context,
+                    Object error,
+                    StackTrace? stackTrace,
+                  ) {
+                    return Image.file(File(doujinshi.downloadedBackupCover),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'images/ic_nothing_here_grey.png',
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      );
+                    });
+                  })
+                : Image.network(
+                    doujinshi.coverImage,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (
+                      BuildContext context,
+                      Object error,
+                      StackTrace? stackTrace,
+                    ) {
+                      return Image.network(
+                        doujinshi.backUpCoverImage,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'images/ic_nothing_here_grey.png',
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      );
+                    },
+                  )
           ],
         ),
       ),

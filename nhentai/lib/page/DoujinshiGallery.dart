@@ -225,7 +225,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   Widget _getTitle() {
     TextEditingController editingController = TextEditingController();
     TextStyle searchTextStyle = TextStyle(
-        fontFamily: Constant.REGULAR, fontSize: 16, color: Constant.mainColor);
+        fontFamily: Constant.REGULAR, fontSize: 14, color: Constant.mainColor);
     return Row(
       children: [
         Expanded(
@@ -377,7 +377,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
             child: NumberPageIndicesList(
                 numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
-                onPagePressed: this._goToPage),
+                onPageSelected: this._goToPage),
           ),
           height: 40,
         ),
@@ -394,6 +394,4 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       ],
     );
   }
-
-  void trackSearch(String searchTerm) {}
 }

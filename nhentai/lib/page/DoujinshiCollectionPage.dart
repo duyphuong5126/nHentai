@@ -186,7 +186,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
             child: NumberPageIndicesList(
                 numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
-                onPagePressed: this._goToPage),
+                onPageSelected: this._goToPage),
             height: 40,
           ),
         ),

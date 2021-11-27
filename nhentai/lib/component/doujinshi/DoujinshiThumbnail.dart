@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
@@ -5,6 +6,7 @@ import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/custom_widget/TriangleBackgroundWidget.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
+import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
@@ -111,25 +113,39 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                                     color: Constant.mainColor,
                                   ),
                                 )
-                              : Image.network(
-                                  doujinshi.thumbnailImage,
-                                  height: double.infinity,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (BuildContext context,
-                                      Object error, StackTrace? stackTrace) {
-                                    return Container(
-                                      color: Constant.getNothingColor(),
-                                      padding: EdgeInsets.all(5),
-                                      child: Image.asset(
+                              : doujinshi is DownloadedDoujinshi
+                                  ? Image.file(
+                                      File(doujinshi.downloadedThumbnail),
+                                      height: double.infinity,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Image.asset(
                                         Constant.IMAGE_NOTHING,
-                                        height: double.infinity,
-                                        width: double.infinity,
                                         fit: BoxFit.fitWidth,
                                       ),
+                                    )
+                                  : Image.network(
+                                      doujinshi.thumbnailImage,
+                                      height: double.infinity,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (BuildContext context,
+                                          Object error,
+                                          StackTrace? stackTrace) {
+                                        return Container(
+                                          color: Constant.getNothingColor(),
+                                          padding: EdgeInsets.all(5),
+                                          child: Image.asset(
+                                            Constant.IMAGE_NOTHING,
+                                            height: double.infinity,
+                                            width: double.infinity,
+                                            fit: BoxFit.fitWidth,
+                                          ),
+                                        );
+                                      },
                                     );
-                                  },
-                                );
                         }),
                     Row(
                       children: [
@@ -219,21 +235,33 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                                     color: Constant.mainColor,
                                   ),
                                 )
-                              : Image.network(
-                                  doujinshi.thumbnailImage,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (BuildContext context,
-                                      Object error, StackTrace? stackTrace) {
-                                    return Container(
-                                      color: Constant.getNothingColor(),
-                                      padding: EdgeInsets.all(5),
-                                      child: Image.asset(
+                              : doujinshi is DownloadedDoujinshi
+                                  ? Image.file(
+                                      File(doujinshi.downloadedThumbnail),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Image.asset(
                                         Constant.IMAGE_NOTHING,
-                                        fit: BoxFit.cover,
+                                        fit: BoxFit.fitWidth,
                                       ),
+                                    )
+                                  : Image.network(
+                                      doujinshi.thumbnailImage,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (BuildContext context,
+                                          Object error,
+                                          StackTrace? stackTrace) {
+                                        return Container(
+                                          color: Constant.getNothingColor(),
+                                          padding: EdgeInsets.all(5),
+                                          child: Image.asset(
+                                            Constant.IMAGE_NOTHING,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        );
+                                      },
                                     );
-                                  },
-                                );
                         }),
                     Row(
                       children: [
