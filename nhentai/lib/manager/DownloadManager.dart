@@ -21,8 +21,9 @@ class DownloadManager {
       {required Doujinshi doujinshi,
       Function(int doujinshiId)? onPending,
       Function()? onDownloadStarted,
-      Function(int doujinshiId)? onFinished}) async {
-    if (onFinished != null) {
+      Function(int doujinshiId)? onFinished}) {
+    if (onFinished != null && !_finishDownloadObservers.contains(onFinished)) {
+      print('DownloadManager: adding onFinishObserver $onFinished');
       _finishDownloadObservers.add(onFinished);
     }
     DoujinshiDownloadProgress currentProgress = downloadProgressCubit.state;
@@ -45,7 +46,7 @@ class DownloadManager {
     DownloadDoujinshiUseCase _downloadDoujinshiUseCase =
         DownloadDoujinshiUseCaseImpl();
     int progress = 0;
-    int total = doujinshi.fullSizePageUrlList.length + 2;
+    int total = doujinshi.fullSizePageUrlList.length + 3;
     _downloadDoujinshiUseCase.execute(doujinshi).listen((savedPageLocalPath) {
       print(
           'DownloadManager: doujinshi ${doujinshi.id} - savedPageLocalPath=$savedPageLocalPath');
@@ -66,34 +67,43 @@ class DownloadManager {
     }, onDone: () async {
       print('DownloadManager: downloaded doujinshi ${doujinshi.id}');
       await Future.delayed(Duration(seconds: 1), () {
+        progress++;
         DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
             doujinshiId: doujinshi.id,
             pagesDownloadProgress: (progress / total),
             isFailed: false,
-            isFinished: true));
-
-        print('DownloadManager: observers=${_finishDownloadObservers.length}');
-        _finishDownloadObservers
-            .forEach((onFinishObserver) => onFinishObserver.call(doujinshi.id));
-        _finishDownloadObservers.clear();
-
-        DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
-            doujinshiId: -1,
-            pagesDownloadProgress: 0,
-            isFailed: false,
             isFinished: false));
-
-        if (_downloadQueue.isNotEmpty) {
-          try {
-            Doujinshi nextDoujinshi = _downloadQueue.removeFirst();
-            print('DownloadManager: next doujinshi ${nextDoujinshi.id}');
-            downloadDoujinshi(doujinshi: nextDoujinshi);
-          } catch (error) {
+      }).then((value) => Future.delayed(Duration(seconds: 1), () {
+            DownloadManager.downloadProgressCubit.emit(
+                DoujinshiDownloadProgress(
+                    doujinshiId: doujinshi.id,
+                    pagesDownloadProgress: (progress / total),
+                    isFailed: false,
+                    isFinished: true));
             print(
-                'DownloadManager: failed to start download next doujinshi with error $error');
-          }
-        }
-      });
+                'DownloadManager: observers=${_finishDownloadObservers.length}');
+            _finishDownloadObservers.forEach(
+                (onFinishObserver) => onFinishObserver.call(doujinshi.id));
+            _finishDownloadObservers.clear();
+
+            DownloadManager.downloadProgressCubit.emit(
+                DoujinshiDownloadProgress(
+                    doujinshiId: -1,
+                    pagesDownloadProgress: 0,
+                    isFailed: false,
+                    isFinished: false));
+
+            if (_downloadQueue.isNotEmpty) {
+              try {
+                Doujinshi nextDoujinshi = _downloadQueue.removeFirst();
+                print('DownloadManager: next doujinshi ${nextDoujinshi.id}');
+                downloadDoujinshi(doujinshi: nextDoujinshi);
+              } catch (error) {
+                print(
+                    'DownloadManager: failed to start download next doujinshi with error $error');
+              }
+            }
+          }));
     });
   }
 
