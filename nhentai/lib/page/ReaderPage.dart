@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -7,6 +8,7 @@ import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/usecase/StoreReadDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
@@ -381,38 +383,51 @@ class _ReaderPageState extends State<ReaderPage>
       _pageController = PageController(initialPage: startPageIndex);
     }
     onPageVisible(startPageIndex);
+    List<String> pageUrlList = doujinshi is DownloadedDoujinshi
+        ? doujinshi.downloadedPathList
+        : doujinshi.fullSizePageUrlList;
     return PageView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: doujinshi.fullSizePageUrlList.length,
+        itemCount: pageUrlList.length,
         reverse: reserve,
         controller: _pageController,
         onPageChanged: onPageVisible,
         itemBuilder: (BuildContext c, int index) {
+          print('ReaderPage: horizontal - ${pageUrlList[index]}');
           Widget pageWidget = Container(
-            child: CachedNetworkImage(
-              imageUrl: doujinshi.fullSizePageUrlList[index],
-              errorWidget: (context, url, error) => Image.asset(
-                Constant.IMAGE_NOTHING,
-                fit: BoxFit.fitWidth,
-              ),
-              fit: BoxFit.fitWidth,
-              placeholder: (BuildContext context, String url) {
-                return Container(
-                  color: Colors.transparent,
-                  child: Center(
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                          fontSize: 24,
-                          fontFamily: Constant.BOLD,
-                          color: Colors.white),
+            child: doujinshi is DownloadedDoujinshi
+                ? Image.file(
+                    File(pageUrlList[index]),
+                    fit: BoxFit.fitWidth,
+                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                      Constant.IMAGE_NOTHING,
+                      fit: BoxFit.fitWidth,
                     ),
+                  )
+                : CachedNetworkImage(
+                    imageUrl: pageUrlList[index],
+                    errorWidget: (context, url, error) => Image.asset(
+                      Constant.IMAGE_NOTHING,
+                      fit: BoxFit.fitWidth,
+                    ),
+                    fit: BoxFit.fitWidth,
+                    placeholder: (BuildContext context, String url) {
+                      return Container(
+                        color: Colors.transparent,
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                                fontSize: 24,
+                                fontFamily: Constant.BOLD,
+                                color: Colors.white),
+                          ),
+                        ),
+                        constraints:
+                            BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
+                      );
+                    },
                   ),
-                  constraints:
-                      BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
-                );
-              },
-            ),
           );
           return BlocBuilder(
               bloc: _isCensoredCubit,
@@ -440,10 +455,14 @@ class _ReaderPageState extends State<ReaderPage>
     _scrollController =
         AutoScrollController(initialScrollOffset: initialScrollOffset);
     _pageController = null;
+    List<String> pageUrlList = doujinshi is DownloadedDoujinshi
+        ? doujinshi.downloadedPathList
+        : doujinshi.fullSizePageUrlList;
     return ListView.builder(
       controller: _scrollController,
-      itemCount: doujinshi.fullSizePageUrlList.length,
+      itemCount: pageUrlList.length,
       itemBuilder: (BuildContext buildContext, int index) {
+        print('ReaderPage: vertical - ${pageUrlList[index]}');
         return AutoScrollTag(
           key: ValueKey(index),
           controller: _scrollController!,
@@ -469,30 +488,42 @@ class _ReaderPageState extends State<ReaderPage>
                           margin: EdgeInsets.only(bottom: 10),
                         )
                       : Container(
-                          child: CachedNetworkImage(
-                            imageUrl: doujinshi.fullSizePageUrlList[index],
-                            errorWidget: (context, url, error) => Image.asset(
-                              Constant.IMAGE_NOTHING,
-                              fit: BoxFit.fitWidth,
-                            ),
-                            fit: BoxFit.fitWidth,
-                            placeholder: (BuildContext context, String url) {
-                              return Container(
-                                color: Colors.transparent,
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                        fontSize: 24,
-                                        fontFamily: Constant.BOLD,
-                                        color: Colors.white),
+                          child: doujinshi is DownloadedDoujinshi
+                              ? Image.file(
+                                  File(pageUrlList[index]),
+                                  fit: BoxFit.fitWidth,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Image.asset(
+                                    Constant.IMAGE_NOTHING,
+                                    fit: BoxFit.fitWidth,
                                   ),
+                                )
+                              : CachedNetworkImage(
+                                  imageUrl: pageUrlList[index],
+                                  errorWidget: (context, url, error) =>
+                                      Image.asset(
+                                    Constant.IMAGE_NOTHING,
+                                    fit: BoxFit.fitWidth,
+                                  ),
+                                  fit: BoxFit.fitWidth,
+                                  placeholder:
+                                      (BuildContext context, String url) {
+                                    return Container(
+                                      color: Colors.transparent,
+                                      child: Center(
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: TextStyle(
+                                              fontSize: 24,
+                                              fontFamily: Constant.BOLD,
+                                              color: Colors.white),
+                                        ),
+                                      ),
+                                      constraints: BoxConstraints.expand(
+                                          height: _DEFAULT_ITEM_HEIGHT),
+                                    );
+                                  },
                                 ),
-                                constraints: BoxConstraints.expand(
-                                    height: _DEFAULT_ITEM_HEIGHT),
-                              );
-                            },
-                          ),
                           margin: EdgeInsets.only(bottom: 10),
                         );
                 }),

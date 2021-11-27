@@ -52,8 +52,8 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
 
   int _recentlyReadCount = 0;
   int _favoriteCount = 0;
-  int numOfPages = 0;
-  int currentPage = -1;
+  int _numOfPages = 0;
+  int _currentPage = -1;
   Map<int, List<Doujinshi>> doujinshiMap = {};
 
   StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
@@ -242,7 +242,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   }
 
   void _goToPage(int page) {
-    if (page < 0 || (page > 0 && page >= numOfPages)) {
+    if (page < 0 || (page > 0 && page >= _numOfPages)) {
     } else {
       _changeToPage(page);
       _scrollController.jumpTo(0);
@@ -251,8 +251,8 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
 
   void _changeToPage(int page) async {
     if (doujinshiMap.containsKey(page)) {
-      currentPage = page;
-      doujinshiMap[currentPage] = doujinshiMap[page]!;
+      _currentPage = page;
+      doujinshiMap[_currentPage] = doujinshiMap[page]!;
 
       _doujinshiListCubit.emit(_getCurrentPage());
       _pageIndicatorCubit.emit(_pageIndicator());
@@ -262,9 +262,9 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
               DoujinshiCollectionType.Recent
           ? await _getRecentlyReadDoujinshiListUseCase.execute(page, _PER_PAGE)
           : await _getFavoriteDoujinshiListUseCase.execute(page, _PER_PAGE);
-      currentPage = page;
-      numOfPages = doujinshiList.numPages;
-      doujinshiMap[currentPage] = doujinshiList.result;
+      _currentPage = page;
+      _numOfPages = doujinshiList.numPages;
+      doujinshiMap[_currentPage] = doujinshiList.result;
 
       _doujinshiListCubit.emit(_getCurrentPage());
       _numOfPagesCubit.emit(doujinshiList.numPages);
@@ -274,7 +274,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   }
 
   List<Doujinshi> _getCurrentPage() {
-    List<Doujinshi>? doujinshiList = doujinshiMap[currentPage];
+    List<Doujinshi>? doujinshiList = doujinshiMap[_currentPage];
     return doujinshiList != null ? doujinshiList : [];
   }
 
@@ -285,16 +285,16 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
         _collectionTypeCubit.state == DoujinshiCollectionType.Recent
             ? 'recently read'
             : 'favorite';
-    if (numOfPages <= 0) {
+    if (_numOfPages <= 0) {
       pageIndicator = 'No $collectionLabel doujinshi';
     } else if (currentPageSize <= 0) {
-      pageIndicator = 'Page ${currentPage + 1}/$numOfPages';
+      pageIndicator = 'Page ${_currentPage + 1}/$_numOfPages';
     } else if (currentPageSize <= 1) {
       pageIndicator =
-          'Page ${currentPage + 1}/$numOfPages - One $collectionLabel doujinshi';
+          'Page ${_currentPage + 1}/$_numOfPages - One $collectionLabel doujinshi';
     } else {
       pageIndicator =
-          'Page ${currentPage + 1}/$numOfPages - $currentPageSize $collectionLabel doujinshis';
+          'Page ${_currentPage + 1}/$_numOfPages - $currentPageSize $collectionLabel doujinshis';
     }
     return pageIndicator;
   }
@@ -310,8 +310,8 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   }
 
   void _resetCollection() {
-    numOfPages = 0;
-    currentPage = -1;
+    _numOfPages = 0;
+    _currentPage = -1;
     doujinshiMap.clear();
     _scrollController.jumpTo(0);
     _numOfPagesCubit.emit(0);

@@ -22,6 +22,7 @@ import 'package:nhentai/component/doujinshi/TagsSection.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiDownloadProgress.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
+import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
@@ -197,35 +198,37 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _itemList.add(SizedBox(
       height: 10,
     ));
+    List<Widget> favoriteDownloadRow = [];
+    favoriteDownloadRow.add(BlocBuilder(
+        bloc: _isFavoriteCubit,
+        builder: (BuildContext b, bool isFavorite) {
+          return FavoriteToggleButton(
+            favoriteCount: doujinshi.numFavorites,
+            isFavorite: isFavorite,
+            onPressed: () {
+              bool newFavoriteStatus = !isFavorite;
+              if (newFavoriteStatus) {
+                AnalyticsUtils.addFavorite(doujinshi.id);
+              } else {
+                AnalyticsUtils.removeFavorite(doujinshi.id);
+              }
+              _updateFavoriteStatus(doujinshi, newFavoriteStatus);
+            },
+          );
+        }));
+    favoriteDownloadRow.add(SizedBox(
+      width: 10,
+    ));
+    if (!(doujinshi is DownloadedDoujinshi)) {
+      favoriteDownloadRow.add(DownloadButton(
+        onPressed: () {
+          DownloadManager.downloadDoujinshi(doujinshi);
+        },
+      ));
+    }
     _itemList.add(Row(
       mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        BlocBuilder(
-            bloc: _isFavoriteCubit,
-            builder: (BuildContext b, bool isFavorite) {
-              return FavoriteToggleButton(
-                favoriteCount: doujinshi.numFavorites,
-                isFavorite: isFavorite,
-                onPressed: () {
-                  bool newFavoriteStatus = !isFavorite;
-                  if (newFavoriteStatus) {
-                    AnalyticsUtils.addFavorite(doujinshi.id);
-                  } else {
-                    AnalyticsUtils.removeFavorite(doujinshi.id);
-                  }
-                  _updateFavoriteStatus(doujinshi, newFavoriteStatus);
-                },
-              );
-            }),
-        SizedBox(
-          width: 10,
-        ),
-        DownloadButton(
-          onPressed: () {
-            DownloadManager.downloadDoujinshi(doujinshi);
-          },
-        )
-      ],
+      children: favoriteDownloadRow,
     ));
     _itemList.add(BlocBuilder(
         bloc: DownloadManager.downloadProgressCubit,

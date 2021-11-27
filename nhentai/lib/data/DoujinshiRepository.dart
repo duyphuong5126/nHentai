@@ -4,6 +4,8 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/entity/DoujinshiResult.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
+import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
+import 'package:nhentai/domain/entity/DownloadedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:rxdart/rxdart.dart';
@@ -33,6 +35,11 @@ abstract class DoujinshiRepository {
   Future<DoujinshiList> getFavoriteDoujinshiList(int page, int perPage);
 
   Stream<String> downloadDoujinshi(Doujinshi doujinshi);
+
+  Future<int> getDownloadedDoujinshiCount();
+
+  Future<DownloadedDoujinshiList> getDownloadedDoujinshis(
+      int page, int perPage);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -152,6 +159,27 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
           print(
               'DoujinshiRepository: could not download doujinshi ${doujinshi.id}, error: $error');
         });
+  }
+
+  @override
+  Future<int> getDownloadedDoujinshiCount() {
+    return _local.getDownloadedDoujinshiCount();
+  }
+
+  @override
+  Future<DownloadedDoujinshiList> getDownloadedDoujinshis(
+      int page, int perPage) async {
+    List<DownloadedDoujinshi> downloadedList =
+        await _local.getDownloadedDoujinshis(page * perPage, perPage);
+    int downloadedDoujinshiCount = await _local.getDownloadedDoujinshiCount();
+    int pageSize =
+        downloadedDoujinshiCount > perPage ? perPage : downloadedDoujinshiCount;
+    int numPages = downloadedDoujinshiCount ~/ perPage;
+    if (downloadedDoujinshiCount % perPage > 0) {
+      numPages++;
+    }
+    return DownloadedDoujinshiList(
+        result: downloadedList, numPages: numPages, perPage: pageSize);
   }
 
   Stream<String> _downloadPage(int doujinshiId, String pageUrl) {

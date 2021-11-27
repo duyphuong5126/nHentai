@@ -210,6 +210,32 @@ class DoujinshiDatabase {
     }
   }
 
+  Future<int> getDownloadedDoujinshiCount() async {
+    int result = 0;
+    await _openDataBase();
+    result = Sqflite.firstIntValue(await _database!.rawQuery(
+            'select count($_DOUJINSHI_ID) from $_DOUJINSHI_TABLE where $_IS_DOWNLOADED_DOUJINSHI = 1')) ??
+        0;
+    return result;
+  }
+
+  Future<List<Doujinshi>> getDownloadedDoujinshis(int skip, int take) async {
+    List<Doujinshi> resultList = [];
+    await _openDataBase();
+    List<Map> recentlyReadDoujinshisList = await _database!.query(
+        _DOUJINSHI_TABLE,
+        columns: [_DOUJINSHI_JSON],
+        where: '$_IS_DOWNLOADED_DOUJINSHI = 1',
+        orderBy: '$_UPDATED_TIME desc',
+        offset: skip,
+        limit: take);
+    recentlyReadDoujinshisList.forEach((doujinshiMap) {
+      String doujinshiJson = doujinshiMap[_DOUJINSHI_JSON];
+      resultList.add(Doujinshi.fromJson(jsonDecode(doujinshiJson)));
+    });
+    return resultList;
+  }
+
   Future<int> _insertDoujinshi(Doujinshi doujinshi,
       {int lastReadPageIndex = -1,
       bool isFavorite = false,
