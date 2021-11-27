@@ -24,7 +24,8 @@ abstract class DoujinshiRemoteDataSource {
 }
 
 class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
-  static const int REQUEST_TIME_OUT = 10;
+  static const int REQUEST_TIME_OUT = 30;
+  static const int FILE_FETCHING_TIME_OUT = 90;
 
   @override
   Future<DoujinshiList> fetchDoujinshiList(
@@ -118,7 +119,7 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
       File localFile = File(filePath);
 
       return Rx.fromCallable(() => get(Uri.parse(pageUrl))
-          .timeout(Duration(seconds: REQUEST_TIME_OUT))).flatMap((remoteFile) {
+          .timeout(Duration(seconds: FILE_FETCHING_TIME_OUT))).flatMap((remoteFile) {
         print(
             'DoujinshiRemoteDataSource: pageUrl=$pageUrl - file size=${remoteFile.bodyBytes.length}');
         return Rx.fromCallable(
