@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/component/ConfirmationAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/DownloadedReaderThumbnail.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
@@ -15,6 +16,7 @@ import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:share/share.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class ReaderPage extends StatefulWidget {
@@ -102,7 +104,7 @@ class _ReaderPageState extends State<ReaderPage>
           )),
           Positioned.fill(
               child: Align(
-            child: _buildReaderHeader(doujinshi.title.english),
+            child: _buildReaderHeader(doujinshi),
             alignment: Alignment.topLeft,
           )),
           Positioned.fill(
@@ -148,40 +150,49 @@ class _ReaderPageState extends State<ReaderPage>
     }
   }
 
-  Widget _buildReaderHeader(String doujinshiTitle) {
+  Widget _buildReaderHeader(Doujinshi doujinshi) {
     return SlideTransition(
       position: _topSlideAnimation,
       child: Container(
         child: Row(
           children: [
-            Container(
-              child: IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  },
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 25,
-                  )),
+            Padding(
+              child: Material(
+                color: Colors.transparent,
+                child: IconButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 25,
+                    )),
+              ),
               padding: EdgeInsets.symmetric(horizontal: 5),
             ),
             Expanded(
                 child: Marquee(
-              text: doujinshiTitle,
+              text: doujinshi.title.english,
               style: TextStyle(
                   fontFamily: Constant.ITALIC,
                   fontSize: 20,
                   color: Colors.white),
             )),
-            Container(
-              child: IconButton(
-                  onPressed: () {},
-                  icon: Icon(
-                    Icons.share,
-                    color: Colors.white,
-                    size: 25,
-                  )),
+            Padding(
+              child: Material(
+                color: Colors.transparent,
+                child: IconButton(
+                    onPressed: () {
+                      Share.share(doujinshi.shareUrl,
+                          subject: doujinshi.title.pretty);
+                    },
+                    icon: Icon(
+                      Icons.share,
+                      color: Colors.white,
+                      size: 25,
+                    )),
+              ),
               padding: EdgeInsets.symmetric(horizontal: 5),
             )
           ],
@@ -255,14 +266,17 @@ class _ReaderPageState extends State<ReaderPage>
                 ),
                 Row(
                   children: [
-                    Container(
-                      child: IconButton(
-                          onPressed: () {},
-                          icon: Icon(
-                            Icons.refresh,
-                            color: Colors.white,
-                            size: 25,
-                          )),
+                    Padding(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: IconButton(
+                            onPressed: () => _showBookMarkComingSoonDialog(),
+                            icon: Icon(
+                              Icons.bookmark,
+                              color: Colors.white,
+                              size: 25,
+                            )),
+                      ),
                       padding: EdgeInsets.symmetric(horizontal: 5),
                     ),
                     Expanded(
@@ -292,27 +306,30 @@ class _ReaderPageState extends State<ReaderPage>
                       },
                     )),
                     Container(
-                      child: IconButton(
-                          onPressed: () {
-                            Radius topCornersRadius = Radius.circular(10);
-                            showModalBottomSheet(
-                                enableDrag: false,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: topCornersRadius,
-                                        topRight: topCornersRadius)),
-                                backgroundColor: Constant.grey4D4D4D,
-                                barrierColor: Colors.transparent,
-                                context: context,
-                                builder: (context) {
-                                  return _buildSettingsBottomSheet();
-                                });
-                          },
-                          icon: Icon(
-                            Icons.settings,
-                            color: Colors.white,
-                            size: 25,
-                          )),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: IconButton(
+                            onPressed: () {
+                              Radius topCornersRadius = Radius.circular(10);
+                              showModalBottomSheet(
+                                  enableDrag: false,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: topCornersRadius,
+                                          topRight: topCornersRadius)),
+                                  backgroundColor: Constant.grey4D4D4D,
+                                  barrierColor: Colors.transparent,
+                                  context: context,
+                                  builder: (context) {
+                                    return _buildSettingsBottomSheet();
+                                  });
+                            },
+                            icon: Icon(
+                              Icons.settings,
+                              color: Colors.white,
+                              size: 25,
+                            )),
+                      ),
                       padding: EdgeInsets.symmetric(horizontal: 5),
                     )
                   ],
@@ -333,9 +350,6 @@ class _ReaderPageState extends State<ReaderPage>
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     return BlocBuilder(
-        buildWhen: (ReaderType prevType, ReaderType newType) {
-          return newType != prevType;
-        },
         bloc: _readerTypeCubit,
         builder: (BuildContext c, ReaderType readerType) {
           Widget readerBody = (readerType == ReaderType.TopDown)
@@ -641,5 +655,20 @@ class _ReaderPageState extends State<ReaderPage>
           style: TextStyle(
               fontFamily: Constant.BOLD, fontSize: 16, color: itemColor),
         ));
+  }
+
+  void _showBookMarkComingSoonDialog() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return ConfirmationAlertDialog(
+              title: 'Coming soon',
+              content:
+                  'The bookmark feature will be available soon. Stay tuned.',
+              confirmLabel: 'OK',
+              confirmAction: () {
+                print('Bookmark feature coming soon message is confirmed');
+              });
+        });
   }
 }

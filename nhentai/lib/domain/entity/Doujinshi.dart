@@ -20,6 +20,7 @@ class Doujinshi {
   List<String> fullSizePageUrlList = [];
   String backUpCoverImage = '';
   String languageIcon = '';
+  String shareUrl = '';
 
   Doujinshi(
       {required this.id,
@@ -84,6 +85,7 @@ class Doujinshi {
         (element) => element.name.toLowerCase() == Constant.CHINESE_LANG)) {
       languageIcon = Constant.IMAGE_LANG_CN;
     }
+    shareUrl = '${Constant.NHENTAI_HOME}/g/$id/';
   }
 
   Map<String, dynamic> toJson() {
