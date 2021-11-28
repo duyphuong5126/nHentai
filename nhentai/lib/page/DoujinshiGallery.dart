@@ -11,11 +11,15 @@ import 'package:nhentai/component/DoujinshiGridGallery.dart';
 import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/component/SortOptionList.dart';
+import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/entity/SearchHistory.dart';
+import 'package:nhentai/domain/entity/SearchHistoryItem.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
+import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:nhentai/support/Extensions.dart';
 import 'package:nhentai/component/DefaultSectionLabel.dart';
 
@@ -26,6 +30,9 @@ class DoujinshiGallery extends StatefulWidget {
 
 class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   static const String HINT = 'nakadashi';
+  static const double SUGGESTION_MAX_HEIGHT = 500.0;
+  static const double SUGGESTION_WIDTH = 220.0;
+
   final GetDoujinshiListUseCase _getBookListByPage =
       new GetDoujinshiListUseCaseImpl();
 
@@ -44,6 +51,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
 
   final ScrollController _scrollController = ScrollController();
+
+  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
+
+  late SearchHistory _searchHistory;
 
   int numOfPages = 0;
   int itemCountPerPage = 0;
@@ -104,6 +115,44 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     return pageIndicator;
   }
 
+  void _saveSearchHistory(String searchTerm) async {
+    if (_searchHistory.history
+        .any((historyItem) => historyItem.match(searchTerm))) {
+      _searchHistory.history.forEach((historyItem) {
+        if (historyItem.match(searchTerm)) {
+          historyItem.increaseSearchTimes();
+          return;
+        }
+      });
+    } else {
+      _searchHistory.prependSearchTerm(searchTerm);
+      bool saveResult =
+          await _preferenceManager.saveSearchHistory(_searchHistory);
+      print('Test>>> result of saving search term $searchTerm: $saveResult');
+    }
+  }
+
+  void _deleteSearchHistory(String searchTerm) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return YesNoActionsAlertDialog(
+              title: 'Delete this suggestion',
+              content: 'Do you want to remove the suggestion "$searchTerm"?',
+              yesLabel: 'Yes',
+              noLabel: 'No',
+              yesAction: () async {
+                _searchHistory.history.removeWhere(
+                    (historyItem) => historyItem.match(searchTerm));
+                bool saveResult =
+                    await _preferenceManager.saveSearchHistory(_searchHistory);
+                print(
+                    'Test>>> result of saving search term $searchTerm: $saveResult');
+              },
+              noAction: () {});
+        });
+  }
+
   void _onSearchTermChanged(String newTerm) {
     if (newTerm != _searchTerm) {
       _scrollController.jumpTo(0);
@@ -115,6 +164,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       selectedPageHolder.data = 0;
       _goToPage(0);
       if (newTerm.isNotEmpty) {
+        _saveSearchHistory(newTerm);
         AnalyticsUtils.search(newTerm);
       }
     }
@@ -139,9 +189,15 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     _refreshStatusesSignalCubit.emit(true);
   }
 
+  void _initSearchHistory() async {
+    _searchHistory = await _preferenceManager.getSearchHistory();
+    print('Test>>> _searchHistory=$_searchHistory');
+  }
+
   @override
   void initState() {
     super.initState();
+    _initSearchHistory();
     _changeToPage(0);
   }
 
@@ -223,7 +279,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   Widget _getTitle() {
-    TextEditingController editingController = TextEditingController();
+    TextEditingController? editingController;
     TextStyle searchTextStyle = TextStyle(
         fontFamily: Constant.REGULAR, fontSize: 14, color: Constant.mainColor);
     return Row(
@@ -234,7 +290,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
               InkResponse(
                 highlightColor: Colors.transparent,
                 onTap: () {
-                  editingController.clear();
+                  editingController?.clear();
                   _onSearchTermChanged('');
                 },
                 child: SvgPicture.asset(
@@ -259,27 +315,123 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           child: Container(
                         height: 35,
                         margin: EdgeInsets.only(left: 10),
-                        child: TextField(
-                          controller: editingController,
-                          decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'e.g. tag: "$HINT"',
-                              hintStyle: searchTextStyle,
-                              contentPadding: EdgeInsets.only(bottom: 10)),
-                          style: searchTextStyle,
-                          maxLines: 1,
-                          textInputAction: TextInputAction.search,
-                          onSubmitted: (searchText) {
-                            String searchTerm =
-                                searchText.isNotEmpty ? searchText : HINT;
-                            _onSearchTermChanged(searchTerm);
+                        child: RawAutocomplete<SearchHistoryItem>(
+                          displayStringForOption: (historyItem) =>
+                              historyItem.toString(),
+                          optionsBuilder: (TextEditingValue text) {
+                            String searchTerm = text.text;
+                            if (searchTerm.isEmpty) {
+                              return const [];
+                            }
+                            return _searchHistory.history.where((historyItem) {
+                              return historyItem.match(searchTerm);
+                            });
+                          },
+                          onSelected: (historyItem) {
+                            _onSearchTermChanged(historyItem.searchTerm);
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            print('Test>>> options=${options.length}');
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Container(
+                                constraints: BoxConstraints(
+                                    maxHeight: SUGGESTION_MAX_HEIGHT),
+                                padding: EdgeInsets.symmetric(horizontal: 5),
+                                color: Colors.white,
+                                width: SUGGESTION_WIDTH,
+                                child: ListView.separated(
+                                    shrinkWrap: true,
+                                    separatorBuilder: (context, int index) =>
+                                        Divider(
+                                          color: Constant.grey4D4D4D,
+                                        ),
+                                    padding: EdgeInsets.zero,
+                                    itemCount: options.length,
+                                    itemBuilder: (context, int index) {
+                                      SearchHistoryItem option =
+                                          options.elementAt(index);
+                                      return Container(
+                                        color: Colors.white,
+                                        margin:
+                                            EdgeInsets.symmetric(horizontal: 5),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Expanded(
+                                                child: GestureDetector(
+                                              child: RichText(
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
+                                                text: TextSpan(
+                                                    style: TextStyle(
+                                                        fontFamily:
+                                                            Constant.REGULAR,
+                                                        fontSize: 14,
+                                                        color: Constant
+                                                            .grey4D4D4D),
+                                                    children: [
+                                                      TextSpan(
+                                                          text:
+                                                              option.toString())
+                                                    ]),
+                                              ),
+                                              onTap: () => onSelected(option),
+                                            )),
+                                            GestureDetector(
+                                              child: Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 20,
+                                                    horizontal: 10),
+                                                child: Icon(Icons.close,
+                                                    size: 14,
+                                                    color: Constant.grey4D4D4D),
+                                              ),
+                                              onTap: () {
+                                                _deleteSearchHistory(
+                                                    option.searchTerm);
+                                                onSelected(SearchHistoryItem(
+                                                    searchTerm: '',
+                                                    searchTimes: 0));
+                                              },
+                                            )
+                                          ],
+                                        ),
+                                      );
+                                    }),
+                              ),
+                            );
+                          },
+                          fieldViewBuilder: (BuildContext context,
+                              TextEditingController textEditingController,
+                              FocusNode focusNode,
+                              VoidCallback onFieldSubmitted) {
+                            editingController = textEditingController;
+                            return TextField(
+                              focusNode: focusNode,
+                              controller: textEditingController,
+                              decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: 'e.g. tag: "$HINT"',
+                                  hintStyle: searchTextStyle,
+                                  contentPadding: EdgeInsets.only(bottom: 10)),
+                              style: searchTextStyle,
+                              maxLines: 1,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: (searchText) {
+                                String searchTerm =
+                                    searchText.isNotEmpty ? searchText : HINT;
+                                _onSearchTermChanged(searchTerm);
+                              },
+                            );
                           },
                         ),
                       )),
                       Container(
                         child: IconButton(
                           onPressed: () {
-                            editingController.clear();
+                            editingController?.clear();
                             _onSearchTermChanged('');
                           },
                           padding: EdgeInsets.all(0),
@@ -293,10 +445,13 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       Container(
                         child: IconButton(
                           onPressed: () {
-                            String searchTerm =
-                                editingController.text.isNotEmpty
-                                    ? editingController.text
-                                    : HINT;
+                            String searchTerm = '';
+                            String? editingSearchTerm = editingController?.text;
+                            if (editingSearchTerm != null) {
+                              searchTerm = editingSearchTerm.isNotEmpty
+                                  ? editingSearchTerm
+                                  : HINT;
+                            }
                             _onSearchTermChanged(searchTerm);
                             context.closeSoftKeyBoard();
                           },

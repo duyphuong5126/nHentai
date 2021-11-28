@@ -53,6 +53,7 @@ class YesNoActionsAlertDialog extends StatelessWidget {
               bottomRight: Radius.circular(20))),
       content: RichText(
         maxLines: 10,
+        textAlign: TextAlign.center,
         text: TextSpan(
             text: content,
             style: TextStyle(

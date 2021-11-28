@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:nhentai/domain/entity/SearchHistory.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -5,6 +7,7 @@ class SharedPreferenceManager {
   static const String _READER_TYPE = 'reader_type';
   static const String _READER_TRANSPARENCY = 'reader_transparency';
   static const String _CENSORED = 'censored';
+  static const String _SEARCH_HISTORY = 'search_history';
 
   Future<ReaderType> getReaderType() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
@@ -35,5 +38,19 @@ class SharedPreferenceManager {
   Future<bool> saveCensored(bool isCensored) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     return sharedPreferences.setBool(_CENSORED, isCensored);
+  }
+
+  Future<SearchHistory> getSearchHistory() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    String rawHistory = sharedPreferences.getString(_SEARCH_HISTORY) ?? '';
+    return rawHistory.isNotEmpty
+        ? SearchHistory.fromJson(jsonDecode(rawHistory))
+        : SearchHistory(history: []);
+  }
+
+  Future<bool> saveSearchHistory(SearchHistory history) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.setString(
+        _SEARCH_HISTORY, jsonEncode(history.toJson()));
   }
 }
