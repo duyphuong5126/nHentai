@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:core';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -99,6 +100,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   @override
   Widget build(BuildContext context) {
+    Future.delayed(Duration(milliseconds: 1)).then((value) =>
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Colors.black,
+            systemStatusBarContrastEnforced: true)));
+
     _initCensoredStatus();
     Doujinshi doujinshi =
         ModalRoute.of(context)?.settings.arguments as Doujinshi;

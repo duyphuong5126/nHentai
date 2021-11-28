@@ -205,7 +205,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   Widget build(BuildContext context) {
     Future.delayed(Duration(milliseconds: 1)).then((value) =>
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-            statusBarColor: Constant.mainDarkColor,
+            statusBarColor: Colors.black,
             systemStatusBarContrastEnforced: true)));
     return Scaffold(
       appBar: AppBar(
@@ -276,6 +276,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     _sortOptionCubit.dispose();
     _loadingCubit.dispose();
     _refreshStatusesSignalCubit.dispose();
+    _scrollController.dispose();
   }
 
   Widget _getTitle() {
@@ -497,6 +498,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
         BlocBuilder(
             bloc: _searchTermCubit,
             builder: (BuildContext c, String searchTerm) {
+              if (searchTerm.isNotEmpty) {
+                Future.delayed(Duration(seconds: 1))
+                    .then((value) => _scrollController.jumpTo(0));
+              }
               return Visibility(
                 child: Container(
                   child: SortOptionList(
