@@ -43,6 +43,8 @@ abstract class DoujinshiRepository {
 
   Stream<bool> deleteDownloadedDoujinshi(
       DownloadedDoujinshi downloadedDoujinshi);
+
+  Stream<Doujinshi> getDoujinshi(int doujinshiId);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -190,6 +192,23 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
   Stream<bool> deleteDownloadedDoujinshi(
       DownloadedDoujinshi downloadedDoujinshi) {
     return _local.deleteDownloadedDoujinshi(downloadedDoujinshi);
+  }
+
+  @override
+  Stream<Doujinshi> getDoujinshi(int doujinshiId) {
+    return Rx.fromCallable(() => _remote.fetchDoujinshi(doujinshiId))
+        .flatMap((doujinshiResult) {
+      if (doujinshiResult is Success) {
+        return Stream.value(doujinshiResult.doujinshi);
+      }
+      if (doujinshiResult is Error) {
+        Exception? exception = doujinshiResult.exception;
+        return exception != null
+            ? Stream.error(exception)
+            : Stream.error(NullThrownError());
+      }
+      return Stream.empty();
+    });
   }
 
   Stream<String> _downloadPage(int doujinshiId, String pageUrl) {

@@ -18,6 +18,7 @@ import 'package:nhentai/domain/entity/SearchHistory.dart';
 import 'package:nhentai/domain/entity/SearchHistoryItem.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
+import 'package:nhentai/domain/usecase/GetDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:nhentai/support/Extensions.dart';
@@ -35,6 +36,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   final GetDoujinshiListUseCase _getBookListByPage =
       new GetDoujinshiListUseCaseImpl();
+  final GetDoujinshiUseCase _getDoujinshiUseCase = GetDoujinshiUseCaseImpl();
 
   final DataCubit<int> _numOfPagesCubit = DataCubit<int>(-1);
   final DataCubit<List<Doujinshi>> _doujinshiListCubit =
@@ -59,12 +61,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   int numOfPages = 0;
   int itemCountPerPage = 0;
   int currentPage = -1;
-  Map<int, List<Doujinshi>> doujinshiMap = {};
+  Map<int, List<Doujinshi>> _doujinshiMap = {};
 
   void _changeToPage(int page) async {
-    if (doujinshiMap.containsKey(page)) {
+    if (_doujinshiMap.containsKey(page)) {
       currentPage = page;
-      doujinshiMap[currentPage] = doujinshiMap[page]!;
+      _doujinshiMap[currentPage] = _doujinshiMap[page]!;
 
       _doujinshiListCubit.emit(_getCurrentPage());
       _pageIndicatorCubit.emit(_pageIndicator());
@@ -75,7 +77,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       currentPage = page;
       numOfPages = doujinshiList.numPages;
       itemCountPerPage = doujinshiList.perPage;
-      doujinshiMap[currentPage] = doujinshiList.result;
+      _doujinshiMap[currentPage] = doujinshiList.result;
 
       _doujinshiListCubit.emit(_getCurrentPage());
       _numOfPagesCubit.emit(doujinshiList.numPages);
@@ -85,12 +87,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   List<Doujinshi> _getCurrentPage() {
-    List<Doujinshi>? doujinshiList = doujinshiMap[currentPage];
+    List<Doujinshi>? doujinshiList = _doujinshiMap[currentPage];
     return doujinshiList != null ? doujinshiList : [];
   }
 
   void _goToPage(int page) {
-    if (page >= 0 && page < numOfPages) {
+    if ((page >= 0 && page < numOfPages) || (page == 0 && numOfPages == 0)) {
       _changeToPage(page);
       _scrollController.jumpTo(0);
     }
@@ -153,10 +155,26 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
         });
   }
 
+  void _searchDoujinshi(int doujinshiId) async {
+    _loadingCubit.emit(true);
+    _getDoujinshiUseCase.execute(doujinshiId).listen((doujinshi) {
+      _openDoujinshi(doujinshi);
+      _loadingCubit.emit(false);
+    }, onError: (error, stackTrace) {
+      print('Failed to get doujinshi $doujinshiId with error $error');
+      _loadingCubit.emit(false);
+    }, onDone: () => _loadingCubit.emit(false));
+  }
+
   void _onSearchTermChanged(String newTerm) {
-    if (newTerm != _searchTerm) {
+    print('Test>> newTerm=$newTerm, _searchTerm=$_searchTerm');
+    int? doujinshiId = int.tryParse(newTerm);
+    if (doujinshiId != null) {
+      _searchDoujinshi(doujinshiId);
+      _saveSearchHistory(newTerm);
+    } else if (newTerm != _searchTerm) {
       _scrollController.jumpTo(0);
-      doujinshiMap.clear();
+      _doujinshiMap.clear();
       _sortOption = SortOption.MostRecent;
       _sortOptionCubit.emit(_sortOption);
       _searchTerm = newTerm;
@@ -172,7 +190,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   void _onSortOptionSelected(SortOption newSortOption) {
     if (newSortOption != _sortOption && _searchTerm.isNotEmpty) {
-      doujinshiMap.clear();
+      _doujinshiMap.clear();
       _sortOption = newSortOption;
       selectedPageHolder.data = 0;
       _goToPage(0);
@@ -293,6 +311,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 onTap: () {
                   editingController?.clear();
                   _onSearchTermChanged('');
+                  context.closeSoftKeyBoard();
                 },
                 child: SvgPicture.asset(
                   Constant.IMAGE_LOGO,
