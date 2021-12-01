@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/StateHolder.dart';
 import 'package:nhentai/analytics/AnalyticsUtils.dart';
+import 'package:nhentai/bloc/DataCubit.dart';
+import 'package:nhentai/domain/entity/masterdata/Version.dart';
 import 'package:nhentai/page/DoujinshiGallery.dart';
 import 'package:nhentai/page/DownloadPage.dart';
 import 'package:nhentai/page/DoujinshiCollectionPage.dart';
@@ -12,8 +15,13 @@ class HomePage extends StatefulWidget {
   static const int DEFAULT_TAB_INDEX = 0;
 
   final StateHolder<String> homeTabNameHolder;
+  final DataCubit<Version?> newVersionCubit;
 
-  const HomePage({Key? key, required this.homeTabNameHolder}) : super(key: key);
+  const HomePage(
+      {Key? key,
+      required this.homeTabNameHolder,
+      required this.newVersionCubit})
+      : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -22,10 +30,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = HomePage.DEFAULT_TAB_INDEX;
 
+  StreamSubscription? _snackBarUrlSubscription;
+
   @override
   void initState() {
     super.initState();
     widget.homeTabNameHolder.data = 'DoujinshiGallery';
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _snackBarUrlSubscription?.cancel();
+    _snackBarUrlSubscription = null;
   }
 
   void _onTabSelected(int index) {
@@ -62,6 +79,26 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    _snackBarUrlSubscription =
+        widget.newVersionCubit.stream.listen((newVersion) {
+      if (newVersion == null) {
+        return;
+      }
+      SnackBar snackBar = SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 5),
+        content: Text(
+          'Version ${newVersion.appVersionCode} is available',
+          style: TextStyle(
+              color: Colors.white, fontFamily: Constant.BOLD, fontSize: 15),
+        ),
+        action: SnackBarAction(
+          label: 'Details',
+          onPressed: () => _onTabSelected(3),
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    });
     return Scaffold(
       body: IndexedStack(
         children: [

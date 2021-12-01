@@ -23,6 +23,7 @@ import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:nhentai/support/Extensions.dart';
 import 'package:nhentai/component/DefaultSectionLabel.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class DoujinshiGallery extends StatefulWidget {
   @override
@@ -53,6 +54,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   StateHolder<int> selectedPageHolder = StateHolder<int>(data: 0);
 
   final ScrollController _scrollController = ScrollController();
+  final RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
 
   final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
 
@@ -84,6 +87,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _pageIndicatorCubit.emit(_pageIndicator());
       _loadingCubit.emit(false);
     }
+    Future.delayed(Duration(seconds: 2))
+        .then((value) => _refreshController.refreshCompleted());
   }
 
   List<Doujinshi> _getCurrentPage() {
@@ -188,6 +193,16 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     }
   }
 
+  void _onRefreshGallery() async {
+    _scrollController.jumpTo(0);
+    _doujinshiMap.clear();
+    _sortOption = SortOption.MostRecent;
+    _sortOptionCubit.emit(_sortOption);
+    _searchTermCubit.emit(_searchTerm);
+    selectedPageHolder.data = 0;
+    _goToPage(0);
+  }
+
   void _onSortOptionSelected(SortOption newSortOption) {
     if (newSortOption != _sortOption && _searchTerm.isNotEmpty) {
       _doujinshiMap.clear();
@@ -237,7 +252,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
               child: Align(
             alignment: Alignment.topLeft,
             child: Container(
-              child: _getBodyWidget(),
+              child: SmartRefresher(
+                enablePullDown: true,
+                controller: _refreshController,
+                child: _getBodyWidget(),
+                onRefresh: this._onRefreshGallery,
+              ),
               color: Colors.black,
             ),
           )),
