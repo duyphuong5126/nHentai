@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
@@ -51,13 +52,12 @@ class _PreviewThumbnailSeeMoreState extends State<PreviewThumbnailSeeMore> {
                             width: double.infinity,
                             color: Constant.grey4D4D4D,
                           )
-                        : Image.network(
-                            widget.thumbnailUrl,
+                        : CachedNetworkImage(
+                            imageUrl: widget.thumbnailUrl,
                             height: double.infinity,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (BuildContext context, Object error,
-                                StackTrace? stackTrace) {
+                            errorWidget: (context, url, error) {
                               return Container(
                                 color: Constant.getNothingColor(),
                                 padding: EdgeInsets.all(5),

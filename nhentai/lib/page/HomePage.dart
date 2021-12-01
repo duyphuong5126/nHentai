@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/StateHolder.dart';
 import 'package:nhentai/analytics/AnalyticsUtils.dart';
@@ -46,6 +47,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onTabSelected(int index) {
+    Color statusBarColor = index == 0 ? Colors.black : Constant.mainDarkColor;
+    Future.delayed(Duration(milliseconds: 1)).then((value) =>
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: statusBarColor,
+            systemStatusBarContrastEnforced: true)));
     setState(() {
       _selectedIndex = index;
       switch (index) {

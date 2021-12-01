@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
@@ -62,19 +63,15 @@ class _CoverImageState extends State<CoverImage> {
                       );
                     });
                   })
-                : Image.network(
-                    doujinshi.coverImage,
+                : CachedNetworkImage(
+                    imageUrl: doujinshi.coverImage,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (
-                      BuildContext context,
-                      Object error,
-                      StackTrace? stackTrace,
-                    ) {
-                      return Image.network(
-                        doujinshi.backUpCoverImage,
+                    errorWidget: (context, url, error) {
+                      return CachedNetworkImage(
+                        imageUrl: doujinshi.backUpCoverImage,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorWidget: (context, url, error) {
                           return Image.asset(
                             'images/ic_nothing_here_grey.png',
                             width: double.infinity,

@@ -236,10 +236,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(milliseconds: 1)).then((value) =>
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-            statusBarColor: Colors.black,
-            systemStatusBarContrastEnforced: true)));
     return Scaffold(
       appBar: AppBar(
         title: _getTitle(),

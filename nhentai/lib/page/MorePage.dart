@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nhentai/Constant.dart';
@@ -58,10 +57,6 @@ class _MorePageState extends State<MorePage> {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(milliseconds: 1)).then((value) =>
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-            statusBarColor: Constant.mainDarkColor,
-            systemStatusBarContrastEnforced: true)));
     _initCensoredStatus();
     _initPackageInfo();
     _initActiveVersion();

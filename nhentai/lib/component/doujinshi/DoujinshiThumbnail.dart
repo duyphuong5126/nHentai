@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:nhentai/Constant.dart';
@@ -126,14 +127,12 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                                         fit: BoxFit.fitWidth,
                                       ),
                                     )
-                                  : Image.network(
-                                      doujinshi.thumbnailImage,
+                                  : CachedNetworkImage(
+                                      imageUrl: doujinshi.thumbnailImage,
                                       height: double.infinity,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (BuildContext context,
-                                          Object error,
-                                          StackTrace? stackTrace) {
+                                      errorWidget: (context, url, error) {
                                         return Container(
                                           color: Constant.getNothingColor(),
                                           padding: EdgeInsets.all(5),
@@ -246,12 +245,10 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                                         fit: BoxFit.fitWidth,
                                       ),
                                     )
-                                  : Image.network(
-                                      doujinshi.thumbnailImage,
+                                  : CachedNetworkImage(
+                                      imageUrl: doujinshi.thumbnailImage,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (BuildContext context,
-                                          Object error,
-                                          StackTrace? stackTrace) {
+                                      errorWidget: (context, url, error) {
                                         return Container(
                                           color: Constant.getNothingColor(),
                                           padding: EdgeInsets.all(5),

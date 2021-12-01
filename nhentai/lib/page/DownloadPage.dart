@@ -58,10 +58,6 @@ class _DownloadPageState extends State<DownloadPage> {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(milliseconds: 1)).then((value) =>
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-            statusBarColor: Constant.mainDarkColor,
-            systemStatusBarContrastEnforced: true)));
     _initDoujinshiCollection();
     return Scaffold(
       appBar: AppBar(
@@ -193,6 +189,10 @@ class _DownloadPageState extends State<DownloadPage> {
     await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
     _initDoujinshiCollection();
+    Future.delayed(Duration(milliseconds: 1)).then((value) =>
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Constant.mainDarkColor,
+            systemStatusBarContrastEnforced: true)));
   }
 
   void _goToPage(int page) {
