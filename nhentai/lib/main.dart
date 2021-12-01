@@ -19,7 +19,7 @@ void _initActiveVersion(DataCubit<Version?> newVersionCubit) async {
   _getActiveVersionUseCase.execute().listen((activeVersion) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     print(
-        'active version=${activeVersion.appVersionCode}, installed version=${packageInfo.version}');
+        'Active version=${activeVersion.appVersionCode}, installed version=${packageInfo.version}');
     if (packageInfo.version != activeVersion.appVersionCode) {
       newVersionCubit.emit(activeVersion);
     }

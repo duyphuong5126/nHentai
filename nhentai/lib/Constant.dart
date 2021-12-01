@@ -45,6 +45,7 @@ class Constant {
   static Color grey767676 = Color.fromARGB(255, 118, 118, 118);
   static Color grey1f1f1f = Color.fromARGB(255, 31, 31, 31);
   static Color black96000000 = Color.fromARGB(150, 0, 0, 0);
+  static Color mainColorTransparent = Color.fromARGB(150, 237, 37, 83);
   static Color mainColor = Color.fromARGB(255, 237, 37, 83);
   static Color mainDarkColor = Color.fromARGB(255, 109, 0, 25);
   static Color blue0673B7 = Color.fromARGB(255, 6, 115, 183);

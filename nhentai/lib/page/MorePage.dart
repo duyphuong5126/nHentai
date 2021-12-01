@@ -134,6 +134,10 @@ class _MorePageState extends State<MorePage> {
                               ),
                             )),
                             Switch(
+                                thumbColor: MaterialStateProperty.resolveWith(
+                                    (states) => _getSwitchThumbColor(states)),
+                                trackColor: MaterialStateProperty.resolveWith(
+                                    (states) => _getSwitchTrackColor(states)),
                                 value: isCensored,
                                 onChanged: _setCensoredStatus)
                           ],
@@ -185,5 +189,25 @@ class _MorePageState extends State<MorePage> {
         ),
       ),
     );
+  }
+
+  Color _getSwitchThumbColor(Set<MaterialState> states) {
+    Set<MaterialState> interactiveStates = <MaterialState>{
+      MaterialState.selected
+    };
+
+    return states.any(interactiveStates.contains)
+        ? Constant.mainColor
+        : Colors.white;
+  }
+
+  Color _getSwitchTrackColor(Set<MaterialState> states) {
+    Set<MaterialState> interactiveStates = <MaterialState>{
+      MaterialState.selected
+    };
+
+    return states.any(interactiveStates.contains)
+        ? Constant.mainColorTransparent
+        : Colors.grey;
   }
 }

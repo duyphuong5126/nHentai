@@ -45,43 +45,62 @@ class _TagsSectionState extends State<TagsSection> {
           direction: Axis.horizontal,
           children: List.generate(tagList.length, (index) {
             Tag tag = tagList[index];
-            return GestureDetector(
-              onTap: () {
-                widget.onTagSelected(tag);
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                child: RichText(
-                  text: TextSpan(children: [
-                    TextSpan(
-                      text: '${tag.name}',
-                      style: TextStyle(
-                          fontFamily: Constant.BOLD,
-                          fontSize: 14,
-                          color: Colors.white),
-                    ),
-                    WidgetSpan(
-                        child: SizedBox(
-                      width: 3,
-                    )),
-                    TextSpan(
-                      text:
-                          '(${tag.count >= 100000 ? compactFormat.format(tag.count) : decimalFormat.format(tag.count)})',
-                      style: TextStyle(
-                          fontFamily: Constant.BOLD,
-                          fontSize: 14,
-                          color: Constant.grey767676),
-                    ),
-                  ]),
-                ),
+            return Material(
+              color: Colors.transparent,
+              child: Ink(
                 decoration: BoxDecoration(
                     color: Constant.grey4D4D4D,
                     borderRadius: BorderRadius.all(Radius.circular(3))),
+                child: InkWell(
+                  onTap: () {
+                    widget.onTagSelected(tag);
+                  },
+                  borderRadius: BorderRadius.all(Radius.circular(3)),
+                  overlayColor: MaterialStateProperty.resolveWith(
+                      (states) => _getBackgroundColor(states)),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    child: RichText(
+                      text: TextSpan(children: [
+                        TextSpan(
+                          text: '${tag.name}',
+                          style: TextStyle(
+                              fontFamily: Constant.BOLD,
+                              fontSize: 14,
+                              color: Colors.white),
+                        ),
+                        WidgetSpan(
+                            child: SizedBox(
+                          width: 3,
+                        )),
+                        TextSpan(
+                          text:
+                              '(${tag.count >= 100000 ? compactFormat.format(tag.count) : decimalFormat.format(tag.count)})',
+                          style: TextStyle(
+                              fontFamily: Constant.BOLD,
+                              fontSize: 14,
+                              color: Constant.grey767676),
+                        ),
+                      ]),
+                    ),
+                  ),
+                ),
               ),
             );
           }),
         ))
       ],
     );
+  }
+
+  Color _getBackgroundColor(Set<MaterialState> states) {
+    Set<MaterialState> interactiveStates = <MaterialState>{
+      MaterialState.pressed,
+      MaterialState.selected
+    };
+
+    return states.any(interactiveStates.contains)
+        ? Constant.mainDarkColor
+        : Constant.grey4D4D4D;
   }
 }
