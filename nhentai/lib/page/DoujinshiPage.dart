@@ -220,6 +220,19 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _itemList.add(DateTimeSection(
       timeMillis: doujinshi.uploadDate * 1000,
     ));
+    int artistCount = doujinshi.tags
+        .where((tag) => tag.type.trim().toLowerCase() == 'artist')
+        .length;
+    if (artistCount > 0) {
+      _itemList.add(SizedBox(
+        height: 10,
+      ));
+      _itemList.add(Text(
+        'Please support ${artistCount > 1 ? 'these artists' : 'this artist'}',
+        style: TextStyle(
+            fontFamily: Constant.REGULAR, fontSize: 16, color: Colors.white),
+      ));
+    }
     _itemList.add(SizedBox(
       height: 10,
     ));

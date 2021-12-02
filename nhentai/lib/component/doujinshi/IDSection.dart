@@ -51,6 +51,7 @@ class _IDSectionState extends State<IDSection> {
                     .then((_) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       behavior: SnackBarBehavior.floating,
+                      backgroundColor: Constant.mainColor,
                       duration: Duration(seconds: 5),
                       content: Text('Doujinshi ID was copied to clipboard',
                           style: TextStyle(
