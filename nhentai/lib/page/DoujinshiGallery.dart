@@ -213,6 +213,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _openDoujinshi(Doujinshi doujinshi) async {
+    context.closeSoftKeyBoard();
     AnalyticsUtils.openDoujinshi(doujinshi.id);
     final openDoujinshiResult = await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);

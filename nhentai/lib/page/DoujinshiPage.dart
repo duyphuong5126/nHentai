@@ -536,6 +536,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   void _onDownloadFinished(int downloadedDoujinshiId, bool isFailed) {
     if (_doujinshiId >= 0 && _doujinshiId == downloadedDoujinshiId) {
+      String title = isFailed ? 'Download failed' : 'Download finished';
       String content = isFailed
           ? 'Could not download this doujinshi'
           : 'This doujinshi was downloaded successfully, you can read it in offline. Go to Home -> Download tab to find it.';
@@ -543,7 +544,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           context: context,
           builder: (context) {
             return ConfirmationAlertDialog(
-                title: 'Download finished',
+                title: title,
                 content: content,
                 confirmLabel: 'OK',
                 confirmAction: () {

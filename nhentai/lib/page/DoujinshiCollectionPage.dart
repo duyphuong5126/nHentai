@@ -18,6 +18,7 @@ import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiListUseCase.dart'
 import 'package:nhentai/page/uimodel/DoujinshiCollectionType.dart';
 import 'package:nhentai/component/DefaultScreenTitle.dart';
 import 'package:nhentai/component/DefaultSectionLabel.dart';
+import 'package:nhentai/support/Extensions.dart';
 
 class DoujinshiCollectionPage extends StatefulWidget {
   const DoujinshiCollectionPage({Key? key}) : super(key: key);
@@ -231,6 +232,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   }
 
   void _openDoujinshi(Doujinshi doujinshi) async {
+    context.closeSoftKeyBoard();
     AnalyticsUtils.openDoujinshi(doujinshi.id);
     await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
