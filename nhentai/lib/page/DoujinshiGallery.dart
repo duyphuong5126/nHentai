@@ -173,6 +173,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   void _onSearchTermChanged(String newTerm) {
     print('Test>> newTerm=$newTerm, _searchTerm=$_searchTerm');
+    context.closeSoftKeyBoard();
     int? doujinshiId = int.tryParse(newTerm);
     if (doujinshiId != null) {
       _searchDoujinshi(doujinshiId);
