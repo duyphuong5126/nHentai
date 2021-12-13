@@ -577,7 +577,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 selectedPageIndexHolder: selectedPageHolder,
                 onPageSelected: this._goToPage),
           ),
-          height: 40,
         ),
         BlocBuilder(
             bloc: _loadingCubit,

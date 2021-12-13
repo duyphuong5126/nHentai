@@ -184,7 +184,6 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
                 numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
                 onPageSelected: this._goToPage),
-            height: 40,
           ),
         ),
         BlocBuilder(

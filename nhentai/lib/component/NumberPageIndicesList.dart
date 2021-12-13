@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nhentai/Constant.dart';
 import 'package:nhentai/StateHolder.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/NumberPageIndex.dart';
@@ -33,6 +34,9 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
   VoidCallback? _visibleRangeObserver;
   final DataCubit<bool> _backwardButtonsVisibility = DataCubit(false);
   final DataCubit<bool> _forwardButtonsVisibility = DataCubit(false);
+  final DataCubit<bool> _pageNumberTextFieldVisibility = DataCubit(false);
+  final TextEditingController _pageNumberInputController =
+      TextEditingController();
 
   void _doInitialScroll() async {
     Future.delayed(Duration(microseconds: 500), () {
@@ -64,157 +68,239 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
           _visibleRangeObserver = () {
             Iterable<int> indices = _positionsListener.itemPositions.value
                 .map((itemPosition) => itemPosition.index);
+            bool isFirstIndexVisible = indices.contains(0);
+            bool isLastIndexVisible = indices.contains(numOfPages - 1);
             _backwardButtonsVisibility
-                .emit(!indices.contains(0) && numOfPages > 0);
+                .emit(!isFirstIndexVisible && numOfPages > 0);
             _forwardButtonsVisibility
-                .emit(!indices.contains(numOfPages - 1) && numOfPages > 0);
+                .emit(!isLastIndexVisible && numOfPages > 0);
+            _pageNumberTextFieldVisibility.emit(numOfPages > 0 &&
+                (!isFirstIndexVisible || !isLastIndexVisible));
           };
           _positionsListener.itemPositions.addListener(_visibleRangeObserver!);
-          return Visibility(
-            child: Row(
-              children: [
-                BlocBuilder(
-                    bloc: _backwardButtonsVisibility,
-                    builder: (context, bool isVisible) {
-                      return Visibility(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Ink(
-                            child: InkWell(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 5.0, right: 5.0),
-                                child: Icon(
-                                  Icons.first_page,
-                                  size: 25,
-                                  color: Colors.white,
+          return Container(
+            child: Visibility(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 40,
+                    child: Row(
+                      children: [
+                        BlocBuilder(
+                            bloc: _backwardButtonsVisibility,
+                            builder: (context, bool isVisible) {
+                              return Visibility(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Ink(
+                                    child: InkWell(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 5.0, right: 5.0),
+                                        child: Icon(
+                                          Icons.first_page,
+                                          size: 25,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      onTap: () => _gotoPage(0),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              onTap: () => _gotoPage(0),
-                            ),
-                          ),
-                        ),
-                        visible: isVisible,
-                      );
-                    }),
-                BlocBuilder(
-                    bloc: _backwardButtonsVisibility,
-                    builder: (context, bool isVisible) {
-                      return Visibility(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Ink(
-                            child: InkWell(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 5.0, right: 5.0),
-                                child: Icon(
-                                  Icons.navigate_before,
-                                  size: 25,
-                                  color: Colors.white,
+                                visible: isVisible,
+                              );
+                            }),
+                        BlocBuilder(
+                            bloc: _backwardButtonsVisibility,
+                            builder: (context, bool isVisible) {
+                              return Visibility(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Ink(
+                                    child: InkWell(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 5.0, right: 5.0),
+                                        child: Icon(
+                                          Icons.navigate_before,
+                                          size: 25,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        int selectedPage =
+                                            _selectedPageIndexCubit.state;
+                                        if (selectedPage > 0) {
+                                          _gotoPage(selectedPage - 1);
+                                        }
+                                      },
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              onTap: () {
-                                int selectedPage =
-                                    _selectedPageIndexCubit.state;
-                                if (selectedPage > 0) {
-                                  _gotoPage(selectedPage - 1);
-                                }
-                              },
-                            ),
+                                visible: isVisible,
+                              );
+                            }),
+                        Expanded(
+                            child: Center(
+                          child: ScrollablePositionedList.builder(
+                            shrinkWrap: true,
+                            itemScrollController: _listScrollController,
+                            itemPositionsListener: _positionsListener,
+                            scrollDirection: Axis.horizontal,
+                            itemCount: numOfPages >= 0 ? numOfPages : 0,
+                            itemBuilder: (context, index) {
+                              Key? key;
+                              if (!isIndexItemKeySet) {
+                                isIndexItemKeySet = true;
+                                key = _indexItemKey;
+                                _doInitialScroll();
+                              }
+                              return NumberPageIndex(
+                                key: key,
+                                pageIndex: index,
+                                initialSelectedPageIndex:
+                                    widget.selectedPageIndexHolder.data,
+                                selectedPageIndexCubit: _selectedPageIndexCubit,
+                                onPagePressed: (selectedPage) {
+                                  widget.selectedPageIndexHolder.data =
+                                      selectedPage;
+                                  _selectedPageIndexCubit.emit(selectedPage);
+                                  widget.onPageSelected(selectedPage);
+                                },
+                              );
+                            },
                           ),
-                        ),
-                        visible: isVisible,
-                      );
-                    }),
-                Expanded(
-                    child: Center(
-                  child: ScrollablePositionedList.builder(
-                    shrinkWrap: true,
-                    itemScrollController: _listScrollController,
-                    itemPositionsListener: _positionsListener,
-                    scrollDirection: Axis.horizontal,
-                    itemCount: numOfPages >= 0 ? numOfPages : 0,
-                    itemBuilder: (context, index) {
-                      Key? key;
-                      if (!isIndexItemKeySet) {
-                        isIndexItemKeySet = true;
-                        key = _indexItemKey;
-                        _doInitialScroll();
-                      }
-                      return NumberPageIndex(
-                        key: key,
-                        pageIndex: index,
-                        initialSelectedPageIndex:
-                            widget.selectedPageIndexHolder.data,
-                        selectedPageIndexCubit: _selectedPageIndexCubit,
-                        onPagePressed: (selectedPage) {
-                          widget.selectedPageIndexHolder.data = selectedPage;
-                          _selectedPageIndexCubit.emit(selectedPage);
-                          widget.onPageSelected(selectedPage);
-                        },
-                      );
-                    },
+                        )),
+                        BlocBuilder(
+                            bloc: _forwardButtonsVisibility,
+                            builder: (context, bool isVisible) {
+                              return Visibility(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Ink(
+                                    child: InkWell(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 5.0, right: 5.0),
+                                        child: Icon(
+                                          Icons.navigate_next,
+                                          size: 25,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        int selectedPage =
+                                            _selectedPageIndexCubit.state;
+                                        if (selectedPage >= 0 &&
+                                            selectedPage < numOfPages - 1) {
+                                          _gotoPage(selectedPage + 1);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                visible: isVisible,
+                              );
+                            }),
+                        BlocBuilder(
+                            bloc: _forwardButtonsVisibility,
+                            builder: (context, bool isVisible) {
+                              return Visibility(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Ink(
+                                    child: InkWell(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 5.0, right: 5.0),
+                                        child: Icon(
+                                          Icons.last_page,
+                                          size: 25,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      onTap: () => _gotoPage(numOfPages - 1),
+                                    ),
+                                  ),
+                                ),
+                                visible: isVisible,
+                              );
+                            })
+                      ],
+                    ),
                   ),
-                )),
-                BlocBuilder(
-                    bloc: _forwardButtonsVisibility,
-                    builder: (context, bool isVisible) {
-                      return Visibility(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Ink(
-                            child: InkWell(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 5.0, right: 5.0),
-                                child: Icon(
-                                  Icons.navigate_next,
-                                  size: 25,
-                                  color: Colors.white,
+                  BlocBuilder(
+                      bloc: _pageNumberTextFieldVisibility,
+                      builder: (context, bool isVisible) {
+                        return Visibility(
+                          child: Center(
+                            child: Container(
+                              margin: EdgeInsets.only(top: 10.0),
+                              width: 250,
+                              height: 40,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(20))),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      child: TextField(
+                                        controller: _pageNumberInputController,
+                                        keyboardType: TextInputType.number,
+                                        decoration: InputDecoration(
+                                            hintStyle: TextStyle(
+                                                color: Constant.grey1f1f1f,
+                                                fontFamily: Constant.REGULAR,
+                                                fontSize: 15),
+                                            border: InputBorder.none,
+                                            hintText: 'Page number'),
+                                        style: TextStyle(
+                                            color: Constant.grey1f1f1f,
+                                            fontFamily: Constant.REGULAR,
+                                            fontSize: 15),
+                                        onSubmitted: (text) {
+                                          _submitPageIndex(text, numOfPages);
+                                        },
+                                      ),
+                                      width: 150,
+                                      height: 60,
+                                    ),
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: Ink(
+                                        child: InkWell(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Icon(
+                                              Icons.arrow_forward,
+                                              size: 20,
+                                              color: Constant.grey1f1f1f,
+                                            ),
+                                          ),
+                                          onTap: () => _submitPageIndex(
+                                              _pageNumberInputController.text,
+                                              numOfPages),
+                                        ),
+                                      ),
+                                    )
+                                  ],
                                 ),
                               ),
-                              onTap: () {
-                                int selectedPage =
-                                    _selectedPageIndexCubit.state;
-                                if (selectedPage >= 0 &&
-                                    selectedPage < numOfPages - 1) {
-                                  _gotoPage(selectedPage + 1);
-                                }
-                              },
                             ),
                           ),
-                        ),
-                        visible: isVisible,
-                      );
-                    }),
-                BlocBuilder(
-                    bloc: _forwardButtonsVisibility,
-                    builder: (context, bool isVisible) {
-                      return Visibility(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Ink(
-                            child: InkWell(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 5.0, right: 5.0),
-                                child: Icon(
-                                  Icons.last_page,
-                                  size: 25,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              onTap: () => _gotoPage(numOfPages - 1),
-                            ),
-                          ),
-                        ),
-                        visible: isVisible,
-                      );
-                    })
-              ],
+                          visible: isVisible,
+                        );
+                      })
+                ],
+              ),
+              visible: numOfPages > 0,
             ),
-            visible: numOfPages > 0,
+            height: 100,
           );
         });
   }
@@ -223,6 +309,15 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
   void dispose() {
     super.dispose();
     _selectedPageIndexCubit.dispose();
+  }
+
+  void _submitPageIndex(String pageIndexText, int numOfPages) {
+    int? pageNumberData = int.tryParse(pageIndexText);
+    if (pageNumberData != null &&
+        pageNumberData > 0 &&
+        pageNumberData <= numOfPages) {
+      _gotoPage(pageNumberData - 1);
+    }
   }
 
   void _gotoPage(int pageIndex) {

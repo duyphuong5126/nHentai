@@ -148,7 +148,6 @@ class _DownloadPageState extends State<DownloadPage> {
                 numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
                 onPageSelected: this._goToPage),
-            height: 40,
           ),
         ),
         BlocBuilder(
