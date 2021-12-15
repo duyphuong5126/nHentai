@@ -23,6 +23,7 @@ class DownloadManager {
   static void downloadDoujinshi(
       {required Doujinshi doujinshi,
       Function(int doujinshiId)? onPending,
+      Function()? onDownloadDuplicated,
       Function()? onDownloadStarted,
       Function(int doujinshiId, bool isFailed)? onFinished}) {
     if (onFinished != null && !_finishDownloadObservers.contains(onFinished)) {
@@ -31,7 +32,7 @@ class DownloadManager {
     }
     DoujinshiDownloadProgress currentProgress = downloadProgressCubit.state;
     if (currentProgress.doujinshiId == doujinshi.id) {
-      onDownloadStarted?.call();
+      onDownloadDuplicated?.call();
       return;
     } else if (currentProgress.doujinshiId >= 0 &&
         currentProgress.pagesDownloadProgress > 0 &&
@@ -41,6 +42,7 @@ class DownloadManager {
       onPending?.call(currentProgress.doujinshiId);
       return;
     }
+    onDownloadStarted?.call();
     DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
         doujinshiId: doujinshi.id,
         pagesDownloadProgress: 0.0,

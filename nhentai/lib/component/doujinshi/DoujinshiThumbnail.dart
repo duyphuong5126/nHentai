@@ -75,13 +75,9 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
       )));
     }
     spans.add(TextSpan(text: doujinshi.title.english));
-    Widget thumbnail = widget.width != null && widget.height != null
+    return widget.width != null && widget.height != null
         ? _fixedSizeThumbnail(doujinshi, spans)
         : _unknownSizeThumbnail(doujinshi, spans);
-    return GestureDetector(
-      child: thumbnail,
-      onTap: () => widget.onDoujinshiSelected(doujinshi),
-    );
   }
 
   Widget _fixedSizeThumbnail(Doujinshi doujinshi, List<InlineSpan> titleSpans) {
@@ -197,7 +193,17 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                       ),
                       visible: isRecentlyRead || isFavorite,
                     );
-                  })
+                  }),
+              Positioned.fill(
+                  child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.all(Radius.circular(3)),
+                  highlightColor: Colors.white,
+                  splashColor: Colors.white,
+                  onTap: () => widget.onDoujinshiSelected(doujinshi),
+                ),
+              ))
             ],
           ),
         ),
@@ -311,7 +317,16 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                       ),
                       visible: isRecentlyRead || isFavorite,
                     );
-                  })
+                  }),
+              Positioned.fill(
+                  child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.all(Radius.circular(3)),
+                  splashColor: Colors.white,
+                  onTap: () => widget.onDoujinshiSelected(doujinshi),
+                ),
+              ))
             ],
           ),
         ));

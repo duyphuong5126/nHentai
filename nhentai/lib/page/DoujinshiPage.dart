@@ -262,8 +262,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         onPressed: () {
           DownloadManager.downloadDoujinshi(
               doujinshi: doujinshi,
+              onDownloadStarted: () => this._onDownloadStarted(doujinshi.id),
               onPending: this._onDownloadPending,
-              onDownloadStarted: this._onDownloadStarted,
+              onDownloadDuplicated: this._onDownloadDuplicated,
               onFinished: this._onDownloadFinished);
         },
       ));
@@ -520,13 +521,29 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         });
   }
 
-  void _onDownloadStarted() {
+  void _onDownloadDuplicated() {
     showDialog(
         context: context,
         builder: (context) {
           return ConfirmationAlertDialog(
-              title: 'Download started',
-              content: 'This doujinshi is being downloaded',
+              title: 'Download already started',
+              content:
+                  'This doujinshi is being downloaded. Please try again later.',
+              confirmLabel: 'OK',
+              confirmAction: () {
+                print('DoujinshiPage: download confirmation dialog was closed');
+              });
+        });
+  }
+
+  void _onDownloadStarted(int doujinshiId) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return ConfirmationAlertDialog(
+              title: 'Download in-progress',
+              content:
+                  'Started downloading doujinshi $doujinshiId, please be patient.',
               confirmLabel: 'OK',
               confirmAction: () {
                 print('DoujinshiPage: download confirmation dialog was closed');
