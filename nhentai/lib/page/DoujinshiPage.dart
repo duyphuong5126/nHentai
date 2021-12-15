@@ -72,6 +72,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
 
+  ScrollController? _scrollController;
+
   int _doujinshiId = -1;
 
   StreamSubscription? _deleteSubscription;
@@ -104,7 +106,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
             statusBarColor: Colors.black,
             systemStatusBarContrastEnforced: true)));
-
+    _scrollController = ScrollController();
     _initCensoredStatus();
     Doujinshi doujinshi =
         ModalRoute.of(context)?.settings.arguments as Doujinshi;
@@ -136,6 +138,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     DownloadManager.unsubscribeOnFinishObserver(this._onDownloadFinished);
     _deleteSubscription?.cancel();
     _deleteSubscription = null;
+    _scrollController?.dispose();
+    _scrollController = null;
   }
 
   Widget _generateDetailSections(Doujinshi doujinshi) {
@@ -427,6 +431,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                     doujinshiListCubit: _recommendedDoujinshiListCubit,
                     onDoujinshiSelected: (doujinshi) {
                       AnalyticsUtils.openDoujinshi(doujinshi.id);
+                      _scrollController?.jumpTo(0);
                       _doujinshiCubit.emit(doujinshi);
                     })
               ],
@@ -462,6 +467,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _getRecommendedList(doujinshi.id);
     _updateDoujinshiStatuses(doujinshi.id);
     return ListView(
+      controller: _scrollController,
       children: List.generate(_itemList.length, (index) {
         return _itemList[index];
       }),
