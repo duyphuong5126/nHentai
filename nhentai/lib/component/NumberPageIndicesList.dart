@@ -237,9 +237,10 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
                           child: Center(
                             child: Container(
                               margin: EdgeInsets.only(top: 10.0),
-                              width: 250,
+                              width: 220,
                               height: 40,
                               child: Container(
+                                padding: EdgeInsets.only(left: 10.0),
                                 decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius:
@@ -275,7 +276,7 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
                                       child: Ink(
                                         child: InkWell(
                                           child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
+                                            padding: const EdgeInsets.all(10.0),
                                             child: Icon(
                                               Icons.arrow_forward,
                                               size: 20,
