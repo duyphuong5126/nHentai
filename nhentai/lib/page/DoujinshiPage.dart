@@ -42,6 +42,7 @@ import 'package:nhentai/manager/DownloadManager.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class DoujinshiPage extends StatefulWidget {
   const DoujinshiPage({Key? key}) : super(key: key);
@@ -72,7 +73,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
 
-  ScrollController? _scrollController;
+  final ItemScrollController _listScrollController = ItemScrollController();
+  final ItemPositionsListener _positionsListener =
+      ItemPositionsListener.create();
 
   int _doujinshiId = -1;
 
@@ -106,7 +109,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
             statusBarColor: Colors.black,
             systemStatusBarContrastEnforced: true)));
-    _scrollController = ScrollController();
+
     _initCensoredStatus();
     Doujinshi doujinshi =
         ModalRoute.of(context)?.settings.arguments as Doujinshi;
@@ -138,8 +141,6 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     DownloadManager.unsubscribeOnFinishObserver(this._onDownloadFinished);
     _deleteSubscription?.cancel();
     _deleteSubscription = null;
-    _scrollController?.dispose();
-    _scrollController = null;
   }
 
   Widget _generateDetailSections(Doujinshi doujinshi) {
@@ -431,7 +432,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                     doujinshiListCubit: _recommendedDoujinshiListCubit,
                     onDoujinshiSelected: (doujinshi) {
                       AnalyticsUtils.openDoujinshi(doujinshi.id);
-                      _scrollController?.jumpTo(0);
+                      _listScrollController.scrollTo(
+                          index: 0, duration: Duration(milliseconds: 500));
                       _doujinshiCubit.emit(doujinshi);
                     })
               ],
@@ -466,11 +468,13 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     ));
     _getRecommendedList(doujinshi.id);
     _updateDoujinshiStatuses(doujinshi.id);
-    return ListView(
-      controller: _scrollController,
-      children: List.generate(_itemList.length, (index) {
+    return ScrollablePositionedList.builder(
+      itemScrollController: _listScrollController,
+      itemPositionsListener: _positionsListener,
+      itemCount: _itemList.length,
+      itemBuilder: (context, index) {
         return _itemList[index];
-      }),
+      },
     );
   }
 
