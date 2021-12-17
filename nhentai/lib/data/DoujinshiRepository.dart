@@ -7,6 +7,7 @@ import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
+import 'package:nhentai/domain/entity/comment/Comment.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -45,6 +46,8 @@ abstract class DoujinshiRepository {
       DownloadedDoujinshi downloadedDoujinshi);
 
   Stream<Doujinshi> getDoujinshi(int doujinshiId);
+
+  Stream<List<Comment>> getCommentList(int doujinshiId);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -209,6 +212,11 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
       }
       return Stream.empty();
     });
+  }
+
+  @override
+  Stream<List<Comment>> getCommentList(int doujinshiId) {
+    return _remote.getCommentList(doujinshiId);
   }
 
   Stream<String> _downloadPage(int doujinshiId, String pageUrl) {

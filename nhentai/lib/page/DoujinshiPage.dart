@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:core';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/analytics/AnalyticsUtils.dart';
@@ -32,8 +34,10 @@ import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
+import 'package:nhentai/domain/entity/comment/Comment.dart';
 import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
 import 'package:nhentai/domain/usecase/DeleteDownloadedDoujinshiUseCase.dart';
+import 'package:nhentai/domain/usecase/GetCommentListUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
@@ -54,6 +58,7 @@ class DoujinshiPage extends StatefulWidget {
 class _DoujinshiPageState extends State<DoujinshiPage> {
   late List<Widget> _itemList;
   late DataCubit<Doujinshi> _doujinshiCubit;
+  late DataCubit<List<Comment>> _commentListCubit;
   late DataCubit<int> _lastReadPageCubit = DataCubit(-1);
   late DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
       DataCubit([]);
@@ -69,13 +74,17 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       UpdateFavoriteDoujinshiUseCaseImpl();
   final DeleteDownloadedDoujinshiUseCase _deleteDownloadedDoujinshiUseCase =
       DeleteDownloadedDoujinshiUseCaseImpl();
+  final GetCommentListUseCase _getCommentListUseCase =
+      GetCommentListUseCaseImpl();
   late SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
+  late DataCubit<bool> _isFloatingActionButtonShown = DataCubit(false);
 
   final ItemScrollController _listScrollController = ItemScrollController();
   final ItemPositionsListener _positionsListener =
       ItemPositionsListener.create();
+  VoidCallback? _visibleRangeObserver;
 
   int _doujinshiId = -1;
 
@@ -103,6 +112,12 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _isCensoredCubit.emit(await _preferenceManager.isCensored());
   }
 
+  void _loadCommentList(int doujinshiId) async {
+    _getCommentListUseCase.execute(doujinshiId).listen((commentList) {
+      _commentListCubit.emit(commentList);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     Future.delayed(Duration(milliseconds: 1)).then((value) =>
@@ -113,8 +128,11 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _initCensoredStatus();
     Doujinshi doujinshi =
         ModalRoute.of(context)?.settings.arguments as Doujinshi;
-    _doujinshiCubit = DataCubit<Doujinshi>(doujinshi);
+    _doujinshiCubit = DataCubit(doujinshi);
     _doujinshiId = doujinshi.id;
+    _commentListCubit = DataCubit([]);
+
+    _loadCommentList(doujinshi.id);
 
     return Scaffold(
       body: SafeArea(
@@ -122,13 +140,36 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           child: BlocBuilder(
             bloc: _doujinshiCubit,
             builder: (BuildContext context, Doujinshi doujinshi) {
-              return _generateDetailSections(doujinshi);
+              return BlocBuilder(
+                  bloc: _commentListCubit,
+                  builder: (context, List<Comment> commentList) {
+                    return _generateDetailSections(doujinshi, commentList);
+                  });
             },
           ),
           padding: EdgeInsets.symmetric(horizontal: 10),
         ),
       ),
       backgroundColor: Constant.grey1f1f1f,
+      floatingActionButton: BlocBuilder(
+        bloc: _isFloatingActionButtonShown,
+        builder: (context, bool isVisible) {
+          return Visibility(
+            child: FloatingActionButton(
+              onPressed: () async {
+                _listScrollController.scrollTo(
+                    index: 0, duration: Duration(microseconds: 300));
+              },
+              backgroundColor: Constant.mainColor,
+              child: const Icon(
+                Icons.arrow_upward,
+                color: Colors.white,
+              ),
+            ),
+            visible: isVisible,
+          );
+        },
+      ),
     );
   }
 
@@ -143,7 +184,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _deleteSubscription = null;
   }
 
-  Widget _generateDetailSections(Doujinshi doujinshi) {
+  Widget _generateDetailSections(
+      Doujinshi doujinshi, List<Comment> commentList) {
     Map<String, List<Tag>> tagMap = {};
     doujinshi.tags.forEach((tag) {
       if (!tagMap.containsKey(tag.type)) {
@@ -435,6 +477,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                       _listScrollController.scrollTo(
                           index: 0, duration: Duration(milliseconds: 500));
                       _doujinshiCubit.emit(doujinshi);
+                      _loadCommentList(doujinshi.id);
                     })
               ],
             ),
@@ -463,9 +506,53 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         visible: doujinshi is DownloadedDoujinshi,
       ));
     }
-    _itemList.add(SizedBox(
-      height: 50,
-    ));
+
+    if (commentList.isNotEmpty) {
+      _itemList.add(SizedBox(
+        height: 15,
+      ));
+      int itemSizeWithoutComment = _itemList.length;
+      if (_visibleRangeObserver != null) {
+        _positionsListener.itemPositions.removeListener(_visibleRangeObserver!);
+        _visibleRangeObserver = null;
+      }
+      _visibleRangeObserver = () {
+        List<int> indices = _positionsListener.itemPositions.value
+            .map((itemPosition) => itemPosition.index)
+            .toList();
+        if (indices.isNotEmpty) {
+          int minimumIndex = indices.reduce(min);
+          _isFloatingActionButtonShown
+              .emit(minimumIndex > itemSizeWithoutComment);
+        }
+      };
+      _positionsListener.itemPositions.addListener(_visibleRangeObserver!);
+      NumberFormat decimalFormat = NumberFormat.decimalPattern();
+      NumberFormat compactFormat = NumberFormat.compact();
+      int commentCount = commentList.length;
+      _itemList.add(Text(
+        'Comment thread (${commentCount >= 100000 ? compactFormat.format(commentCount) : decimalFormat.format(commentCount)})',
+        style: TextStyle(
+            fontFamily: Constant.BOLD, fontSize: 18, color: Colors.white),
+      ));
+      _itemList.add(SizedBox(
+        height: 5,
+      ));
+      commentList.forEach((comment) {
+        DateFormat dateFormat = DateFormat('hh:mm aaa - EEE, MMM d, yyyy');
+        _itemList.add(_getCommentWidget(comment, dateFormat));
+        _itemList.add(SizedBox(
+          height: 10,
+        ));
+      });
+      _itemList.add(SizedBox(
+        height: 40,
+      ));
+    } else {
+      _itemList.add(SizedBox(
+        height: 50,
+      ));
+    }
     _getRecommendedList(doujinshi.id);
     _updateDoujinshiStatuses(doujinshi.id);
     return ScrollablePositionedList.builder(
@@ -619,5 +706,74 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                 });
           });
     });
+  }
+
+  Widget _getCommentWidget(Comment comment, DateFormat dateFormat) {
+    DateTime postDate = DateTime.fromMillisecondsSinceEpoch(comment.postDate);
+    return Container(
+      padding: EdgeInsets.all(5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 15,
+            backgroundColor: Constant.mainColor,
+            backgroundImage: NetworkImage(comment.poster.avatarUrl),
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          Flexible(
+              child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.start,
+                maxLines: 10,
+                text: TextSpan(
+                    text: comment.poster.userName,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: Constant.BOLD,
+                        color: Colors.white)),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              RichText(
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.start,
+                maxLines: 1000,
+                text: TextSpan(
+                    text: comment.body,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: Constant.REGULAR,
+                        color: Colors.white)),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(dateFormat.format(postDate),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: Constant.REGULAR,
+                          color: Constant.black96000000))
+                ],
+              )
+            ],
+          ))
+        ],
+      ),
+      decoration: BoxDecoration(
+          color: Constant.grey4D4D4D,
+          borderRadius: BorderRadius.all(Radius.circular(3))),
+    );
   }
 }

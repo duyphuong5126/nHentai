@@ -6,6 +6,7 @@ import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:http/http.dart';
 import 'package:nhentai/domain/entity/DoujinshiResult.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
+import 'package:nhentai/domain/entity/comment/Comment.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
@@ -21,6 +22,8 @@ abstract class DoujinshiRemoteDataSource {
 
   Stream<String> downloadPageAndReturnLocalPath(
       int doujinshiId, String pageUrl, String fileName);
+
+  Stream<List<Comment>> getCommentList(int doujinshiId);
 }
 
 class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
@@ -119,7 +122,8 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
       File localFile = File(filePath);
 
       return Rx.fromCallable(() => get(Uri.parse(pageUrl))
-          .timeout(Duration(seconds: _FILE_FETCHING_TIME_OUT))).flatMap((remoteFile) {
+              .timeout(Duration(seconds: _FILE_FETCHING_TIME_OUT)))
+          .flatMap((remoteFile) {
         print(
             'DoujinshiRemoteDataSource: pageUrl=$pageUrl - file size=${remoteFile.bodyBytes.length}');
         return Rx.fromCallable(
@@ -136,5 +140,21 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
         print('$stacktrace');
       }
     });
+  }
+
+  @override
+  Stream<List<Comment>> getCommentList(int doujinshiId) {
+    Uri commentApi = Uri.parse(_getCommentListApiUrl(doujinshiId));
+    return Rx.fromCallable(() => get(commentApi))
+        .map((response) => jsonDecode(response.body))
+        .map((jsonArray) {
+      List<Comment> commentList = [];
+      jsonArray.forEach((json) => commentList.add(Comment.fromJson(json)));
+      return commentList;
+    });
+  }
+
+  String _getCommentListApiUrl(int doujinshiId) {
+    return '${Constant.NHENTAI_HOME}/api/gallery/$doujinshiId/comments';
   }
 }
