@@ -546,7 +546,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         ));
       });
       _itemList.add(SizedBox(
-        height: 40,
+        height: 100,
       ));
     } else {
       _itemList.add(SizedBox(
