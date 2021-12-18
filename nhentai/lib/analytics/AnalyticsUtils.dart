@@ -4,6 +4,12 @@ class AnalyticsUtils {
   static late FirebaseAnalytics _analytics = FirebaseAnalytics();
 
   static const String EVENT_OPEN_DOUJINSHI = 'open_doujinshi';
+  static const String EVENT_OPEN_READ_DOUJINSHI = 'open_read_doujinshi';
+  static const String EVENT_OPEN_FAVORITE_DOUJINSHI = 'open_favorite_doujinshi';
+  static const String EVENT_OPEN_DOWNLOADED_DOUJINSHI =
+      'open_downloaded_doujinshi';
+  static const String EVENT_OPEN_RECOMMENDED_DOUJINSHI =
+      'open_recommended_doujinshi';
   static const String EVENT_READ_DOUJINSHI = 'read_doujinshi';
   static const String EVENT_ADD_FAVORITE = 'add_favorite';
   static const String EVENT_REMOVE_FAVORITE = 'remove_favorite';
@@ -25,6 +31,34 @@ class AnalyticsUtils {
     print('AnalyticsUtils: openDoujinshi - $doujinshiId');
     _analytics.logEvent(
         name: EVENT_OPEN_DOUJINSHI,
+        parameters: {PARAM_DOUJINSHI_ID: doujinshiId});
+  }
+
+  static void openReadDoujinshi(int doujinshiId) {
+    print('AnalyticsUtils: openReadDoujinshi - $doujinshiId');
+    _analytics.logEvent(
+        name: EVENT_OPEN_READ_DOUJINSHI,
+        parameters: {PARAM_DOUJINSHI_ID: doujinshiId});
+  }
+
+  static void openFavoriteDoujinshi(int doujinshiId) {
+    print('AnalyticsUtils: openFavoriteDoujinshi - $doujinshiId');
+    _analytics.logEvent(
+        name: EVENT_OPEN_FAVORITE_DOUJINSHI,
+        parameters: {PARAM_DOUJINSHI_ID: doujinshiId});
+  }
+
+  static void openDownloadedDoujinshi(int doujinshiId) {
+    print('AnalyticsUtils: openDownloadedDoujinshi - $doujinshiId');
+    _analytics.logEvent(
+        name: EVENT_OPEN_DOWNLOADED_DOUJINSHI,
+        parameters: {PARAM_DOUJINSHI_ID: doujinshiId});
+  }
+
+  static void openRecommendedDoujinshi(int doujinshiId) {
+    print('AnalyticsUtils: openRecommendedDoujinshi - $doujinshiId');
+    _analytics.logEvent(
+        name: EVENT_OPEN_RECOMMENDED_DOUJINSHI,
         parameters: {PARAM_DOUJINSHI_ID: doujinshiId});
   }
 

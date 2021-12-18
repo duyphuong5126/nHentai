@@ -301,7 +301,6 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
               ),
               visible: numOfPages > 0,
             ),
-            height: 100,
           );
         });
   }

@@ -171,7 +171,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
           refreshStatusesSignalCubit: refreshStatusesSignalCubit,
         ),
         Container(
-          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          margin: EdgeInsets.fromLTRB(10, 15, 10, 5),
           child: RecommendedDoujinshiList(
             recommendationType: recommendationType,
           ),
@@ -186,12 +186,12 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
                     visible: label.isNotEmpty,
                   );
                 }),
-            margin: EdgeInsets.fromLTRB(10, 20, 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 10, 10, 5),
           ),
         ),
         Center(
           child: Container(
-            margin: EdgeInsets.fromLTRB(10, 20, 10, 40),
+            margin: EdgeInsets.fromLTRB(10, 5, 10, 20),
             child: NumberPageIndicesList(
                 numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
@@ -244,7 +244,12 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
 
   void _openDoujinshi(Doujinshi doujinshi) async {
     context.closeSoftKeyBoard();
-    AnalyticsUtils.openDoujinshi(doujinshi.id);
+    DoujinshiCollectionType collectionType = _collectionTypeCubit.state;
+    if (collectionType == DoujinshiCollectionType.Recent) {
+      AnalyticsUtils.openReadDoujinshi(doujinshi.id);
+    } else {
+      AnalyticsUtils.openFavoriteDoujinshi(doujinshi.id);
+    }
     await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
     _initDoujinshiCollection();

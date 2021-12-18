@@ -474,7 +474,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                     title: 'More like this',
                     doujinshiListCubit: _recommendedDoujinshiListCubit,
                     onDoujinshiSelected: (doujinshi) {
-                      AnalyticsUtils.openDoujinshi(doujinshi.id);
+                      AnalyticsUtils.openRecommendedDoujinshi(doujinshi.id);
                       _listScrollController.scrollTo(
                           index: 0, duration: Duration(milliseconds: 500));
                       _doujinshiCubit.emit(doujinshi);

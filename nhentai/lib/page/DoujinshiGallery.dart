@@ -559,9 +559,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
           refreshStatusesSignalCubit: _refreshStatusesSignalCubit,
         ),
         Container(
-          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          margin: EdgeInsets.fromLTRB(10, 15, 10, 5),
           child: RecommendedDoujinshiList(
-            recommendationType: RecommendationType.RecentlyRead,
+            recommendationType: RecommendationType.Gallery,
           ),
         ),
         Center(
@@ -574,7 +574,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                     visible: label.isNotEmpty,
                   );
                 }),
-            margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 10, 10, 5),
           ),
         ),
         Container(

@@ -131,7 +131,7 @@ class _DownloadPageState extends State<DownloadPage> {
           refreshStatusesSignalCubit: refreshStatusesSignalCubit,
         ),
         Container(
-          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          margin: EdgeInsets.fromLTRB(10, 15, 10, 5),
           child: RecommendedDoujinshiList(
             recommendationType: RecommendationType.Downloaded,
           ),
@@ -146,12 +146,12 @@ class _DownloadPageState extends State<DownloadPage> {
                     visible: label.isNotEmpty,
                   );
                 }),
-            margin: EdgeInsets.fromLTRB(10, 20, 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 10, 10, 5),
           ),
         ),
         Center(
           child: Container(
-            margin: EdgeInsets.fromLTRB(10, 20, 10, 40),
+            margin: EdgeInsets.fromLTRB(10, 5, 10, 20),
             child: NumberPageIndicesList(
                 numOfPagesCubit: _numOfPagesCubit,
                 selectedPageIndexHolder: selectedPageHolder,
@@ -194,7 +194,7 @@ class _DownloadPageState extends State<DownloadPage> {
 
   void _openDoujinshi(Doujinshi doujinshi) async {
     context.closeSoftKeyBoard();
-    AnalyticsUtils.openDoujinshi(doujinshi.id);
+    AnalyticsUtils.openDownloadedDoujinshi(doujinshi.id);
     await Navigator.of(context)
         .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
     _initDoujinshiCollection();

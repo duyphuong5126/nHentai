@@ -1,1 +1,1 @@
-enum RecommendationType { RecentlyRead, Favorite, Downloaded }
+enum RecommendationType { Gallery, RecentlyRead, Favorite, Downloaded }
