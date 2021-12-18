@@ -63,7 +63,7 @@ class _MorePageState extends State<MorePage> {
     _initActiveVersion();
     return Scaffold(
       appBar: AppBar(
-        title: DefaultScreenTitle('Settings'),
+        title: DefaultScreenTitle('About'),
         centerTitle: true,
         backgroundColor: Constant.mainColor,
       ),
