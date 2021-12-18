@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:core';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:nhentai/Constant.dart';
@@ -47,6 +48,7 @@ import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DoujinshiPage extends StatefulWidget {
   const DoujinshiPage({Key? key}) : super(key: key);
@@ -404,7 +406,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                         return YesNoActionsAlertDialog(
                             title: 'Forget this doujinshi',
                             content:
-                                'This doujinshi is in your reading list. Do you want to remove it?',
+                                'This doujinshi is in your reading list.\nDo you want to remove it?',
                             yesLabel: 'Yes',
                             noLabel: 'No',
                             yesAction: () => _forgetDoujinshi(doujinshi.id),
@@ -497,7 +499,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                 return YesNoActionsAlertDialog(
                     title: 'Delete this doujinshi',
                     content:
-                        'This doujinshi is in your downloaded list. Do you want to remove it?',
+                        'This doujinshi is in your downloaded list.\nDo you want to remove it?',
                     yesLabel: 'Yes',
                     noLabel: 'No',
                     yesAction: () => _deleteDownloadedDoujinshi(doujinshi),
@@ -626,7 +628,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           return ConfirmationAlertDialog(
               title: 'Download already started',
               content:
-                  'This doujinshi is being downloaded. Please try again later.',
+                  'This doujinshi is being downloaded.\nPlease try again later.',
               confirmLabel: 'OK',
               confirmAction: () {
                 print('DoujinshiPage: download confirmation dialog was closed');
@@ -654,7 +656,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       String title = isFailed ? 'Download failed' : 'Download finished';
       String content = isFailed
           ? 'Could not download this doujinshi'
-          : 'This doujinshi was downloaded successfully, you can read it in offline. Go to Home -> Download tab to find it.';
+          : 'This doujinshi was downloaded successfully, you can read it in offline.\nGo to Home -> Download tab to find it.';
       showDialog(
           context: context,
           builder: (context) {
@@ -744,16 +746,36 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
               SizedBox(
                 height: 10,
               ),
-              RichText(
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.start,
-                maxLines: 1000,
-                text: TextSpan(
-                    text: comment.body,
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: Constant.REGULAR,
-                        color: Colors.white)),
+              Container(
+                margin: EdgeInsets.only(right: 5),
+                child: Linkify(
+                  onOpen: (link) {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return YesNoActionsAlertDialog(
+                            title: 'Open External Link',
+                            content:
+                                'You are about to go to this url: ${link.url}.\nAre you sure?',
+                            yesLabel: 'Yes',
+                            noLabel: 'No',
+                            yesAction: () {
+                              launch(link.url);
+                            },
+                            noAction: () {},
+                          );
+                        });
+                  },
+                  text: comment.body,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: Constant.REGULAR,
+                      color: Colors.white),
+                  linkStyle: TextStyle(
+                      fontSize: 14,
+                      fontFamily: Constant.ITALIC,
+                      color: Constant.mainColor),
+                ),
               ),
               SizedBox(
                 height: 10,
