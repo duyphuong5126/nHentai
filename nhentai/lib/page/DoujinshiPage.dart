@@ -471,6 +471,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                   height: 15,
                 ),
                 HorizontalDoujinshiList(
+                    title: 'More like this',
                     doujinshiListCubit: _recommendedDoujinshiListCubit,
                     onDoujinshiSelected: (doujinshi) {
                       AnalyticsUtils.openDoujinshi(doujinshi.id);

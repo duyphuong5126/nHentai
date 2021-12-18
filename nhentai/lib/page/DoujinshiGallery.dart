@@ -12,8 +12,10 @@ import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/component/SortOptionList.dart';
 import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
+import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/entity/SearchHistory.dart';
 import 'package:nhentai/domain/entity/SearchHistoryItem.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
@@ -556,6 +558,12 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
           onDoujinshiSelected: this._openDoujinshi,
           refreshStatusesSignalCubit: _refreshStatusesSignalCubit,
         ),
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          child: RecommendedDoujinshiList(
+            recommendationType: RecommendationType.RecentlyRead,
+          ),
+        ),
         Center(
           child: Container(
             child: BlocBuilder(
@@ -566,11 +574,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                     visible: label.isNotEmpty,
                   );
                 }),
-            margin: EdgeInsets.fromLTRB(10, 20, 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
           ),
         ),
         Container(
-          margin: EdgeInsets.fromLTRB(10, 20, 10, 40),
+          margin: EdgeInsets.fromLTRB(10, 5, 10, 20),
           child: Center(
             child: NumberPageIndicesList(
                 numOfPagesCubit: _numOfPagesCubit,

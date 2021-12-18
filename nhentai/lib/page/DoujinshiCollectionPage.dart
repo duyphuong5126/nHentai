@@ -9,8 +9,10 @@ import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/DoujinshiGridGallery.dart';
 import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
+import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
+import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/usecase/GetFavoriteDoujinshiCountUseCase.dart';
 import 'package:nhentai/domain/usecase/GetFavoriteDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiCountUseCase.dart';
@@ -156,6 +158,10 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
   }
 
   Widget _getBodyWidget() {
+    RecommendationType recommendationType =
+        _collectionTypeCubit.state == DoujinshiCollectionType.Recent
+            ? RecommendationType.RecentlyRead
+            : RecommendationType.Favorite;
     return ListView(
       controller: _scrollController,
       children: [
@@ -163,6 +169,12 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
           doujinshiListCubit: _doujinshiListCubit,
           onDoujinshiSelected: this._openDoujinshi,
           refreshStatusesSignalCubit: refreshStatusesSignalCubit,
+        ),
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          child: RecommendedDoujinshiList(
+            recommendationType: recommendationType,
+          ),
         ),
         Center(
           child: Container(

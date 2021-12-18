@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:nhentai/data/DoujinshiLocalDataSource.dart';
 import 'package:nhentai/data/DoujinshiRemoteDataSource.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
@@ -7,6 +9,7 @@ import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
+import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/entity/comment/Comment.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:rxdart/rxdart.dart';
@@ -48,6 +51,9 @@ abstract class DoujinshiRepository {
   Stream<Doujinshi> getDoujinshi(int doujinshiId);
 
   Stream<List<Comment>> getCommentList(int doujinshiId);
+
+  Stream<Future<List<Doujinshi>>> getRecommendedDoujinshis(
+      RecommendationType recommendationType, int limit);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -229,6 +235,41 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
     }).doOnError((error, stackTrace) {
       print(
           'DoujinshiRepository: could not download page $pageUrl with error $error');
+    });
+  }
+
+  @override
+  Stream<Future<List<Doujinshi>>> getRecommendedDoujinshis(
+      recommendationType, int limit) {
+    return _local
+        .getRecommendedSearchTerm(recommendationType)
+        .flatMap((searchTerm) {
+      SortOption sortOption =
+          SortOption.values[Random().nextInt(SortOption.values.length)];
+      return Rx.fromCallable(
+              () => _remote.fetchDoujinshiList(1, searchTerm, sortOption))
+          .flatMap((remoteDoujinshiList) {
+        return _local.getLocalDoujinshiIds().map((localIds) async {
+          List<Doujinshi> doujinshiList = remoteDoujinshiList.result
+              .where((doujinshi) => !localIds.contains(doujinshi.id))
+              .toList();
+
+          int pageIndex = 2;
+          while (doujinshiList.length < limit &&
+              pageIndex < remoteDoujinshiList.numPages) {
+            DoujinshiList doujinshiListResult = await _remote
+                .fetchDoujinshiList(pageIndex++, searchTerm, sortOption);
+            doujinshiList.addAll(doujinshiListResult.result);
+          }
+
+          return doujinshiList;
+        });
+      });
+    }).map((doujinshiListFuture) async {
+      List<Doujinshi> doujinshiList = await doujinshiListFuture;
+      doujinshiList.sort((Doujinshi a, Doujinshi b) =>
+          -a.numFavorites.compareTo(b.numFavorites));
+      return doujinshiList.take(limit).toList();
     });
   }
 }

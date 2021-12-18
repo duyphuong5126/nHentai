@@ -3,6 +3,7 @@ import 'package:nhentai/data/db/DoujinshiDatabase.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
+import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -34,10 +35,20 @@ abstract class DoujinshiLocalDataSource {
 
   Stream<bool> deleteDownloadedDoujinshi(
       DownloadedDoujinshi downloadedDoujinshi);
+
+  Stream<String> getRecommendedSearchTerm(
+      RecommendationType recommendationType);
+
+  Stream<List<int>> getLocalDoujinshiIds();
 }
 
 class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
   DoujinshiDatabase _database = DoujinshiDatabase();
+
+  @override
+  Stream<List<int>> getLocalDoujinshiIds() {
+    return _database.getLocalDoujinshiIds();
+  }
 
   @override
   Future saveRecentlyReadDoujinshi(Doujinshi doujinshi, int lastReadPageIndex) {
@@ -138,5 +149,11 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
       });
     }).flatMap((downloadedPaths) => Rx.fromCallable(() =>
         _database.deleteDownloadedDoujinshi(downloadedDoujinshi.id, false)));
+  }
+
+  @override
+  Stream<String> getRecommendedSearchTerm(
+      RecommendationType recommendationType) {
+    return _database.getRecommendedSearchTerm(recommendationType);
   }
 }

@@ -11,9 +11,11 @@ import 'package:nhentai/component/DefaultSectionLabel.dart';
 import 'package:nhentai/component/DoujinshiGridGallery.dart';
 import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/component/NumberPageIndicesList.dart';
+import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshiList.dart';
+import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/usecase/GetDownloadedDoujinshiCountUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDownloadedDoujinshisUseCase.dart';
 import 'package:nhentai/domain/usecase/GetFavoriteDoujinshiCountUseCase.dart';
@@ -127,6 +129,12 @@ class _DownloadPageState extends State<DownloadPage> {
           doujinshiListCubit: _doujinshiListCubit,
           onDoujinshiSelected: this._openDoujinshi,
           refreshStatusesSignalCubit: refreshStatusesSignalCubit,
+        ),
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          child: RecommendedDoujinshiList(
+            recommendationType: RecommendationType.Downloaded,
+          ),
         ),
         Center(
           child: Container(

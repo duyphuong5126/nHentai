@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
+import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:path/path.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DoujinshiDatabase {
@@ -63,7 +66,7 @@ class DoujinshiDatabase {
     List<Map> recentlyReadDoujinshisList = await _database!.query(
         _DOUJINSHI_TABLE,
         columns: [_DOUJINSHI_JSON],
-        where: '$_LAST_READ_PAGE > 0',
+        where: '$_LAST_READ_PAGE >= 0',
         orderBy: '$_UPDATED_TIME desc',
         offset: skip,
         limit: take);
@@ -78,7 +81,7 @@ class DoujinshiDatabase {
     int result = 0;
     await _openDataBase();
     result = Sqflite.firstIntValue(await _database!.rawQuery(
-            'select count($_DOUJINSHI_ID) from $_DOUJINSHI_TABLE where $_LAST_READ_PAGE > 0')) ??
+            'select count($_DOUJINSHI_ID) from $_DOUJINSHI_TABLE where $_LAST_READ_PAGE >= 0')) ??
         0;
     return result;
   }
@@ -249,6 +252,132 @@ class DoujinshiDatabase {
       resultList.add(Doujinshi.fromJson(jsonDecode(doujinshiJson)));
     });
     return resultList;
+  }
+
+  Stream<List<int>> getLocalDoujinshiIds() {
+    return Rx.fromCallable(() => _database!.query(
+              _DOUJINSHI_TABLE,
+              columns: [_DOUJINSHI_ID],
+              where:
+                  '$_IS_DOWNLOADED_DOUJINSHI = 1 or $_LAST_READ_PAGE >= 0 or $_IS_FAVORITE_DOUJINSHI = 1',
+            ))
+        .map((List<Map> doujinshiList) => doujinshiList
+            .map((doujinshiMap) => doujinshiMap[_DOUJINSHI_ID] as int)
+            .toList());
+  }
+
+  Stream<String> getRecommendedSearchTerm(
+      RecommendationType recommendationType) {
+    switch (recommendationType) {
+      case RecommendationType.RecentlyRead:
+        return _getRecommendedSearchTermFromRecentlyRead();
+      case RecommendationType.Downloaded:
+        return _getRecommendedSearchTermFromDownload();
+      case RecommendationType.Favorite:
+        return _getRecommendedSearchTermFromFavorite();
+      default:
+        return _getRecommendedSearchTermFromRecentlyRead();
+    }
+  }
+
+  Stream<String> _getRecommendedSearchTermFromDownload() {
+    return Rx.fromCallable(() => _openDataBase())
+        .flatMap((value) => Rx.fromCallable(() => _database!.query(
+            _DOUJINSHI_TABLE,
+            columns: [_DOUJINSHI_JSON],
+            where: '$_IS_DOWNLOADED_DOUJINSHI = 1')))
+        .map((List<Map> localList) => localList.map((doujinshiMap) =>
+            Doujinshi.fromJson(jsonDecode(doujinshiMap[_DOUJINSHI_JSON]))))
+        .map((Iterable<Doujinshi> localList) {
+      List<String> searchTermList = [];
+      localList.forEach((doujinshi) {
+        searchTermList.addAll(doujinshi.tags
+            .where((tag) =>
+                tag.type.toLowerCase() == 'artist' ||
+                tag.type.toLowerCase() == 'tag')
+            .map((tag) => tag.name));
+      });
+      List<String> finalSearchTermList = searchTermList.toSet().toList();
+      finalSearchTermList.shuffle();
+      int finalSearchTermCount = finalSearchTermList.length;
+      if (finalSearchTermCount > 0) {
+        return finalSearchTermCount == 1
+            ? finalSearchTermList[0]
+            : finalSearchTermList[Random().nextInt(finalSearchTermCount)];
+      }
+      return '';
+    });
+  }
+
+  Stream<String> _getRecommendedSearchTermFromFavorite() {
+    return Rx.fromCallable(() => _openDataBase())
+        .flatMap((value) => Rx.fromCallable(() => _database!.query(
+            _DOUJINSHI_TABLE,
+            columns: [_DOUJINSHI_JSON],
+            where: '$_IS_FAVORITE_DOUJINSHI = 1')))
+        .map((List<Map> localList) => localList.map((doujinshiMap) =>
+            Doujinshi.fromJson(jsonDecode(doujinshiMap[_DOUJINSHI_JSON]))))
+        .map((Iterable<Doujinshi> localList) {
+      List<String> searchTermList = [];
+      localList.forEach((doujinshi) {
+        searchTermList.addAll(doujinshi.tags
+            .where((tag) => tag.type.toLowerCase() == 'artist')
+            .map((tag) => tag.name));
+      });
+
+      List<String> finalSearchTermList = searchTermList.toSet().toList();
+      finalSearchTermList.shuffle();
+      int finalSearchTermCount = finalSearchTermList.length;
+      if (finalSearchTermCount > 0) {
+        return finalSearchTermCount == 1
+            ? finalSearchTermList[0]
+            : finalSearchTermList[Random().nextInt(finalSearchTermCount)];
+      } else {
+        localList.forEach((doujinshi) {
+          searchTermList.addAll(doujinshi.tags
+              .where((tag) => tag.type.toLowerCase() == 'tag')
+              .map((tag) => tag.name));
+        });
+        finalSearchTermList = searchTermList.toSet().toList();
+        finalSearchTermList.shuffle();
+        int finalSearchTermCount = finalSearchTermList.length;
+        if (finalSearchTermCount > 0) {
+          return finalSearchTermCount == 1
+              ? finalSearchTermList[0]
+              : finalSearchTermList[Random().nextInt(finalSearchTermCount)];
+        }
+      }
+      return '';
+    });
+  }
+
+  Stream<String> _getRecommendedSearchTermFromRecentlyRead() {
+    return Rx.fromCallable(() => _openDataBase())
+        .flatMap((value) => Rx.fromCallable(() => _database!.query(
+            _DOUJINSHI_TABLE,
+            columns: [_DOUJINSHI_JSON],
+            where: '$_LAST_READ_PAGE >= 0')))
+        .map((List<Map> localList) => localList.map((doujinshiMap) =>
+            Doujinshi.fromJson(jsonDecode(doujinshiMap[_DOUJINSHI_JSON]))))
+        .map((localList) {
+      List<String> searchTermList = [];
+      localList.forEach((doujinshi) {
+        searchTermList.addAll(doujinshi.tags
+            .where((tag) =>
+                tag.type.toLowerCase() == 'artist' ||
+                tag.type.toLowerCase() == 'tag')
+            .map((tag) => tag.name));
+      });
+      List<String> finalSearchTermList = searchTermList.toSet().toList();
+      finalSearchTermList.shuffle();
+      int finalSearchTermCount = finalSearchTermList.length;
+      if (finalSearchTermCount > 0) {
+        return finalSearchTermCount == 1
+            ? finalSearchTermList[0]
+            : finalSearchTermList[Random().nextInt(finalSearchTermCount)];
+      }
+      return '';
+    });
   }
 
   Future<int> _insertDoujinshi(Doujinshi doujinshi,
