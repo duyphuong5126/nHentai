@@ -269,12 +269,28 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 builder: (BuildContext context, int numOfPages) {
                   return Visibility(
                     child: Container(
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Image.asset(
                             'images/ic_nothing_here_grey.png',
                             height: 450,
+                          ),
+                          Container(
+                            margin: EdgeInsets.only(
+                                left: 10, right: 10, bottom: 10),
+                            constraints: BoxConstraints.expand(height: 40),
+                            child: MaterialButton(
+                              child: Text(
+                                'Retry',
+                                style: TextStyle(
+                                    fontFamily: Constant.BOLD,
+                                    fontSize: 16,
+                                    color: Colors.white),
+                              ),
+                              color: Constant.mainColor,
+                              onPressed: this._onRefreshGallery,
+                            ),
                           )
                         ],
                       ),

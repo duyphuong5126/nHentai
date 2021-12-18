@@ -32,12 +32,16 @@ class ConfirmationAlertDialog extends StatelessWidget {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-                fontFamily: Constant.BOLD,
-                fontSize: 20,
-                color: Constant.mainColor),
+          RichText(
+            maxLines: 10,
+            textAlign: TextAlign.center,
+            text: TextSpan(
+                text: title,
+                style: TextStyle(
+                    fontFamily: Constant.BOLD,
+                    fontSize: 20,
+                    color: Constant.mainColor)),
+            overflow: TextOverflow.ellipsis,
           )
         ],
       ),
