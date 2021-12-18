@@ -156,7 +156,7 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
           return pageUrlList;
         })
         .flatMap((pageUrlList) => Stream.fromIterable(pageUrlList))
-        .interval(Duration(milliseconds: 500))
+        .interval(Duration(seconds: 1))
         .flatMap((pageUrl) {
           print('DoujinshiRepository: try to download page $pageUrl');
           return _downloadPage(doujinshi.id, pageUrl);
