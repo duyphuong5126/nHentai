@@ -272,10 +272,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Image.asset(
+                          Expanded(
+                              child: Image.asset(
                             'images/ic_nothing_here_grey.png',
-                            height: 450,
-                          ),
+                            fit: BoxFit.scaleDown,
+                          )),
                           Container(
                             margin: EdgeInsets.only(
                                 left: 10, right: 10, bottom: 10),
