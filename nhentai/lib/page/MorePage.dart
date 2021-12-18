@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -115,6 +116,141 @@ class _MorePageState extends State<MorePage> {
                         ],
                       );
                     }),
+                Container(
+                  margin: EdgeInsets.all(10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Support me on',
+                        style: TextStyle(
+                            fontFamily: Constant.BOLD,
+                            fontSize: 15,
+                            color: Colors.white),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkResponse(
+                          highlightColor: Constant.mainDarkColor,
+                          onTap: () =>
+                              launch('https://www.patreon.com/nonoka9002'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              'Patreon',
+                              style: TextStyle(
+                                  fontFamily: Constant.BOLD,
+                                  fontSize: 15,
+                                  color: Constant.mainColor),
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.all(10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Contact me on',
+                        style: TextStyle(
+                            fontFamily: Constant.BOLD,
+                            fontSize: 15,
+                            color: Colors.white),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkResponse(
+                          highlightColor: Constant.mainDarkColor,
+                          onTap: () => launch('https://twitter.com/nonoka9002'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              'Twitter',
+                              style: TextStyle(
+                                  fontFamily: Constant.BOLD,
+                                  fontSize: 15,
+                                  color: Constant.mainColor),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'or',
+                        style: TextStyle(
+                            fontFamily: Constant.BOLD,
+                            fontSize: 15,
+                            color: Colors.white),
+                      ),
+                      BlocBuilder(
+                          bloc: _packageCubit,
+                          builder: (context, PackageInfo packageInfo) {
+                            String platformName = Platform.isAndroid
+                                ? 'android'
+                                : Platform.isIOS
+                                    ? 'iOS'
+                                    : '';
+                            String emailTemplate = 'mailto:nonoka9002@gmail.com'
+                                '?subject=[nhentai $platformName]Feedback about version ${packageInfo.version}'
+                                '&body=Tell me your feedbacks.';
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkResponse(
+                                highlightColor: Constant.mainDarkColor,
+                                onTap: () => launch(emailTemplate),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  child: Text(
+                                    'Email',
+                                    style: TextStyle(
+                                        fontFamily: Constant.BOLD,
+                                        fontSize: 15,
+                                        color: Constant.mainColor),
+                                  ),
+                                ),
+                              ),
+                            );
+                          })
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.all(10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Feature updates on',
+                        style: TextStyle(
+                            fontFamily: Constant.BOLD,
+                            fontSize: 15,
+                            color: Colors.white),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkResponse(
+                          highlightColor: Constant.mainDarkColor,
+                          onTap: () => launch(
+                              'https://www.youtube.com/channel/UCPgznH-jwwc4xvfvpOnGpHA'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              'Youtube',
+                              style: TextStyle(
+                                  fontFamily: Constant.BOLD,
+                                  fontSize: 15,
+                                  color: Constant.mainColor),
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
                 Container(
                   margin: EdgeInsets.all(10),
                   child: BlocBuilder(
