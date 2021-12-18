@@ -626,7 +626,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         context: context,
         builder: (context) {
           return ConfirmationAlertDialog(
-              title: 'Download already started',
+              title: 'Download started',
               content:
                   'This doujinshi is being downloaded.\nPlease try again later.',
               confirmLabel: 'OK',
