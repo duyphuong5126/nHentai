@@ -8,6 +8,7 @@ import 'package:nhentai/component/doujinshi/HorizontalDoujinshiList.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiListViewModel.dart';
+import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 
 class RecommendedDoujinshiList extends StatefulWidget {
   final RecommendationType recommendationType;
@@ -43,7 +44,8 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
               AnalyticsUtils.openRecommendedDoujinshi(doujinshi.id);
               await Navigator.of(context).pushNamed(
                   MainNavigator.DOUJINSHI_PAGE,
-                  arguments: doujinshi);
+                  arguments: OpenDoujinshiModel(
+                      doujinshi: doujinshi, isSearchable: false));
 
               Color statusBarColor = Constant.mainDarkColor;
               if (widget.recommendationType == RecommendationType.Gallery) {

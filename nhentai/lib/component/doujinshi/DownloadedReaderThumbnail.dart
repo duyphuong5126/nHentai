@@ -98,7 +98,7 @@ class _DownloadedReaderThumbnailState extends State<DownloadedReaderThumbnail> {
                 ),
               ),
               width: double.infinity,
-              height: 20,
+              height: widget.thumbnailIndex == selectedIndex ? 18 : 20,
             )
           ],
         );

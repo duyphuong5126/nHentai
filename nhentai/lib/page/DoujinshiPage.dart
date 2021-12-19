@@ -44,6 +44,7 @@ import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateFavoriteDoujinshiUseCase.dart';
 import 'package:nhentai/manager/DownloadManager.dart';
+import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -128,8 +129,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             systemStatusBarContrastEnforced: true)));
 
     _initCensoredStatus();
-    Doujinshi doujinshi =
-        ModalRoute.of(context)?.settings.arguments as Doujinshi;
+    OpenDoujinshiModel openDoujinshiModel =
+        ModalRoute.of(context)?.settings.arguments as OpenDoujinshiModel;
+    Doujinshi doujinshi = openDoujinshiModel.doujinshi;
     _doujinshiCubit = DataCubit(doujinshi);
     _doujinshiId = doujinshi.id;
     _commentListCubit = DataCubit([]);
@@ -145,7 +147,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
               return BlocBuilder(
                   bloc: _commentListCubit,
                   builder: (context, List<Comment> commentList) {
-                    return _generateDetailSections(doujinshi, commentList);
+                    return _generateDetailSections(doujinshi, commentList,
+                        openDoujinshiModel.isSearchable);
                   });
             },
           ),
@@ -187,7 +190,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   }
 
   Widget _generateDetailSections(
-      Doujinshi doujinshi, List<Comment> commentList) {
+      Doujinshi doujinshi, List<Comment> commentList, bool isSearchable) {
     Map<String, List<Tag>> tagMap = {};
     doujinshi.tags.forEach((tag) {
       if (!tagMap.containsKey(tag.type)) {
@@ -251,7 +254,23 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
       _itemList.add(TagsSection(
         tagName: tagName,
         tagList: tags != null ? tags : [],
-        onTagSelected: this._onTagSelected,
+        onTagSelected: (tag) {
+          if (isSearchable) {
+            _onTagSelected(tag);
+          } else {
+            Clipboard.setData(ClipboardData(text: tag.name)).then((_) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  backgroundColor: Constant.mainColor,
+                  duration: Duration(seconds: 5),
+                  content: Text('Tag "${tag.name}" was copied to clipboard',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: Constant.BOLD,
+                          fontSize: 15))));
+            });
+          }
+        },
       ));
       _itemList.add(SizedBox(
         height: 10,

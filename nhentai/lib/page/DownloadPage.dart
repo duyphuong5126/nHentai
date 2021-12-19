@@ -20,6 +20,7 @@ import 'package:nhentai/domain/usecase/GetDownloadedDoujinshiCountUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDownloadedDoujinshisUseCase.dart';
 import 'package:nhentai/domain/usecase/GetFavoriteDoujinshiCountUseCase.dart';
 import 'package:nhentai/domain/usecase/GetRecentlyReadDoujinshiCountUseCase.dart';
+import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/support/Extensions.dart';
 
 class DownloadPage extends StatefulWidget {
@@ -195,8 +196,9 @@ class _DownloadPageState extends State<DownloadPage> {
   void _openDoujinshi(Doujinshi doujinshi) async {
     context.closeSoftKeyBoard();
     AnalyticsUtils.openDownloadedDoujinshi(doujinshi.id);
-    await Navigator.of(context)
-        .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
+    await Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_PAGE,
+        arguments:
+            OpenDoujinshiModel(doujinshi: doujinshi, isSearchable: false));
     _initDoujinshiCollection();
     Future.delayed(Duration(milliseconds: 1)).then((value) =>
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(

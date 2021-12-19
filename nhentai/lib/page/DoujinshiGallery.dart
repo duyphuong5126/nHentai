@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nhentai/Constant.dart';
@@ -21,6 +20,7 @@ import 'package:nhentai/domain/entity/SearchHistoryItem.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiUseCase.dart';
+import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:nhentai/support/Extensions.dart';
@@ -218,8 +218,10 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   void _openDoujinshi(Doujinshi doujinshi) async {
     context.closeSoftKeyBoard();
     AnalyticsUtils.openDoujinshi(doujinshi.id);
-    final openDoujinshiResult = await Navigator.of(context)
-        .pushNamed(MainNavigator.DOUJINSHI_PAGE, arguments: doujinshi);
+    final openDoujinshiResult = await Navigator.of(context).pushNamed(
+        MainNavigator.DOUJINSHI_PAGE,
+        arguments:
+            OpenDoujinshiModel(doujinshi: doujinshi, isSearchable: true));
     if (openDoujinshiResult is Tag) {
       _onSearchTermChanged(openDoujinshiResult.name);
     }
