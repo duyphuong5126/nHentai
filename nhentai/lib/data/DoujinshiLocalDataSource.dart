@@ -140,13 +140,13 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
       downloadedPaths.add(downloadedDoujinshi.downloadedThumbnail);
       return Stream.value(downloadedPaths);
     }).doOnData((downloadedPaths) {
-      downloadedPaths.map((downloadedPath) {
-        try {
-          File(downloadedPath).delete();
-        } catch (error) {
-          print('Could not delete file $downloadedPath with error $error');
-        }
-      });
+      String existedPath = downloadedPaths.firstWhere((filePath) {
+        File file = File(filePath);
+        return file.existsSync() && file.parent.existsSync();
+      }, orElse: () => '');
+      if (existedPath.isNotEmpty) {
+        File(existedPath).parent.delete(recursive: true);
+      }
     }).flatMap((downloadedPaths) => Rx.fromCallable(() =>
         _database.deleteDownloadedDoujinshi(downloadedDoujinshi.id, false)));
   }
