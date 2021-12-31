@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:marquee/marquee.dart';
@@ -17,6 +16,7 @@ import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share/share.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -29,7 +29,6 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage>
     with SingleTickerProviderStateMixin {
-  static const int _EXTENT_CACHE_FACTOR = 4;
   static const double _DEFAULT_ITEM_HEIGHT = 300;
   static const double _DEFAULT_THUMBNAIL_WIDTH = 60;
   static const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
@@ -45,7 +44,9 @@ class _ReaderPageState extends State<ReaderPage>
   late Animation<Offset> _topSlideAnimation;
   late Animation<Offset> _bottomSlideAnimation;
   late AutoScrollController _thumbnailScrollController;
-  AutoScrollController? _scrollController;
+  final ItemScrollController _pageScrollController = ItemScrollController();
+  final ItemPositionsListener _pageIndexListener =
+      ItemPositionsListener.create();
   PageController? _pageController;
 
   DataCubit<int>? _currentPageCubit = DataCubit<int>(-1);
@@ -69,6 +70,11 @@ class _ReaderPageState extends State<ReaderPage>
     _storeReadDoujinshiUseCase.execute(doujinshi, lastReadPageIndex);
   }
 
+  void _scrollInitially(int startIndex) async {
+    Future.delayed(Duration(seconds: 1))
+        .then((value) => _pageScrollController.jumpTo(index: startIndex));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +96,8 @@ class _ReaderPageState extends State<ReaderPage>
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
             statusBarColor: Colors.black,
             systemStatusBarContrastEnforced: true)));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.bottom]);
 
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
@@ -127,14 +135,14 @@ class _ReaderPageState extends State<ReaderPage>
   @override
   void dispose() {
     super.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: SystemUiOverlay.values);
     _currentPageCubit?.dispose();
     _currentPageCubit = null;
     _readerTypeCubit?.dispose();
     _readerTypeCubit = null;
     _screenTransparencyCubit?.dispose();
     _screenTransparencyCubit = null;
-    _scrollController?.dispose();
-    _scrollController = null;
     _pageController?.dispose();
     _pageController = null;
     _thumbnailScrollController.dispose();
@@ -247,8 +255,8 @@ class _ReaderPageState extends State<ReaderPage>
                                   height: _DEFAULT_THUMBNAIL_HEIGHT,
                                   thumbnailIndex: index,
                                   onThumbnailSelected: (selectedIndex) {
-                                    _scrollController
-                                        ?.scrollToIndex(selectedIndex);
+                                    _pageScrollController.jumpTo(
+                                        index: selectedIndex);
                                     _pageController?.jumpToPage(selectedIndex);
                                     _currentPageCubit?.emit(selectedIndex);
                                   },
@@ -259,8 +267,8 @@ class _ReaderPageState extends State<ReaderPage>
                                   height: _DEFAULT_THUMBNAIL_HEIGHT,
                                   thumbnailIndex: index,
                                   onThumbnailSelected: (selectedIndex) {
-                                    _scrollController
-                                        ?.scrollToIndex(selectedIndex);
+                                    _pageScrollController.jumpTo(
+                                        index: selectedIndex);
                                     _pageController?.jumpToPage(selectedIndex);
                                     _currentPageCubit?.emit(selectedIndex);
                                   },
@@ -486,87 +494,79 @@ class _ReaderPageState extends State<ReaderPage>
 
   Widget _buildVerticalReader(
       Doujinshi doujinshi, int startPageIndex, Function(int) onPageVisible) {
-    double initialScrollOffset = _DEFAULT_ITEM_HEIGHT * startPageIndex;
-    double height = MediaQuery.of(context).size.height;
-    _scrollController =
-        AutoScrollController(initialScrollOffset: initialScrollOffset);
     _pageController = null;
     List<String> pageUrlList = doujinshi is DownloadedDoujinshi
         ? doujinshi.downloadedPathList
         : doujinshi.fullSizePageUrlList;
-    return ListView.builder(
-      controller: _scrollController,
+    _scrollInitially(startPageIndex);
+    return ScrollablePositionedList.builder(
+      itemScrollController: _pageScrollController,
+      itemPositionsListener: _pageIndexListener,
       itemCount: pageUrlList.length,
       itemBuilder: (BuildContext buildContext, int index) {
         print('ReaderPage: vertical - ${pageUrlList[index]}');
-        return AutoScrollTag(
+        return VisibilityDetector(
           key: ValueKey(index),
-          controller: _scrollController!,
-          index: index,
-          child: VisibilityDetector(
-            key: ValueKey(index),
-            onVisibilityChanged: (VisibilityInfo info) {
-              onPageVisible((info.key as ValueKey).value);
-            },
-            child: BlocBuilder(
-                bloc: _isCensoredCubit,
-                builder: (BuildContext context, bool isCensored) {
-                  return isCensored
-                      ? Container(
-                          constraints: BoxConstraints.expand(height: 300),
-                          color: Constant.grey4D4D4D,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.block,
-                            size: 50,
-                            color: Constant.mainColor,
-                          ),
-                          margin: EdgeInsets.only(bottom: 10),
-                        )
-                      : Container(
-                          child: doujinshi is DownloadedDoujinshi
-                              ? Image.file(
-                                  File(pageUrlList[index]),
+          onVisibilityChanged: (VisibilityInfo info) {
+            onPageVisible((info.key as ValueKey).value);
+          },
+          child: BlocBuilder(
+              bloc: _isCensoredCubit,
+              builder: (BuildContext context, bool isCensored) {
+                return isCensored
+                    ? Container(
+                        constraints: BoxConstraints.expand(height: 300),
+                        color: Constant.grey4D4D4D,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.block,
+                          size: 50,
+                          color: Constant.mainColor,
+                        ),
+                        margin: EdgeInsets.only(bottom: 10),
+                      )
+                    : Container(
+                        child: doujinshi is DownloadedDoujinshi
+                            ? Image.file(
+                                File(pageUrlList[index]),
+                                fit: BoxFit.fitWidth,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Image.asset(
+                                  Constant.IMAGE_NOTHING,
                                   fit: BoxFit.fitWidth,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Image.asset(
-                                    Constant.IMAGE_NOTHING,
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                )
-                              : CachedNetworkImage(
-                                  imageUrl: pageUrlList[index],
-                                  errorWidget: (context, url, error) =>
-                                      Image.asset(
-                                    Constant.IMAGE_NOTHING,
-                                    fit: BoxFit.fitWidth,
-                                  ),
-                                  fit: BoxFit.fitWidth,
-                                  placeholder:
-                                      (BuildContext context, String url) {
-                                    return Container(
-                                      color: Colors.transparent,
-                                      child: Center(
-                                        child: Text(
-                                          '${index + 1}',
-                                          style: TextStyle(
-                                              fontSize: 24,
-                                              fontFamily: Constant.BOLD,
-                                              color: Colors.white),
-                                        ),
-                                      ),
-                                      constraints: BoxConstraints.expand(
-                                          height: _DEFAULT_ITEM_HEIGHT),
-                                    );
-                                  },
                                 ),
-                          margin: EdgeInsets.only(bottom: 10),
-                        );
-                }),
-          ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: pageUrlList[index],
+                                errorWidget: (context, url, error) =>
+                                    Image.asset(
+                                  Constant.IMAGE_NOTHING,
+                                  fit: BoxFit.fitWidth,
+                                ),
+                                fit: BoxFit.fitWidth,
+                                placeholder:
+                                    (BuildContext context, String url) {
+                                  return Container(
+                                    color: Colors.transparent,
+                                    child: Center(
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                            fontSize: 24,
+                                            fontFamily: Constant.BOLD,
+                                            color: Colors.white),
+                                      ),
+                                    ),
+                                    constraints: BoxConstraints.expand(
+                                        height: _DEFAULT_ITEM_HEIGHT),
+                                  );
+                                },
+                              ),
+                        margin: EdgeInsets.only(bottom: 10),
+                      );
+              }),
         );
       },
-      cacheExtent: height * _EXTENT_CACHE_FACTOR,
     );
   }
 
