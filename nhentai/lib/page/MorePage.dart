@@ -220,39 +220,6 @@ class _MorePageState extends State<MorePage> {
                 ),
                 Container(
                   margin: EdgeInsets.all(10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Feature updates on',
-                        style: TextStyle(
-                            fontFamily: Constant.BOLD,
-                            fontSize: 15,
-                            color: Colors.white),
-                      ),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkResponse(
-                          highlightColor: Constant.mainDarkColor,
-                          onTap: () => launch(
-                              'https://www.youtube.com/channel/UCPgznH-jwwc4xvfvpOnGpHA'),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: Text(
-                              'Youtube',
-                              style: TextStyle(
-                                  fontFamily: Constant.BOLD,
-                                  fontSize: 15,
-                                  color: Constant.mainColor),
-                            ),
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                Container(
-                  margin: EdgeInsets.all(10),
                   child: BlocBuilder(
                       bloc: _isCensoredCubit,
                       builder: (BuildContext c, bool isCensored) {
