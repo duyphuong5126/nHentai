@@ -42,14 +42,11 @@ class _ReaderPageState extends State<ReaderPage>
   late AnimationController _animationController;
   late Animation<Offset> _topSlideAnimation;
   late Animation<Offset> _bottomSlideAnimation;
-  final ItemScrollController _pageScrollController = ItemScrollController();
-  final ItemPositionsListener _pageIndexListener =
-      ItemPositionsListener.create();
-  final ItemScrollController _thumbnailScrollController =
-      ItemScrollController();
-  final ItemPositionsListener _thumbnailIndexListener =
-      ItemPositionsListener.create();
-  PageController? _pageController;
+  ItemScrollController? _verticalPageScrollController;
+  ItemPositionsListener? _verticalPageIndexListener;
+  ItemScrollController? _thumbnailScrollController;
+  ItemPositionsListener? _thumbnailIndexListener;
+  PageController? _horizontalPageScrollController;
 
   DataCubit<int>? _currentPageCubit = DataCubit<int>(-1);
   DataCubit<ReaderType>? _readerTypeCubit =
@@ -73,13 +70,14 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _scrollInitially(int startIndex) async {
-    Future.delayed(Duration(seconds: 1))
-        .then((value) => _pageScrollController.jumpTo(index: startIndex));
+    Future.delayed(Duration(seconds: 1)).then((value) =>
+        _verticalPageScrollController?.scrollTo(
+            index: startIndex, duration: Duration(milliseconds: 200)));
   }
 
   void _scrollToThumbnailIndex(int thumbnailIndex) async {
     Future.delayed(Duration(milliseconds: 200)).then((value) =>
-        _thumbnailScrollController.scrollTo(
+        _thumbnailScrollController?.scrollTo(
             index: thumbnailIndex, duration: Duration(milliseconds: 200)));
   }
 
@@ -110,6 +108,9 @@ class _ReaderPageState extends State<ReaderPage>
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
     Doujinshi doujinshi = readingModel.doujinshi;
+
+    _thumbnailScrollController = ItemScrollController();
+    _thumbnailIndexListener = ItemPositionsListener.create();
     return Scaffold(
       body: SafeArea(
           child: Stack(
@@ -151,8 +152,12 @@ class _ReaderPageState extends State<ReaderPage>
     _readerTypeCubit = null;
     _screenTransparencyCubit?.dispose();
     _screenTransparencyCubit = null;
-    _pageController?.dispose();
-    _pageController = null;
+    _horizontalPageScrollController?.dispose();
+    _horizontalPageScrollController = null;
+    _verticalPageScrollController = null;
+    _verticalPageIndexListener = null;
+    _thumbnailScrollController = null;
+    _thumbnailIndexListener = null;
   }
 
   void _onDoubleTapDown(TapDownDetails details) {
@@ -258,9 +263,11 @@ class _ReaderPageState extends State<ReaderPage>
                                 height: _DEFAULT_THUMBNAIL_HEIGHT,
                                 thumbnailIndex: index,
                                 onThumbnailSelected: (selectedIndex) {
-                                  _pageScrollController.jumpTo(
-                                      index: selectedIndex);
-                                  _pageController?.jumpToPage(selectedIndex);
+                                  _verticalPageScrollController?.scrollTo(
+                                      index: selectedIndex,
+                                      duration: Duration(milliseconds: 200));
+                                  _horizontalPageScrollController
+                                      ?.jumpToPage(selectedIndex);
                                   _currentPageCubit?.emit(selectedIndex);
                                 },
                                 selectedIndexBloc: _currentPageCubit!)
@@ -270,9 +277,11 @@ class _ReaderPageState extends State<ReaderPage>
                                 height: _DEFAULT_THUMBNAIL_HEIGHT,
                                 thumbnailIndex: index,
                                 onThumbnailSelected: (selectedIndex) {
-                                  _pageScrollController.jumpTo(
-                                      index: selectedIndex);
-                                  _pageController?.jumpToPage(selectedIndex);
+                                  _verticalPageScrollController?.scrollTo(
+                                      index: selectedIndex,
+                                      duration: Duration(milliseconds: 200));
+                                  _horizontalPageScrollController
+                                      ?.jumpToPage(selectedIndex);
                                   _currentPageCubit?.emit(selectedIndex);
                                 },
                                 selectedIndexBloc: _currentPageCubit!);
@@ -425,9 +434,12 @@ class _ReaderPageState extends State<ReaderPage>
 
   Widget _buildHorizontalReader(Doujinshi doujinshi, int startPageIndex,
       Function(int) onPageVisible, bool reserve) {
-    if (_pageController == null) {
-      _pageController = PageController(initialPage: startPageIndex);
+    if (_horizontalPageScrollController == null) {
+      _horizontalPageScrollController =
+          PageController(initialPage: startPageIndex);
     }
+    _verticalPageScrollController = null;
+    _verticalPageIndexListener = null;
     onPageVisible(startPageIndex);
     List<String> pageUrlList = doujinshi is DownloadedDoujinshi
         ? doujinshi.downloadedPathList
@@ -436,7 +448,7 @@ class _ReaderPageState extends State<ReaderPage>
         scrollDirection: Axis.horizontal,
         itemCount: pageUrlList.length,
         reverse: reserve,
-        controller: _pageController,
+        controller: _horizontalPageScrollController,
         onPageChanged: onPageVisible,
         itemBuilder: (BuildContext c, int index) {
           print('ReaderPage: horizontal - ${pageUrlList[index]}');
@@ -496,14 +508,16 @@ class _ReaderPageState extends State<ReaderPage>
 
   Widget _buildVerticalReader(
       Doujinshi doujinshi, int startPageIndex, Function(int) onPageVisible) {
-    _pageController = null;
+    _horizontalPageScrollController = null;
+    _verticalPageScrollController = ItemScrollController();
+    _verticalPageIndexListener = ItemPositionsListener.create();
     List<String> pageUrlList = doujinshi is DownloadedDoujinshi
         ? doujinshi.downloadedPathList
         : doujinshi.fullSizePageUrlList;
     _scrollInitially(startPageIndex);
     return ScrollablePositionedList.builder(
-      itemScrollController: _pageScrollController,
-      itemPositionsListener: _pageIndexListener,
+      itemScrollController: _verticalPageScrollController,
+      itemPositionsListener: _verticalPageIndexListener,
       itemCount: pageUrlList.length,
       itemBuilder: (BuildContext buildContext, int index) {
         print('ReaderPage: vertical - ${pageUrlList[index]}');
