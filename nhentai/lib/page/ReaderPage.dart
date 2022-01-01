@@ -15,7 +15,6 @@ import 'package:nhentai/domain/usecase/StoreReadDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
-import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share/share.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -43,9 +42,12 @@ class _ReaderPageState extends State<ReaderPage>
   late AnimationController _animationController;
   late Animation<Offset> _topSlideAnimation;
   late Animation<Offset> _bottomSlideAnimation;
-  late AutoScrollController _thumbnailScrollController;
   final ItemScrollController _pageScrollController = ItemScrollController();
   final ItemPositionsListener _pageIndexListener =
+      ItemPositionsListener.create();
+  final ItemScrollController _thumbnailScrollController =
+      ItemScrollController();
+  final ItemPositionsListener _thumbnailIndexListener =
       ItemPositionsListener.create();
   PageController? _pageController;
 
@@ -73,6 +75,12 @@ class _ReaderPageState extends State<ReaderPage>
   void _scrollInitially(int startIndex) async {
     Future.delayed(Duration(seconds: 1))
         .then((value) => _pageScrollController.jumpTo(index: startIndex));
+  }
+
+  void _scrollToThumbnailIndex(int thumbnailIndex) async {
+    Future.delayed(Duration(milliseconds: 200)).then((value) =>
+        _thumbnailScrollController.scrollTo(
+            index: thumbnailIndex, duration: Duration(milliseconds: 200)));
   }
 
   @override
@@ -111,7 +119,7 @@ class _ReaderPageState extends State<ReaderPage>
             child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
                 (visiblePage) {
               _currentPageCubit?.emit(visiblePage);
-              _thumbnailScrollController.scrollToIndex(visiblePage);
+              _scrollToThumbnailIndex(visiblePage);
               _storeReadDoujinshi(doujinshi, visiblePage);
             }),
             alignment: Alignment.topLeft,
@@ -145,7 +153,6 @@ class _ReaderPageState extends State<ReaderPage>
     _screenTransparencyCubit = null;
     _pageController?.dispose();
     _pageController = null;
-    _thumbnailScrollController.dispose();
   }
 
   void _onDoubleTapDown(TapDownDetails details) {
@@ -218,7 +225,6 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   Widget _buildReaderFooter(Doujinshi doujinshi) {
-    _thumbnailScrollController = AutoScrollController(keepScrollOffset: true);
     return SlideTransition(
       position: _bottomSlideAnimation,
       child: Container(
@@ -230,9 +236,10 @@ class _ReaderPageState extends State<ReaderPage>
               children: [
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 5),
-                  child: ListView.separated(
+                  child: ScrollablePositionedList.separated(
                       reverse: readerType == ReaderType.RightToLeft,
-                      controller: _thumbnailScrollController,
+                      itemScrollController: _thumbnailScrollController,
+                      itemPositionsListener: _thumbnailIndexListener,
                       scrollDirection: Axis.horizontal,
                       itemCount: doujinshi.previewThumbnailList.length,
                       separatorBuilder: (BuildContext c, int index) {
@@ -244,36 +251,31 @@ class _ReaderPageState extends State<ReaderPage>
                         String thumbnailPath = doujinshi is DownloadedDoujinshi
                             ? doujinshi.downloadedPathList[index]
                             : doujinshi.previewThumbnailList[index];
-                        return AutoScrollTag(
-                          key: ValueKey(index),
-                          controller: _thumbnailScrollController,
-                          index: index,
-                          child: doujinshi is DownloadedDoujinshi
-                              ? DownloadedReaderThumbnail(
-                                  thumbnailPath: thumbnailPath,
-                                  width: _DEFAULT_THUMBNAIL_WIDTH,
-                                  height: _DEFAULT_THUMBNAIL_HEIGHT,
-                                  thumbnailIndex: index,
-                                  onThumbnailSelected: (selectedIndex) {
-                                    _pageScrollController.jumpTo(
-                                        index: selectedIndex);
-                                    _pageController?.jumpToPage(selectedIndex);
-                                    _currentPageCubit?.emit(selectedIndex);
-                                  },
-                                  selectedIndexBloc: _currentPageCubit!)
-                              : ReaderThumbnail(
-                                  thumbnailUrl: thumbnailPath,
-                                  width: _DEFAULT_THUMBNAIL_WIDTH,
-                                  height: _DEFAULT_THUMBNAIL_HEIGHT,
-                                  thumbnailIndex: index,
-                                  onThumbnailSelected: (selectedIndex) {
-                                    _pageScrollController.jumpTo(
-                                        index: selectedIndex);
-                                    _pageController?.jumpToPage(selectedIndex);
-                                    _currentPageCubit?.emit(selectedIndex);
-                                  },
-                                  selectedIndexBloc: _currentPageCubit!),
-                        );
+                        return doujinshi is DownloadedDoujinshi
+                            ? DownloadedReaderThumbnail(
+                                thumbnailPath: thumbnailPath,
+                                width: _DEFAULT_THUMBNAIL_WIDTH,
+                                height: _DEFAULT_THUMBNAIL_HEIGHT,
+                                thumbnailIndex: index,
+                                onThumbnailSelected: (selectedIndex) {
+                                  _pageScrollController.jumpTo(
+                                      index: selectedIndex);
+                                  _pageController?.jumpToPage(selectedIndex);
+                                  _currentPageCubit?.emit(selectedIndex);
+                                },
+                                selectedIndexBloc: _currentPageCubit!)
+                            : ReaderThumbnail(
+                                thumbnailUrl: thumbnailPath,
+                                width: _DEFAULT_THUMBNAIL_WIDTH,
+                                height: _DEFAULT_THUMBNAIL_HEIGHT,
+                                thumbnailIndex: index,
+                                onThumbnailSelected: (selectedIndex) {
+                                  _pageScrollController.jumpTo(
+                                      index: selectedIndex);
+                                  _pageController?.jumpToPage(selectedIndex);
+                                  _currentPageCubit?.emit(selectedIndex);
+                                },
+                                selectedIndexBloc: _currentPageCubit!);
                       }),
                   constraints:
                       BoxConstraints.expand(height: _DEFAULT_THUMBNAIL_HEIGHT),

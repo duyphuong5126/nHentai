@@ -525,7 +525,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                     noAction: () {});
               }),
         ),
-        visible: doujinshi is DownloadedDoujinshi,
+        visible: true,
       ));
     }
 
