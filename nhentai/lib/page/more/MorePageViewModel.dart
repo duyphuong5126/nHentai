@@ -66,7 +66,7 @@ class MorePageViewModelImpl extends MorePageViewModel {
 
   @override
   void installAndroidVersion(Version version) {
-    loadingCubit.emit('Downloading apk version ${version.appVersionCode}');
+    loadingCubit.emit('Downloading apk file');
     _downloadActiveApkUseCase
         .execute(version.appVersionCode, version.downloadUrl)
         .listen((localApkPath) {
