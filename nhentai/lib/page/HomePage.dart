@@ -9,7 +9,7 @@ import 'package:nhentai/domain/entity/masterdata/Version.dart';
 import 'package:nhentai/page/DoujinshiGallery.dart';
 import 'package:nhentai/page/DownloadPage.dart';
 import 'package:nhentai/page/DoujinshiCollectionPage.dart';
-import 'package:nhentai/page/MorePage.dart';
+import 'package:nhentai/page/more/MorePage.dart';
 
 class HomePage extends StatefulWidget {
   static const String DEFAULT_TAB_NAME = 'DoujinshiGallery';

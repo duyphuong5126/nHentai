@@ -1,13 +1,14 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nhentai/Constant.dart';
-import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/component/DefaultScreenTitle.dart';
+import 'package:nhentai/component/LoadingMessage.dart';
 import 'package:nhentai/domain/entity/masterdata/Version.dart';
-import 'package:nhentai/domain/usecase/GetActiveVersionUseCase.dart';
-import 'package:nhentai/preference/SharedPreferenceManager.dart';
+import 'package:nhentai/page/more/MorePageViewModel.dart';
+import 'package:open_file/open_file.dart';
 import 'package:package_info/package_info.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -19,48 +20,24 @@ class MorePage extends StatefulWidget {
 }
 
 class _MorePageState extends State<MorePage> {
-  final GetActiveVersionUseCase _getActiveVersionUseCase =
-      GetActiveVersionUseCaseImpl();
-  final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
-  final DataCubit<bool> _isCensoredCubit = DataCubit(false);
-  final DataCubit<PackageInfo> _packageCubit = DataCubit(
-      PackageInfo(appName: '', packageName: '', version: '', buildNumber: ''));
+  MorePageViewModel _viewModel = MorePageViewModelImpl();
+  StreamSubscription? _localApkSubscription;
 
-  final DataCubit<Version?> _newVersionCubit = DataCubit(null);
-
-  void _initCensoredStatus() async {
-    _isCensoredCubit.emit(await _preferenceManager.isCensored());
-  }
-
-  void _initPackageInfo() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    print(
-        'appName=${packageInfo.appName},packageName=${packageInfo.packageName},version=${packageInfo.version},buildNumber=${packageInfo.buildNumber}');
-    _packageCubit.emit(packageInfo);
-  }
-
-  void _initActiveVersion() async {
-    _getActiveVersionUseCase.execute().listen((activeVersion) async {
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      print(
-          'active version=${activeVersion.appVersionCode}, installed version=${packageInfo.version}');
-      if (packageInfo.version != activeVersion.appVersionCode &&
-          activeVersion.isActivated) {
-        _newVersionCubit.emit(activeVersion);
+  @override
+  void initState() {
+    super.initState();
+    _viewModel.setUp();
+    _localApkSubscription =
+        _viewModel.apkPathCubit.stream.listen((String? apkFilePath) {
+      if (apkFilePath != null) {
+        OpenFile.open(apkFilePath);
       }
     });
   }
 
-  void _setCensoredStatus(bool isCensored) async {
-    _preferenceManager.saveCensored(isCensored);
-    _isCensoredCubit.emit(isCensored);
-  }
-
   @override
   Widget build(BuildContext context) {
-    _initCensoredStatus();
-    _initPackageInfo();
-    _initActiveVersion();
+    _viewModel.initStates();
     return Scaffold(
       appBar: AppBar(
         title: DefaultScreenTitle('About'),
@@ -75,7 +52,7 @@ class _MorePageState extends State<MorePage> {
             ListView(
               children: [
                 BlocBuilder(
-                    bloc: _packageCubit,
+                    bloc: _viewModel.packageCubit,
                     builder: (context, PackageInfo packageInfo) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -186,7 +163,7 @@ class _MorePageState extends State<MorePage> {
                             color: Colors.white),
                       ),
                       BlocBuilder(
-                          bloc: _packageCubit,
+                          bloc: _viewModel.packageCubit,
                           builder: (context, PackageInfo packageInfo) {
                             String platformName = Platform.isAndroid
                                 ? 'android'
@@ -221,7 +198,7 @@ class _MorePageState extends State<MorePage> {
                 Container(
                   margin: EdgeInsets.all(10),
                   child: BlocBuilder(
-                      bloc: _isCensoredCubit,
+                      bloc: _viewModel.isCensoredCubit,
                       builder: (BuildContext c, bool isCensored) {
                         return Row(
                           children: [
@@ -242,7 +219,7 @@ class _MorePageState extends State<MorePage> {
                                 trackColor: MaterialStateProperty.resolveWith(
                                     (states) => _getSwitchTrackColor(states)),
                                 value: isCensored,
-                                onChanged: _setCensoredStatus)
+                                onChanged: _viewModel.setCensoredStatus)
                           ],
                         );
                       }),
@@ -258,7 +235,19 @@ class _MorePageState extends State<MorePage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   BlocBuilder(
-                      bloc: _newVersionCubit,
+                    bloc: _viewModel.loadingCubit,
+                    builder: (context, String? loadingMessage) {
+                      String message = loadingMessage != null
+                          ? loadingMessage
+                          : 'Loading, please wait';
+                      return Visibility(
+                        child: LoadingMessage(loadingMessage: message),
+                        visible: loadingMessage != null,
+                      );
+                    },
+                  ),
+                  BlocBuilder(
+                      bloc: _viewModel.newVersionCubit,
                       builder: (BuildContext context, Version? newVersion) {
                         String buttonLabel = newVersion != null
                             ? 'Checkout version ${newVersion.appVersionCode}'
@@ -279,7 +268,12 @@ class _MorePageState extends State<MorePage> {
                                     color: Colors.white),
                               ),
                               color: Constant.mainColor,
-                              onPressed: () => launch(url),
+                              onPressed: () {
+                                if (Platform.isAndroid && newVersion != null)
+                                  _viewModel.installAndroidVersion(newVersion);
+                                else
+                                  launch(url);
+                              },
                             ),
                           ),
                           visible: newVersion != null && newVersion.isActivated,
@@ -292,6 +286,13 @@ class _MorePageState extends State<MorePage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() async {
+    super.dispose();
+    await _localApkSubscription?.cancel();
+    _localApkSubscription = null;
   }
 
   Color _getSwitchThumbColor(Set<MaterialState> states) {
