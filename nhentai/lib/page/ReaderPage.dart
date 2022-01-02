@@ -15,6 +15,7 @@ import 'package:nhentai/domain/usecase/StoreReadDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share/share.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -42,8 +43,7 @@ class _ReaderPageState extends State<ReaderPage>
   late AnimationController _animationController;
   late Animation<Offset> _topSlideAnimation;
   late Animation<Offset> _bottomSlideAnimation;
-  ItemScrollController? _verticalPageScrollController;
-  ItemPositionsListener? _verticalPageIndexListener;
+  AutoScrollController? _verticalPageScrollController;
   ItemScrollController? _thumbnailScrollController;
   ItemPositionsListener? _thumbnailIndexListener;
   PageController? _horizontalPageScrollController;
@@ -70,9 +70,8 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _scrollInitially(int startIndex) async {
-    Future.delayed(Duration(seconds: 1)).then((value) =>
-        _verticalPageScrollController?.scrollTo(
-            index: startIndex, duration: Duration(milliseconds: 200)));
+    Future.delayed(Duration(seconds: 1)).then(
+        (value) => _verticalPageScrollController?.scrollToIndex(startIndex));
   }
 
   void _scrollToThumbnailIndex(int thumbnailIndex) async {
@@ -154,8 +153,8 @@ class _ReaderPageState extends State<ReaderPage>
     _screenTransparencyCubit = null;
     _horizontalPageScrollController?.dispose();
     _horizontalPageScrollController = null;
+    _verticalPageScrollController?.dispose();
     _verticalPageScrollController = null;
-    _verticalPageIndexListener = null;
     _thumbnailScrollController = null;
     _thumbnailIndexListener = null;
   }
@@ -263,9 +262,8 @@ class _ReaderPageState extends State<ReaderPage>
                                 height: _DEFAULT_THUMBNAIL_HEIGHT,
                                 thumbnailIndex: index,
                                 onThumbnailSelected: (selectedIndex) {
-                                  _verticalPageScrollController?.scrollTo(
-                                      index: selectedIndex,
-                                      duration: Duration(milliseconds: 200));
+                                  _verticalPageScrollController
+                                      ?.scrollToIndex(selectedIndex);
                                   _horizontalPageScrollController
                                       ?.jumpToPage(selectedIndex);
                                   _currentPageCubit?.emit(selectedIndex);
@@ -277,9 +275,8 @@ class _ReaderPageState extends State<ReaderPage>
                                 height: _DEFAULT_THUMBNAIL_HEIGHT,
                                 thumbnailIndex: index,
                                 onThumbnailSelected: (selectedIndex) {
-                                  _verticalPageScrollController?.scrollTo(
-                                      index: selectedIndex,
-                                      duration: Duration(milliseconds: 200));
+                                  _verticalPageScrollController
+                                      ?.scrollToIndex(selectedIndex);
                                   _horizontalPageScrollController
                                       ?.jumpToPage(selectedIndex);
                                   _currentPageCubit?.emit(selectedIndex);
@@ -403,6 +400,7 @@ class _ReaderPageState extends State<ReaderPage>
             },
             child: InteractiveViewer(
               transformationController: _transformationController,
+              clipBehavior: Clip.antiAlias,
               minScale: 0.5,
               maxScale: 4,
               panEnabled: true,
@@ -439,7 +437,6 @@ class _ReaderPageState extends State<ReaderPage>
           PageController(initialPage: startPageIndex);
     }
     _verticalPageScrollController = null;
-    _verticalPageIndexListener = null;
     onPageVisible(startPageIndex);
     List<String> pageUrlList = doujinshi is DownloadedDoujinshi
         ? doujinshi.downloadedPathList
@@ -509,79 +506,82 @@ class _ReaderPageState extends State<ReaderPage>
   Widget _buildVerticalReader(
       Doujinshi doujinshi, int startPageIndex, Function(int) onPageVisible) {
     _horizontalPageScrollController = null;
-    _verticalPageScrollController = ItemScrollController();
-    _verticalPageIndexListener = ItemPositionsListener.create();
+    _verticalPageScrollController = AutoScrollController();
     List<String> pageUrlList = doujinshi is DownloadedDoujinshi
         ? doujinshi.downloadedPathList
         : doujinshi.fullSizePageUrlList;
     _scrollInitially(startPageIndex);
-    return ScrollablePositionedList.builder(
-      itemScrollController: _verticalPageScrollController,
-      itemPositionsListener: _verticalPageIndexListener,
+    return ListView.builder(
+      controller: _verticalPageScrollController,
       itemCount: pageUrlList.length,
       itemBuilder: (BuildContext buildContext, int index) {
         print('ReaderPage: vertical - ${pageUrlList[index]}');
-        return VisibilityDetector(
-          key: ValueKey(index),
-          onVisibilityChanged: (VisibilityInfo info) {
-            onPageVisible((info.key as ValueKey).value);
-          },
-          child: BlocBuilder(
-              bloc: _isCensoredCubit,
-              builder: (BuildContext context, bool isCensored) {
-                return isCensored
-                    ? Container(
-                        constraints: BoxConstraints.expand(height: 300),
-                        color: Constant.grey4D4D4D,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.block,
-                          size: 50,
-                          color: Constant.mainColor,
-                        ),
-                        margin: EdgeInsets.only(bottom: 10),
-                      )
-                    : Container(
-                        child: doujinshi is DownloadedDoujinshi
-                            ? Image.file(
-                                File(pageUrlList[index]),
-                                fit: BoxFit.fitWidth,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Image.asset(
-                                  Constant.IMAGE_NOTHING,
-                                  fit: BoxFit.fitWidth,
-                                ),
-                              )
-                            : CachedNetworkImage(
-                                imageUrl: pageUrlList[index],
-                                errorWidget: (context, url, error) =>
-                                    Image.asset(
-                                  Constant.IMAGE_NOTHING,
-                                  fit: BoxFit.fitWidth,
-                                ),
-                                fit: BoxFit.fitWidth,
-                                placeholder:
-                                    (BuildContext context, String url) {
-                                  return Container(
-                                    color: Colors.transparent,
-                                    child: Center(
-                                      child: Text(
-                                        '${index + 1}',
-                                        style: TextStyle(
-                                            fontSize: 24,
-                                            fontFamily: Constant.BOLD,
-                                            color: Colors.white),
-                                      ),
+        return AutoScrollTag(
+            key: ValueKey(index),
+            controller: _verticalPageScrollController!,
+            index: index,
+            child: VisibilityDetector(
+              key: ValueKey(index),
+              onVisibilityChanged: (VisibilityInfo info) {
+                onPageVisible((info.key as ValueKey).value);
+              },
+              child: BlocBuilder(
+                  bloc: _isCensoredCubit,
+                  builder: (BuildContext context, bool isCensored) {
+                    return isCensored
+                        ? Container(
+                            constraints: BoxConstraints.expand(height: 300),
+                            color: Constant.grey4D4D4D,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.block,
+                              size: 50,
+                              color: Constant.mainColor,
+                            ),
+                            margin: EdgeInsets.only(bottom: 10),
+                          )
+                        : Container(
+                            child: doujinshi is DownloadedDoujinshi
+                                ? Image.file(
+                                    File(pageUrlList[index]),
+                                    fit: BoxFit.fitWidth,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Image.asset(
+                                      Constant.IMAGE_NOTHING,
+                                      fit: BoxFit.fitWidth,
                                     ),
-                                    constraints: BoxConstraints.expand(
-                                        height: _DEFAULT_ITEM_HEIGHT),
-                                  );
-                                },
-                              ),
-                        margin: EdgeInsets.only(bottom: 10),
-                      );
-              }),
-        );
+                                  )
+                                : CachedNetworkImage(
+                                    imageUrl: pageUrlList[index],
+                                    errorWidget: (context, url, error) =>
+                                        Image.asset(
+                                      Constant.IMAGE_NOTHING,
+                                      fit: BoxFit.fitWidth,
+                                    ),
+                                    fit: BoxFit.fitWidth,
+                                    placeholder:
+                                        (BuildContext context, String url) {
+                                      return Container(
+                                        color: Colors.transparent,
+                                        child: Center(
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
+                                                fontSize: 24,
+                                                fontFamily: Constant.BOLD,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                        constraints: BoxConstraints.expand(
+                                            height: _DEFAULT_ITEM_HEIGHT),
+                                      );
+                                    },
+                                  ),
+                            margin: EdgeInsets.only(bottom: 10),
+                          );
+                  }),
+            ));
       },
     );
   }
