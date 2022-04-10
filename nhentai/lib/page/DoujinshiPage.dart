@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,6 +45,8 @@ import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateFavoriteDoujinshiUseCase.dart';
 import 'package:nhentai/manager/DownloadManager.dart';
+import 'package:nhentai/notification/notification_helper.dart';
+import 'package:nhentai/notification/notification_helper_factory.dart';
 import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
@@ -83,6 +86,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
   late DataCubit<bool> _isFloatingActionButtonShown = DataCubit(false);
+
+  late NotificationHelper _doujinshiNotificationHelper =
+      NotificationHelperFactory.doujinshiNotificationHelper;
 
   final ItemScrollController _listScrollController = ItemScrollController();
   final ItemPositionsListener _positionsListener =
@@ -705,6 +711,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
             String content = isDeletedSuccessfully
                 ? 'Doujinshi ${doujinshi.id} was deleted successfully'
                 : 'Failed to delete doujinshi ${doujinshi.id}';
+            _sendDeleteDoujinshiNotification(
+                doujinshi.id, isDeletedSuccessfully);
             return ConfirmationAlertDialog(
                 title: title,
                 content: content,
@@ -817,5 +825,21 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           color: Constant.grey4D4D4D,
           borderRadius: BorderRadius.all(Radius.circular(3))),
     );
+  }
+
+  void _sendDeleteDoujinshiNotification(int doujinshiId, bool isSuccess) {
+    String notificationTitle =
+        isSuccess ? 'Deleted Successfully' : 'Failed To Delete';
+    String notificationBody = isSuccess
+        ? 'Doujinshi $doujinshiId was deleted successfully'
+        : 'Failed to delete doujinshi $doujinshiId';
+    if (Platform.isAndroid) {
+      _doujinshiNotificationHelper.sendAndroidNotification(
+          doujinshiId, notificationTitle, notificationBody);
+    } else if (Platform.isIOS) {
+      _doujinshiNotificationHelper.sendIOSNotification(
+          doujinshiId, notificationTitle, notificationBody,
+          presentAlert: true, presentSound: true, presentBadge: true);
+    }
   }
 }

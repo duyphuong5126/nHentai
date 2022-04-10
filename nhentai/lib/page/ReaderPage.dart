@@ -32,6 +32,7 @@ class _ReaderPageState extends State<ReaderPage>
   static const double _DEFAULT_ITEM_HEIGHT = 300;
   static const double _DEFAULT_THUMBNAIL_WIDTH = 60;
   static const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
+  static const double _DEFAULT_CACHE_EXTENT = 2000;
 
   final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   final StoreReadDoujinshiUseCase _storeReadDoujinshiUseCase =
@@ -70,7 +71,7 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _scrollInitially(int startIndex) async {
-    Future.delayed(Duration(seconds: 1)).then(
+    Future.delayed(Duration(milliseconds: 100)).then(
         (value) => _verticalPageScrollController?.scrollToIndex(startIndex));
   }
 
@@ -514,6 +515,7 @@ class _ReaderPageState extends State<ReaderPage>
     return ListView.builder(
       controller: _verticalPageScrollController,
       itemCount: pageUrlList.length,
+      cacheExtent: _DEFAULT_CACHE_EXTENT,
       itemBuilder: (BuildContext buildContext, int index) {
         print('ReaderPage: vertical - ${pageUrlList[index]}');
         return AutoScrollTag(
