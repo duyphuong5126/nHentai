@@ -580,6 +580,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
         Container(
           margin: EdgeInsets.fromLTRB(10, 15, 10, 5),
           child: RecommendedDoujinshiList(
+            listName: 'DoujinshiGallery',
             recommendationType: RecommendationType.Gallery,
           ),
         ),

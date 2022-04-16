@@ -174,6 +174,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
         Container(
           margin: EdgeInsets.fromLTRB(10, 15, 10, 5),
           child: RecommendedDoujinshiList(
+            listName: 'DoujinshiCollectionPage',
             recommendationType: recommendationType,
           ),
         ),

@@ -134,6 +134,7 @@ class _DownloadPageState extends State<DownloadPage> {
         Container(
           margin: EdgeInsets.fromLTRB(10, 15, 10, 5),
           child: RecommendedDoujinshiList(
+            listName: 'DownloadPage',
             recommendationType: RecommendationType.Downloaded,
           ),
         ),

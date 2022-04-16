@@ -11,9 +11,11 @@ import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiL
 import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 
 class RecommendedDoujinshiList extends StatefulWidget {
+  final String listName;
   final RecommendationType recommendationType;
 
-  const RecommendedDoujinshiList({Key? key, required this.recommendationType})
+  const RecommendedDoujinshiList(
+      {Key? key, required this.listName, required this.recommendationType})
       : super(key: key);
 
   @override
@@ -27,9 +29,9 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
   @override
   void initState() {
     super.initState();
-    _recommendedDoujinshiListViewModel =
-        RecommendedDoujinshiListViewModelImpl();
-    _recommendedDoujinshiListViewModel?.init(widget.recommendationType);
+    _recommendedDoujinshiListViewModel = RecommendedDoujinshiListViewModelImpl(
+        name: widget.listName, recommendationType: widget.recommendationType);
+    _recommendedDoujinshiListViewModel?.init();
   }
 
   @override
@@ -70,6 +72,7 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
                       child: Material(
                         color: Colors.transparent,
                         child: IconButton(
+                          splashRadius: 25,
                           icon: Icon(
                             Icons.refresh,
                             size: 30,
@@ -77,7 +80,7 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
                           ),
                           onPressed: () {
                             _recommendedDoujinshiListViewModel
-                                ?.init(widget.recommendationType);
+                                ?.refreshCurrentList();
                           },
                         ),
                       ),
