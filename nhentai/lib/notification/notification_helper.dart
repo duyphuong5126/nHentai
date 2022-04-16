@@ -18,13 +18,30 @@ class NotificationHelper {
       this.priority = Priority.defaultPriority});
 
   void sendAndroidNotification(int id, String title, String? body,
-      {bool onlyAlertOnce = false,
-      StyleInformation styleInformation = const BigTextStyleInformation('')}) {
+      {bool onlyAlertOnce = false, StyleInformation? styleInformation}) {
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(channelId, channelName,
             channelDescription: channelDescription,
             importance: importance,
             priority: priority,
+            onlyAlertOnce: onlyAlertOnce,
+            styleInformation: styleInformation);
+
+    flutterLocalNotificationsPlugin.show(id, title, body,
+        NotificationDetails(android: androidNotificationDetails));
+  }
+
+  void sendAndroidProgressNotification(
+      int id, String title, String? body, int progress, int maxProgress,
+      {bool onlyAlertOnce = false, StyleInformation? styleInformation}) {
+    AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(channelId, channelName,
+            channelDescription: channelDescription,
+            importance: importance,
+            priority: priority,
+            showProgress: true,
+            progress: progress,
+            maxProgress: maxProgress,
             onlyAlertOnce: onlyAlertOnce,
             styleInformation: styleInformation);
 

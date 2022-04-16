@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io' show Platform;
 
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:nhentai/bloc/DataCubit.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiDownloadProgress.dart';
@@ -65,7 +66,7 @@ class DownloadManager {
       print(
           'DownloadManager: doujinshi ${doujinshi.id} - savedPageLocalPath=$savedPageLocalPath');
       progress++;
-      _sendDownloadingNotification(progress / total, doujinshi.id);
+      _sendDownloadingNotification(progress, total, doujinshi.id);
       DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
           doujinshiId: doujinshi.id,
           pagesDownloadProgress: progress / total,
@@ -154,15 +155,18 @@ class DownloadManager {
   }
 
   static void _sendDownloadingNotification(
-      double absoluteProgress, int doujinshiId) {
-    String absoluteProgressText = '${(absoluteProgress * 100).toInt()}%';
+      int downloaded, int total, int doujinshiId) {
     String notificationTitle = 'Downloading';
-    String notificationBody =
-        'Downloading doujinshi $doujinshiId, progress: $absoluteProgressText';
+    String notificationBody = 'Downloading doujinshi $doujinshiId, please wait';
     if (Platform.isAndroid) {
-      _downloadNotificationHelper.sendAndroidNotification(
-          _downloadProgressNotificationId, notificationTitle, notificationBody,
-          onlyAlertOnce: true);
+      _downloadNotificationHelper.sendAndroidProgressNotification(
+          _downloadProgressNotificationId,
+          notificationTitle,
+          notificationBody,
+          downloaded,
+          total,
+          onlyAlertOnce: true,
+          styleInformation: const BigTextStyleInformation(''));
     } else if (Platform.isIOS) {
       _downloadNotificationHelper.sendIOSNotification(
           doujinshiId, notificationTitle, notificationBody,
@@ -181,7 +185,8 @@ class DownloadManager {
     if (Platform.isAndroid) {
       _downloadNotificationHelper.sendAndroidNotification(
           doujinshiId, notificationTitle, notificationBody,
-          onlyAlertOnce: false);
+          onlyAlertOnce: false,
+          styleInformation: const BigTextStyleInformation(''));
     } else if (Platform.isIOS) {
       _downloadNotificationHelper.sendIOSNotification(
           doujinshiId, notificationTitle, notificationBody,
