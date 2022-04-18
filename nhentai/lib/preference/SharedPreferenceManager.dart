@@ -1,13 +1,26 @@
 import 'dart:convert';
 import 'package:nhentai/domain/entity/SearchHistory.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
+import 'package:nhentai/page/uimodel/reader_screen_coverage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferenceManager {
   static const String _READER_TYPE = 'reader_type';
   static const String _READER_TRANSPARENCY = 'reader_transparency';
+  static const String _READER_SCREEN_COVERAGE = 'reader_screen_coverage';
   static const String _CENSORED = 'censored';
   static const String _SEARCH_HISTORY = 'search_history';
+
+  Future<ReaderScreenCoverage> getReaderScreenCoverage() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    int typePosition = sharedPreferences.getInt(_READER_SCREEN_COVERAGE) ?? 0;
+    return ReaderScreenCoverage.values[typePosition];
+  }
+
+  Future saveReaderScreenCoverage(ReaderScreenCoverage coverage) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    sharedPreferences.setInt(_READER_SCREEN_COVERAGE, coverage.index);
+  }
 
   Future<ReaderType> getReaderType() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();

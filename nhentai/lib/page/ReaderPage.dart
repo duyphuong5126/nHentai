@@ -14,6 +14,7 @@ import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/usecase/StoreReadDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
+import 'package:nhentai/page/uimodel/reader_screen_coverage.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -52,6 +53,8 @@ class _ReaderPageState extends State<ReaderPage>
   DataCubit<int>? _currentPageCubit = DataCubit<int>(-1);
   DataCubit<ReaderType>? _readerTypeCubit =
       DataCubit<ReaderType>(ReaderType.LeftToRight);
+  DataCubit<ReaderScreenCoverage>? _screenCoverageCubit =
+      DataCubit<ReaderScreenCoverage>(ReaderScreenCoverage.Basic);
   DataCubit<double>? _screenTransparencyCubit = DataCubit<double>(0);
 
   final DataCubit<bool> _isCensoredCubit = DataCubit(false);
@@ -62,6 +65,8 @@ class _ReaderPageState extends State<ReaderPage>
 
   void _iniReaderType() async {
     _readerTypeCubit?.emit(await _preferenceManager.getReaderType());
+    _screenCoverageCubit
+        ?.emit(await _preferenceManager.getReaderScreenCoverage());
     _screenTransparencyCubit
         ?.emit(await _preferenceManager.getReaderTransparency());
   }
@@ -98,47 +103,33 @@ class _ReaderPageState extends State<ReaderPage>
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(milliseconds: 1)).then((value) =>
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-            statusBarColor: Colors.black,
-            systemStatusBarContrastEnforced: true)));
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: [SystemUiOverlay.bottom]);
-
     ReadingModel readingModel =
         ModalRoute.of(context)?.settings.arguments as ReadingModel;
     Doujinshi doujinshi = readingModel.doujinshi;
 
     _thumbnailScrollController = ItemScrollController();
     _thumbnailIndexListener = ItemPositionsListener.create();
-    return Scaffold(
-      body: SafeArea(
-          child: Stack(
-        children: [
-          Positioned.fill(
-              child: Align(
-            child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
-                (visiblePage) {
-              _currentPageCubit?.emit(visiblePage);
-              _scrollToThumbnailIndex(visiblePage);
-              _storeReadDoujinshi(doujinshi, visiblePage);
-            }),
-            alignment: Alignment.topLeft,
-          )),
-          Positioned.fill(
-              child: Align(
-            child: _buildReaderHeader(doujinshi),
-            alignment: Alignment.topLeft,
-          )),
-          Positioned.fill(
-              child: Align(
-            child: _buildReaderFooter(doujinshi),
-            alignment: Alignment.bottomLeft,
-          ))
-        ],
-      )),
-      backgroundColor: Constant.grey1f1f1f,
-    );
+
+    return BlocBuilder(
+        bloc: _screenCoverageCubit,
+        builder: (context, ReaderScreenCoverage coverage) {
+          print('ReaderScreenCoverage>>> $coverage');
+          switch (coverage) {
+            case ReaderScreenCoverage.Basic:
+              {
+                return _buildBasicReaderBody(readingModel, doujinshi);
+              }
+            case ReaderScreenCoverage.TransparentStatusBar:
+              {
+                return _buildTransparentStatusBarReaderBody(
+                    readingModel, doujinshi);
+              }
+            case ReaderScreenCoverage.FullScreen:
+              {
+                return _buildFullScreenReaderBody(readingModel, doujinshi);
+              }
+          }
+        });
   }
 
   @override
@@ -176,10 +167,121 @@ class _ReaderPageState extends State<ReaderPage>
     }
   }
 
-  Widget _buildReaderHeader(Doujinshi doujinshi) {
+  Widget _buildBasicReaderBody(ReadingModel readingModel, Doujinshi doujinshi) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+                child: Align(
+              child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
+                  (visiblePage) {
+                _currentPageCubit?.emit(visiblePage);
+                _scrollToThumbnailIndex(visiblePage);
+                _storeReadDoujinshi(doujinshi, visiblePage);
+              }),
+              alignment: Alignment.topLeft,
+            )),
+            Positioned.fill(
+                child: Align(
+              child: _buildReaderHeader(doujinshi, 0),
+              alignment: Alignment.topLeft,
+            )),
+            Positioned.fill(
+                child: Align(
+              child: _buildReaderFooter(doujinshi),
+              alignment: Alignment.bottomLeft,
+            ))
+          ],
+        ),
+      ),
+      backgroundColor: Constant.grey1f1f1f,
+    );
+  }
+
+  Widget _buildTransparentStatusBarReaderBody(
+      ReadingModel readingModel, Doujinshi doujinshi) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemStatusBarContrastEnforced: true));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    double statusBarHeight = MediaQuery.of(context).viewPadding.top;
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+              child: Align(
+            child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
+                (visiblePage) {
+              _currentPageCubit?.emit(visiblePage);
+              _scrollToThumbnailIndex(visiblePage);
+              _storeReadDoujinshi(doujinshi, visiblePage);
+            }),
+            alignment: Alignment.topLeft,
+          )),
+          Positioned.fill(
+              child: Align(
+            child: _buildReaderHeader(doujinshi, statusBarHeight),
+            alignment: Alignment.topLeft,
+          )),
+          Positioned.fill(
+              child: Align(
+            child: _buildReaderFooter(doujinshi),
+            alignment: Alignment.bottomLeft,
+          ))
+        ],
+      ),
+      backgroundColor: Constant.grey1f1f1f,
+    );
+  }
+
+  Widget _buildFullScreenReaderBody(
+      ReadingModel readingModel, Doujinshi doujinshi) {
+    Future.delayed(Duration(milliseconds: 1)).then((value) =>
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Colors.black,
+            systemStatusBarContrastEnforced: true)));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.bottom]);
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+                child: Align(
+              child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
+                  (visiblePage) {
+                _currentPageCubit?.emit(visiblePage);
+                _scrollToThumbnailIndex(visiblePage);
+                _storeReadDoujinshi(doujinshi, visiblePage);
+              }),
+              alignment: Alignment.topLeft,
+            )),
+            Positioned.fill(
+                child: Align(
+              child: _buildReaderHeader(doujinshi, 0),
+              alignment: Alignment.topLeft,
+            )),
+            Positioned.fill(
+                child: Align(
+              child: _buildReaderFooter(doujinshi),
+              alignment: Alignment.bottomLeft,
+            ))
+          ],
+        ),
+      ),
+      backgroundColor: Constant.grey1f1f1f,
+    );
+  }
+
+  Widget _buildReaderHeader(Doujinshi doujinshi, double topSpace) {
     return SlideTransition(
       position: _topSlideAnimation,
       child: Container(
+        padding: EdgeInsets.only(top: topSpace),
         child: Row(
           children: [
             Padding(
@@ -224,7 +326,7 @@ class _ReaderPageState extends State<ReaderPage>
           ],
         ),
         color: Constant.black96000000,
-        constraints: BoxConstraints.expand(height: 50),
+        constraints: BoxConstraints.expand(height: topSpace + 50),
       ),
     );
   }
@@ -598,67 +700,130 @@ class _ReaderPageState extends State<ReaderPage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Reading type',
-                    style: TextStyle(
-                        fontFamily: Constant.BOLD,
-                        fontSize: 16,
-                        color: Colors.white),
+                  Expanded(
+                    child: Text(
+                      'Reading direction',
+                      style: TextStyle(
+                          fontFamily: Constant.BOLD,
+                          fontSize: 16,
+                          color: Colors.white),
+                    ),
+                    flex: 1,
                   ),
-                  BlocBuilder(
-                      buildWhen: (ReaderType prevType, ReaderType newType) {
-                        return newType != prevType;
-                      },
-                      bloc: _readerTypeCubit,
-                      builder: (BuildContext b, ReaderType selectedType) {
-                        return DropdownButton<ReaderType>(
-                            value: selectedType,
-                            icon: Icon(Icons.keyboard_arrow_down),
-                            iconSize: 18,
-                            onChanged: (newType) {
-                              if (newType != null) {
-                                _preferenceManager.saveReaderType(newType);
-                                _readerTypeCubit?.emit(newType);
-                              }
-                            },
-                            items: ReaderType.values
-                                .map((readerType) => generateDropDownItem(
-                                    readerType, readerType == selectedType))
-                                .toList());
-                      })
+                  Expanded(
+                    child: BlocBuilder(
+                        buildWhen: (ReaderType prevType, ReaderType newType) {
+                          return newType != prevType;
+                        },
+                        bloc: _readerTypeCubit,
+                        builder: (BuildContext b, ReaderType selectedType) {
+                          return DropdownButton<ReaderType>(
+                              isExpanded: true,
+                              value: selectedType,
+                              icon: Icon(Icons.keyboard_arrow_down),
+                              iconSize: 16,
+                              onChanged: (newType) {
+                                if (newType != null) {
+                                  _preferenceManager.saveReaderType(newType);
+                                  _readerTypeCubit?.emit(newType);
+                                }
+                              },
+                              items: ReaderType.values
+                                  .map((readerType) =>
+                                      generateReaderTypeDropDownItem(readerType,
+                                          readerType == selectedType))
+                                  .toList());
+                        }),
+                    flex: 1,
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Screen mode',
+                      style: TextStyle(
+                          fontFamily: Constant.BOLD,
+                          fontSize: 16,
+                          color: Colors.white),
+                    ),
+                    flex: 1,
+                  ),
+                  Expanded(
+                    child: BlocBuilder(
+                        buildWhen: (ReaderScreenCoverage prevCoverage,
+                            ReaderScreenCoverage newCoverage) {
+                          return prevCoverage != newCoverage;
+                        },
+                        bloc: _screenCoverageCubit,
+                        builder: (BuildContext b,
+                            ReaderScreenCoverage selectedCoverage) {
+                          return DropdownButton<ReaderScreenCoverage>(
+                              isExpanded: true,
+                              value: selectedCoverage,
+                              icon: Icon(Icons.keyboard_arrow_down),
+                              iconSize: 16,
+                              onChanged: (coverage) {
+                                if (coverage != null) {
+                                  _preferenceManager
+                                      .saveReaderScreenCoverage(coverage);
+                                  _screenCoverageCubit?.emit(coverage);
+                                }
+                              },
+                              items: ReaderScreenCoverage.values
+                                  .map((coverage) =>
+                                      generateScreenCoverageDropDownItem(
+                                          coverage,
+                                          coverage == selectedCoverage))
+                                  .toList());
+                        }),
+                    flex: 1,
+                  )
                 ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text(
-                    'Eye comfort',
-                    style: TextStyle(
-                        fontFamily: Constant.BOLD,
-                        fontSize: 16,
-                        color: Colors.white),
-                  ),
-                  BlocBuilder(
-                      buildWhen:
-                          (double preTransparency, double newTransparency) {
-                        return preTransparency != newTransparency;
-                      },
+                  Expanded(
+                    child: BlocBuilder(
                       bloc: _screenTransparencyCubit,
-                      builder: (BuildContext c, double transparency) {
-                        return Expanded(
-                            child: Container(
-                          child: Slider(
+                      builder: (context, double transparency) {
+                        return Text(
+                          'Eye comfort (${((transparency / 255) * 100).toInt()}%)',
+                          style: TextStyle(
+                              fontFamily: Constant.BOLD,
+                              fontSize: 16,
+                              color: Colors.white),
+                        );
+                      },
+                    ),
+                    flex: 3,
+                  ),
+                  Expanded(
+                    child: BlocBuilder(
+                        buildWhen:
+                            (double preTransparency, double newTransparency) {
+                          return preTransparency != newTransparency;
+                        },
+                        bloc: _screenTransparencyCubit,
+                        builder: (BuildContext c, double transparency) {
+                          return Slider(
                             value: transparency,
+                            activeColor: Constant.mainColor,
+                            inactiveColor: Constant.grey767676,
+                            thumbColor: Constant.mainDarkColor,
                             min: 0,
                             max: 255,
                             onChanged: (double value) {
                               _screenTransparencyCubit?.emit(value);
                               _preferenceManager.saveReaderTransparency(value);
                             },
-                          ),
-                          margin: EdgeInsets.only(left: 10),
-                        ));
-                      })
+                          );
+                        }),
+                    flex: 4,
+                  )
                 ],
               )
             ],
@@ -669,13 +834,25 @@ class _ReaderPageState extends State<ReaderPage>
     );
   }
 
-  DropdownMenuItem<ReaderType> generateDropDownItem(
+  DropdownMenuItem<ReaderType> generateReaderTypeDropDownItem(
       ReaderType readerType, bool isSelected) {
     Color itemColor = isSelected ? Constant.mainColor : Constant.grey767676;
     return DropdownMenuItem<ReaderType>(
         value: readerType,
         child: Text(
           Constant.READER_TYPES[readerType]!,
+          style: TextStyle(
+              fontFamily: Constant.BOLD, fontSize: 16, color: itemColor),
+        ));
+  }
+
+  DropdownMenuItem<ReaderScreenCoverage> generateScreenCoverageDropDownItem(
+      ReaderScreenCoverage coverage, bool isSelected) {
+    Color itemColor = isSelected ? Constant.mainColor : Constant.grey767676;
+    return DropdownMenuItem<ReaderScreenCoverage>(
+        value: coverage,
+        child: Text(
+          Constant.READER_SCREEN_COVERAGE_LEVELS[coverage]!,
           style: TextStyle(
               fontFamily: Constant.BOLD, fontSize: 16, color: itemColor),
         ));

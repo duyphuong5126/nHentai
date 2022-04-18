@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
+import 'package:nhentai/page/uimodel/reader_screen_coverage.dart';
 
 class Constant {
   static const String NHENTAI_HOME = 'https://nhentai.net';
@@ -39,6 +40,13 @@ class Constant {
     ReaderType.LeftToRight: 'Left to right',
     ReaderType.TopDown: 'Top down',
     ReaderType.RightToLeft: 'Right to left',
+  };
+
+  static const Map<ReaderScreenCoverage, String> READER_SCREEN_COVERAGE_LEVELS =
+      {
+    ReaderScreenCoverage.Basic: 'Basic',
+    ReaderScreenCoverage.TransparentStatusBar: 'Under status bar',
+    ReaderScreenCoverage.FullScreen: 'Full screen',
   };
 
   static Color grey4D4D4D = Color.fromARGB(255, 77, 77, 77);
