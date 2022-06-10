@@ -43,7 +43,7 @@ class DoujinshiRemoteDataSourceImpl extends DoujinshiRemoteDataSource {
     }
     String url = searchTerm.isEmpty
         ? '${Constant.NHENTAI_HOME}/api/galleries/all?page=$page' + sortString
-        : '${Constant.NHENTAI_HOME}/api/galleries/search?query=${searchTerm.replaceAll(' ', '_')}&page=$page' +
+        : '${Constant.NHENTAI_HOME}/api/galleries/search?query=${searchTerm.replaceAll(' ', '+').toLowerCase()}&page=$page' +
             sortString;
     Future<DoujinshiList> result;
     try {
