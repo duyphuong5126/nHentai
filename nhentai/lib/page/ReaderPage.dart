@@ -72,16 +72,16 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _storeReadDoujinshi(Doujinshi doujinshi, int lastReadPageIndex) async {
-    _storeReadDoujinshiUseCase.execute(doujinshi, lastReadPageIndex);
+    await _storeReadDoujinshiUseCase.execute(doujinshi, lastReadPageIndex);
   }
 
   void _scrollInitially(int startIndex) async {
-    Future.delayed(Duration(milliseconds: 100)).then(
+    await Future.delayed(Duration(milliseconds: 100)).then(
         (value) => _verticalPageScrollController?.scrollToIndex(startIndex));
   }
 
   void _scrollToThumbnailIndex(int thumbnailIndex) async {
-    Future.delayed(Duration(milliseconds: 200)).then((value) =>
+    await Future.delayed(Duration(milliseconds: 200)).then((value) =>
         _thumbnailScrollController?.scrollTo(
             index: thumbnailIndex, duration: Duration(milliseconds: 200)));
   }
@@ -615,6 +615,7 @@ class _ReaderPageState extends State<ReaderPage>
         : doujinshi.fullSizePageUrlList;
     _scrollInitially(startPageIndex);
     return ListView.builder(
+      shrinkWrap: true,
       controller: _verticalPageScrollController,
       itemCount: pageUrlList.length,
       cacheExtent: _DEFAULT_CACHE_EXTENT,
