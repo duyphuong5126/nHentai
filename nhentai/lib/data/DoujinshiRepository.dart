@@ -11,6 +11,7 @@ import 'package:nhentai/domain/entity/DownloadedDoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendDoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/entity/comment/Comment.dart';
+import 'package:nhentai/domain/entity/recommendation_info.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -31,6 +32,8 @@ abstract class DoujinshiRepository {
   Future<bool> clearLastReadPage(int doujinshiId);
 
   Future<bool> updateDoujinshiDetails(int doujinshiId);
+
+  Future<bool> updateDoujinshiInfo(Doujinshi doujinshi);
 
   Future<bool> updateFavoriteDoujinshi(Doujinshi doujinshi, bool isFavorite);
 
@@ -54,6 +57,9 @@ abstract class DoujinshiRepository {
 
   Stream<Future<List<Doujinshi>>> getRecommendedDoujinshis(
       RecommendationType recommendationType, int limit);
+
+  Future<RecommendationInfo> getRecommendationInfo(
+      RecommendationType recommendationType);
 }
 
 class DoujinshiRepositoryImpl extends DoujinshiRepository {
@@ -273,4 +279,21 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
       return doujinshiList.take(limit).toList();
     });
   }
+
+  @override
+  Future<RecommendationInfo> getRecommendationInfo(
+      RecommendationType recommendationType) {
+    return _local
+        .getRecommendedSearchTerm(recommendationType)
+        .first
+        .then((searchTerm) {
+      SortOption sortOption =
+          SortOption.values[Random().nextInt(SortOption.values.length)];
+      return RecommendationInfo(searchTerm: searchTerm, sortOption: sortOption);
+    });
+  }
+
+  @override
+  Future<bool> updateDoujinshiInfo(Doujinshi doujinshi) async =>
+      await _local.updateDoujinshiDetails(doujinshi);
 }

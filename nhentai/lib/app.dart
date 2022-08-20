@@ -45,7 +45,7 @@ class _NHentaiAppState extends State<NHentaiApp> {
       },
       navigatorObservers: [
         FirebaseAnalyticsObserver(
-            analytics: FirebaseAnalytics(),
+            analytics: FirebaseAnalytics.instance,
             nameExtractor: (RouteSettings settings) {
               String? routeName = settings.name;
               switch (settings.name) {
@@ -81,6 +81,9 @@ class _NHentaiAppState extends State<NHentaiApp> {
       if (packageInfo.version != activeVersion.appVersionCode) {
         newVersionCubit.emit(activeVersion);
       }
+    }, onError: (error, s) {
+      print(
+          'Failed to check active version error=$error');
     });
   }
 

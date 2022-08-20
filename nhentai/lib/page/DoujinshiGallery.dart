@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -12,13 +15,14 @@ import 'package:nhentai/component/NumberPageIndicesList.dart';
 import 'package:nhentai/component/SortOptionList.dart';
 import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiList.dart';
+import 'package:nhentai/data/remote/url_builder.dart';
+import 'package:nhentai/data/remote/web_network_service.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/entity/SearchHistory.dart';
 import 'package:nhentai/domain/entity/SearchHistoryItem.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
-import 'package:nhentai/domain/usecase/GetDoujinshiListUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
@@ -26,6 +30,7 @@ import 'package:nhentai/preference/SharedPreferenceManager.dart';
 import 'package:nhentai/support/Extensions.dart';
 import 'package:nhentai/component/DefaultSectionLabel.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class DoujinshiGallery extends StatefulWidget {
   @override
@@ -37,8 +42,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   static const double SUGGESTION_MAX_HEIGHT = 500.0;
   static const double SUGGESTION_WIDTH = 220.0;
 
-  final GetDoujinshiListUseCase _getBookListByPage =
-      new GetDoujinshiListUseCaseImpl();
   final GetDoujinshiUseCase _getDoujinshiUseCase = GetDoujinshiUseCaseImpl();
 
   final DataCubit<int> _numOfPagesCubit = DataCubit<int>(-1);
@@ -68,6 +71,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   int currentPage = -1;
   Map<int, List<Doujinshi>> _doujinshiMap = {};
 
+  WebViewController? _galleryController;
+
   void _changeToPage(int page) async {
     if (_doujinshiMap.containsKey(page)) {
       currentPage = page;
@@ -76,18 +81,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _doujinshiListCubit.emit(_getCurrentPage());
       _pageIndicatorCubit.emit(_pageIndicator());
     } else {
+      String galleryUrl =
+          UrlBuilder.buildGalleryUrl(page + 1, _searchTerm, _sortOption);
       _loadingCubit.emit(true);
-      DoujinshiList doujinshiList =
-          await _getBookListByPage.execute(page, _searchTerm, _sortOption);
       currentPage = page;
-      numOfPages = doujinshiList.numPages;
-      itemCountPerPage = doujinshiList.perPage;
-      _doujinshiMap[currentPage] = doujinshiList.result;
-
-      _doujinshiListCubit.emit(_getCurrentPage());
-      _numOfPagesCubit.emit(doujinshiList.numPages);
-      _pageIndicatorCubit.emit(_pageIndicator());
-      _loadingCubit.emit(false);
+      _galleryController?.loadUrl(galleryUrl);
     }
     Future.delayed(Duration(seconds: 2))
         .then((value) => _refreshController.refreshCompleted());
@@ -135,9 +133,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       });
     } else {
       _searchHistory.prependSearchTerm(searchTerm);
-      bool saveResult =
-          await _preferenceManager.saveSearchHistory(_searchHistory);
-      print('Test>>> result of saving search term $searchTerm: $saveResult');
+      await _preferenceManager.saveSearchHistory(_searchHistory);
     }
   }
 
@@ -153,10 +149,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
               yesAction: () async {
                 _searchHistory.history.removeWhere(
                     (historyItem) => historyItem.match(searchTerm));
-                bool saveResult =
-                    await _preferenceManager.saveSearchHistory(_searchHistory);
-                print(
-                    'Test>>> result of saving search term $searchTerm: $saveResult');
+                await _preferenceManager.saveSearchHistory(_searchHistory);
               },
               noAction: () {});
         });
@@ -230,14 +223,15 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   void _initSearchHistory() async {
     _searchHistory = await _preferenceManager.getSearchHistory();
-    print('Test>>> _searchHistory=$_searchHistory');
   }
 
   @override
   void initState() {
     super.initState();
+    if (Platform.isAndroid) {
+      WebView.platform = AndroidWebView();
+    }
     _initSearchHistory();
-    _changeToPage(0);
   }
 
   @override
@@ -250,6 +244,38 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       ),
       body: Stack(
         children: [
+          Positioned.fill(
+              child: Align(
+                  alignment: Alignment.topLeft,
+                  child: WebView(
+                    javascriptMode: JavascriptMode.unrestricted,
+                    onWebViewCreated: (controller) {
+                      _galleryController = controller;
+                      _changeToPage(0);
+                    },
+                    onPageFinished: (url) async {
+                      try {
+                        String? body = await _galleryController?.body.then(
+                            (webBodyString) =>
+                                WebNetworkService.unescapeBodyString(
+                                    webBodyString));
+                        if (body != null) {
+                          DoujinshiList doujinshiList =
+                              DoujinshiList.fromJson(jsonDecode(body));
+                          numOfPages = doujinshiList.numPages;
+                          itemCountPerPage = doujinshiList.perPage;
+                          _doujinshiMap[currentPage] = doujinshiList.result;
+
+                          _doujinshiListCubit.emit(_getCurrentPage());
+                          _numOfPagesCubit.emit(doujinshiList.numPages);
+                          _pageIndicatorCubit.emit(_pageIndicator());
+                          _loadingCubit.emit(false);
+                        }
+                      } catch (error) {
+                        print('Gallery WebView error=$error');
+                      }
+                    },
+                  ))),
           Positioned.fill(
               child: Align(
             alignment: Alignment.topLeft,
@@ -317,7 +343,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 );
               },
             ),
-          ))
+          )),
         ],
       ),
     );
@@ -390,7 +416,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                             _onSearchTermChanged(historyItem.searchTerm);
                           },
                           optionsViewBuilder: (context, onSelected, options) {
-                            print('Test>>> options=${options.length}');
                             return Align(
                               alignment: Alignment.topLeft,
                               child: Container(

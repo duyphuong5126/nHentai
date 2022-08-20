@@ -321,7 +321,6 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
   }
 
   void _gotoPage(int pageIndex) {
-    print('Test>>> go to page $pageIndex');
     if (pageIndex >= 0) {
       widget.selectedPageIndexHolder.data = pageIndex;
       _listScrollController.jumpTo(index: pageIndex);

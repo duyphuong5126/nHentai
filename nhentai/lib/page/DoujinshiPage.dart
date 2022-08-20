@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:io' show Platform;
 
@@ -29,6 +30,8 @@ import 'package:nhentai/component/doujinshi/PreviewSection.dart';
 import 'package:nhentai/component/doujinshi/PreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/SecondTitle.dart';
 import 'package:nhentai/component/doujinshi/TagsSection.dart';
+import 'package:nhentai/data/remote/url_builder.dart';
+import 'package:nhentai/data/remote/web_network_service.dart';
 import 'package:nhentai/domain/entity/DeletedDoujinshi.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiDownloadProgress.dart';
@@ -39,20 +42,20 @@ import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/entity/comment/Comment.dart';
 import 'package:nhentai/domain/usecase/ClearLastReadPageUseCase.dart';
 import 'package:nhentai/domain/usecase/DeleteDownloadedDoujinshiUseCase.dart';
-import 'package:nhentai/domain/usecase/GetCommentListUseCase.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
-import 'package:nhentai/domain/usecase/GetRecommendedDoujinshiListUseCase.dart';
-import 'package:nhentai/domain/usecase/UpdateDoujinshiDetailsUseCase.dart';
 import 'package:nhentai/domain/usecase/UpdateFavoriteDoujinshiUseCase.dart';
+import 'package:nhentai/domain/usecase/update_doujinshi_info_use_case.dart';
 import 'package:nhentai/manager/DownloadManager.dart';
 import 'package:nhentai/notification/notification_helper.dart';
 import 'package:nhentai/notification/notification_helper_factory.dart';
 import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
+import 'package:nhentai/support/Extensions.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class DoujinshiPage extends StatefulWidget {
   const DoujinshiPage({Key? key}) : super(key: key);
@@ -68,20 +71,16 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   late DataCubit<int> _lastReadPageCubit = DataCubit(-1);
   late DataCubit<List<Doujinshi>> _recommendedDoujinshiListCubit =
       DataCubit([]);
-  late GetRecommendedDoujinshiListUseCase _recommendedDoujinshiListUseCase =
-      GetRecommendedDoujinshiListUseCaseImpl();
   late GetDoujinshiStatusesUseCase _getDoujinshiStatusesUseCase =
       GetDoujinshiStatusesUseCaseImpl();
   late ClearLastReadPageUseCase _clearLastReadPageUseCase =
       ClearLastReadPageUseCaseImpl();
-  late UpdateDoujinshiDetailsUseCase _updateDoujinshiDetailsUseCase =
-      UpdateDoujinshiDetailsUseCaseImpl();
+  late UpdateDoujinshiInfoUseCase _updateDoujinshiInfoUseCase =
+      UpdateDoujinshiInfoUseCaseImpl();
   final UpdateFavoriteDoujinshiUseCase _updateFavoriteDoujinshiUseCase =
       UpdateFavoriteDoujinshiUseCaseImpl();
   final DeleteDownloadedDoujinshiUseCase _deleteDownloadedDoujinshiUseCase =
       DeleteDownloadedDoujinshiUseCaseImpl();
-  final GetCommentListUseCase _getCommentListUseCase =
-      GetCommentListUseCaseImpl();
   late SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   late DataCubit<bool> _isCensoredCubit = DataCubit(false);
   late DataCubit<bool> _isFavoriteCubit = DataCubit(false);
@@ -99,10 +98,15 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   StreamSubscription? _deleteSubscription;
 
+  WebViewController? _recommendationWebViewController;
+
+  WebViewController? _detailWebViewController;
+
+  WebViewController? _commentListWebViewController;
+
   void _getRecommendedList(int doujinshiId) async {
-    RecommendedDoujinshiList recommendedDoujinshiList =
-        await _recommendedDoujinshiListUseCase.execute(doujinshiId);
-    _recommendedDoujinshiListCubit.emit(recommendedDoujinshiList.result);
+    _recommendationWebViewController
+        ?.loadUrl(UrlBuilder.buildDetailRecommendationUrl(doujinshiId));
   }
 
   void _updateDoujinshiStatuses(int doujinshiId) async {
@@ -113,7 +117,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     if (statuses.isDownloaded ||
         statuses.isFavorite ||
         statuses.lastReadPageIndex >= 0) {
-      _updateDoujinshiDetailsUseCase.execute(doujinshiId);
+      _detailWebViewController?.loadUrl(UrlBuilder.buildDetailUrl(doujinshiId));
     }
   }
 
@@ -122,9 +126,16 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   }
 
   void _loadCommentList(int doujinshiId) async {
-    _getCommentListUseCase.execute(doujinshiId).listen((commentList) {
-      _commentListCubit.emit(commentList);
-    });
+    _commentListWebViewController
+        ?.loadUrl(UrlBuilder.buildCommentListUrl(doujinshiId));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isAndroid) {
+      WebView.platform = AndroidWebView();
+    }
   }
 
   @override
@@ -142,8 +153,6 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     _doujinshiId = doujinshi.id;
     _commentListCubit = DataCubit([]);
 
-    _loadCommentList(doujinshi.id);
-
     return Scaffold(
       body: SafeArea(
         child: Container(
@@ -153,8 +162,100 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
               return BlocBuilder(
                   bloc: _commentListCubit,
                   builder: (context, List<Comment> commentList) {
-                    return _generateDetailSections(doujinshi, commentList,
-                        openDoujinshiModel.isSearchable);
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 1,
+                          height: 1,
+                          child: WebView(
+                            javascriptMode: JavascriptMode.unrestricted,
+                            onWebViewCreated: (controller) {
+                              _recommendationWebViewController = controller;
+                            },
+                            onPageFinished: (url) async {
+                              try {
+                                String? body =
+                                    await _recommendationWebViewController?.body
+                                        .then((webBodyString) =>
+                                            WebNetworkService
+                                                .unescapeBodyString(
+                                                    webBodyString));
+                                if (body != null) {
+                                  RecommendedDoujinshiList doujinshiList =
+                                      RecommendedDoujinshiList.fromJson(
+                                          jsonDecode(body));
+                                  _recommendedDoujinshiListCubit
+                                      .emit(doujinshiList.result);
+                                }
+                              } catch (error) {
+                                print(
+                                    'Detail recommendation WebView error=$error');
+                              }
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          width: 1,
+                          height: 1,
+                          child: WebView(
+                            javascriptMode: JavascriptMode.unrestricted,
+                            onWebViewCreated: (controller) {
+                              _detailWebViewController = controller;
+                            },
+                            onPageFinished: (url) async {
+                              try {
+                                String? body = await _detailWebViewController
+                                    ?.body
+                                    .then((webBodyString) =>
+                                        WebNetworkService.unescapeBodyString(
+                                            webBodyString));
+                                if (body != null) {
+                                  Doujinshi doujinshi =
+                                      Doujinshi.fromJson(jsonDecode(body));
+                                  await _updateDoujinshiInfoUseCase
+                                      .execute(doujinshi);
+                                }
+                              } catch (error) {
+                                print('Detail WebView error=$error');
+                              }
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          width: 1,
+                          height: 1,
+                          child: WebView(
+                            javascriptMode: JavascriptMode.unrestricted,
+                            onWebViewCreated: (controller) {
+                              _commentListWebViewController = controller;
+                              _loadCommentList(doujinshi.id);
+                            },
+                            onPageFinished: (url) async {
+                              try {
+                                String? body =
+                                    await _commentListWebViewController?.body
+                                        .then((webBodyString) =>
+                                            WebNetworkService
+                                                .unescapeBodyString(
+                                                    webBodyString));
+                                if (body != null) {
+                                  dynamic jsonArray = jsonDecode(body);
+                                  List<Comment> commentList = [];
+                                  jsonArray.forEach((json) =>
+                                      commentList.add(Comment.fromJson(json)));
+                                  _commentListCubit.emit(commentList);
+                                }
+                              } catch (error) {
+                                print('Detail WebView error=$error');
+                              }
+                            },
+                          ),
+                        ),
+                        _generateDetailSections(doujinshi, commentList,
+                            openDoujinshiModel.isSearchable)
+                      ],
+                    );
                   });
             },
           ),
@@ -583,13 +684,16 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     }
     _getRecommendedList(doujinshi.id);
     _updateDoujinshiStatuses(doujinshi.id);
-    return ScrollablePositionedList.builder(
-      itemScrollController: _listScrollController,
-      itemPositionsListener: _positionsListener,
-      itemCount: _itemList.length,
-      itemBuilder: (context, index) {
-        return _itemList[index];
-      },
+    return Container(
+      color: Constant.grey1f1f1f,
+      child: ScrollablePositionedList.builder(
+        itemScrollController: _listScrollController,
+        itemPositionsListener: _positionsListener,
+        itemCount: _itemList.length,
+        itemBuilder: (context, index) {
+          return _itemList[index];
+        },
+      ),
     );
   }
 

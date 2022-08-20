@@ -1,7 +1,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 
 class AnalyticsUtils {
-  static late FirebaseAnalytics _analytics = FirebaseAnalytics();
+  static late FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   static const String EVENT_OPEN_DOUJINSHI = 'open_doujinshi';
   static const String EVENT_OPEN_READ_DOUJINSHI = 'open_read_doujinshi';
@@ -19,7 +19,7 @@ class AnalyticsUtils {
 
   static void setScreen(String screenName) async {
     print('AnalyticsUtils: setScreen - $screenName');
-    FirebaseAnalytics().setCurrentScreen(screenName: screenName);
+    FirebaseAnalytics.instance.setCurrentScreen(screenName: screenName);
   }
 
   static void search(String searchTerm) async {
