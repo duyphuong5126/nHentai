@@ -158,7 +158,7 @@ class DoujinshiRepositoryImpl extends DoujinshiRepository {
           pageUrlList.add(doujinshi.coverImage);
           pageUrlList.add(doujinshi.backUpCoverImage);
           pageUrlList.add(doujinshi.thumbnailImage);
-          pageUrlList.addAll(fullSizePageUrlList);
+          pageUrlList.addAll(fullSizePageUrlList.map((image) => image.path));
           return pageUrlList;
         })
         .flatMap((pageUrlList) => Stream.fromIterable(pageUrlList))

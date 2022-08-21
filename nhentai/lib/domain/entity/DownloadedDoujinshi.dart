@@ -1,7 +1,8 @@
 import 'package:nhentai/domain/entity/Doujinshi.dart';
+import 'package:nhentai/domain/entity/image.dart';
 
 class DownloadedDoujinshi extends Doujinshi {
-  final List<String> downloadedPathList;
+  final List<DoujinshiImage> downloadedPathList;
   final String downloadedCover;
   final String downloadedBackupCover;
   final String downloadedThumbnail;

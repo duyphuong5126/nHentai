@@ -1,7 +1,9 @@
 import 'package:nhentai/Constant.dart';
+import 'package:nhentai/domain/entity/DoujinshiPage.dart';
 import 'package:nhentai/domain/entity/Images.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
 import 'package:nhentai/domain/entity/Title.dart';
+import 'package:nhentai/domain/entity/image.dart';
 
 class Doujinshi {
   late int id;
@@ -17,7 +19,7 @@ class Doujinshi {
   late String thumbnailImage;
   late String coverImage;
   List<String> previewThumbnailList = [];
-  List<String> fullSizePageUrlList = [];
+  List<DoujinshiImage> fullSizePageUrlList = [];
   String backUpCoverImage = '';
   String languageIcon = '';
   String shareUrl = '';
@@ -65,9 +67,13 @@ class Doujinshi {
         String thumbnailType = images.pages[index].t == 'p' ? '.png' : '.jpg';
         previewThumbnailList.add(
             '${Constant.NHENTAI_T}/galleries/$mediaId/${index + 1}t$thumbnailType');
-        String imageType = images.pages[index].t == 'p' ? '.png' : '.jpg';
-        fullSizePageUrlList.add(
-            '${Constant.NHENTAI_I}/galleries/$mediaId/${index + 1}$imageType');
+        DoujinshiPage page = images.pages[index];
+        String imageType = page.t == 'p' ? '.png' : '.jpg';
+        fullSizePageUrlList.add(DoujinshiImage(
+            path:
+                '${Constant.NHENTAI_I}/galleries/$mediaId/${index + 1}$imageType',
+            width: page.w,
+            height: page.h));
       }
     }
 

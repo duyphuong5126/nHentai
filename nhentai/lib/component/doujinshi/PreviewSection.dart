@@ -25,8 +25,8 @@ class _PreviewSectionState extends State<PreviewSection> {
   @override
   Widget build(BuildContext context) {
     Doujinshi doujinshi = widget.doujinshi;
-    List<String> pages = doujinshi is DownloadedDoujinshi
-        ? doujinshi.downloadedPathList
+    Iterable<String> pages = doujinshi is DownloadedDoujinshi
+        ? doujinshi.downloadedPathList.map((image) => image.path)
         : doujinshi.previewThumbnailList;
     int total = pages.length;
     int numOfRows = 2;
@@ -65,7 +65,7 @@ class _PreviewSectionState extends State<PreviewSection> {
   }
 
   Widget _getThumbnail(
-      int total, int index, List<String> pages, int remainItemCount) {
+      int total, int index, Iterable<String> pages, int remainItemCount) {
     return total > MAX_ITEM && index == MAX_ITEM - 1
         ? PreviewThumbnailSeeMore(
             thumbnailUrl: pages.elementAt(index),
@@ -79,7 +79,7 @@ class _PreviewSectionState extends State<PreviewSection> {
   }
 
   Widget _getDownloadedThumbnail(
-      int total, int index, List<String> pages, int remainItemCount) {
+      int total, int index, Iterable<String> pages, int remainItemCount) {
     return total > MAX_ITEM && index == MAX_ITEM - 1
         ? DownloadedPreviewThumbnailSeeMore(
             thumbnailLocalPath: pages.elementAt(index),

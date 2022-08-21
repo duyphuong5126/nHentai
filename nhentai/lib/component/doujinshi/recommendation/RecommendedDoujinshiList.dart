@@ -7,7 +7,6 @@ import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/analytics/AnalyticsUtils.dart';
 import 'package:nhentai/component/doujinshi/HorizontalDoujinshiList.dart';
-import 'package:nhentai/data/remote/web_network_service.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiListViewModel.dart';
@@ -31,7 +30,7 @@ class RecommendedDoujinshiList extends StatefulWidget {
 class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
   RecommendedDoujinshiListViewModel? _recommendedDoujinshiListViewModel;
 
-  WebViewController? _webViewController;
+  WebViewController? _recommendationWebViewController;
 
   @override
   void initState() {
@@ -49,10 +48,12 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
     return Stack(
       alignment: Alignment.center,
       children: [
-        BlocBuilder(
+        BlocConsumer(
           bloc: _recommendedDoujinshiListViewModel?.recommendedUrl(),
+          listener: (context, String url) {
+            _recommendationWebViewController?.loadUrl(url);
+          },
           builder: (context, String url) {
-            _webViewController?.loadUrl(url);
             return url.isNotEmpty
                 ? SizedBox(
                     width: 1,
@@ -61,14 +62,13 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
                       backgroundColor: Colors.transparent,
                       javascriptMode: JavascriptMode.unrestricted,
                       onWebViewCreated: (controller) {
-                        _webViewController = controller;
+                        _recommendationWebViewController = controller;
+                        _recommendationWebViewController?.loadUrl(url);
                       },
                       onPageFinished: (url) async {
                         try {
-                          String? body = await _webViewController?.body.then(
-                              (webBodyString) =>
-                                  WebNetworkService.unescapeBodyString(
-                                      webBodyString));
+                          String? body =
+                              await _recommendationWebViewController?.bodyJson;
                           if (body != null) {
                             _recommendedDoujinshiListViewModel
                                 ?.onDataLoaded(body);

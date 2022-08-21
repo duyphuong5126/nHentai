@@ -95,7 +95,9 @@ class RecommendedDoujinshiListViewModelImpl
 
   @override
   void onDataLoaded(String rawJson) async {
-    List<Doujinshi> doujinshiList = DoujinshiList.fromJson(jsonDecode(rawJson)).result.sublist(0, RECOMMENDATION_LIMIT);
+    List<Doujinshi> doujinshiList = DoujinshiList.fromJson(jsonDecode(rawJson))
+        .result
+        .sublist(0, RECOMMENDATION_LIMIT);
     if (doujinshiList.isNotEmpty) {
       _recommendedListCubit.emit(doujinshiList);
       _namedLists[name] = doujinshiList;

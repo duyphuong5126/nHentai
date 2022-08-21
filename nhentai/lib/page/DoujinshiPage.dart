@@ -31,7 +31,6 @@ import 'package:nhentai/component/doujinshi/PreviewThumbnail.dart';
 import 'package:nhentai/component/doujinshi/SecondTitle.dart';
 import 'package:nhentai/component/doujinshi/TagsSection.dart';
 import 'package:nhentai/data/remote/url_builder.dart';
-import 'package:nhentai/data/remote/web_network_service.dart';
 import 'package:nhentai/domain/entity/DeletedDoujinshi.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiDownloadProgress.dart';
@@ -176,11 +175,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                             onPageFinished: (url) async {
                               try {
                                 String? body =
-                                    await _recommendationWebViewController?.body
-                                        .then((webBodyString) =>
-                                            WebNetworkService
-                                                .unescapeBodyString(
-                                                    webBodyString));
+                                    await _recommendationWebViewController
+                                        ?.bodyJson;
                                 if (body != null) {
                                   RecommendedDoujinshiList doujinshiList =
                                       RecommendedDoujinshiList.fromJson(
@@ -205,11 +201,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                             },
                             onPageFinished: (url) async {
                               try {
-                                String? body = await _detailWebViewController
-                                    ?.body
-                                    .then((webBodyString) =>
-                                        WebNetworkService.unescapeBodyString(
-                                            webBodyString));
+                                String? body =
+                                    await _detailWebViewController?.bodyJson;
                                 if (body != null) {
                                   Doujinshi doujinshi =
                                       Doujinshi.fromJson(jsonDecode(body));
@@ -234,11 +227,8 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                             onPageFinished: (url) async {
                               try {
                                 String? body =
-                                    await _commentListWebViewController?.body
-                                        .then((webBodyString) =>
-                                            WebNetworkService
-                                                .unescapeBodyString(
-                                                    webBodyString));
+                                    await _commentListWebViewController
+                                        ?.bodyJson;
                                 if (body != null) {
                                   dynamic jsonArray = jsonDecode(body);
                                   List<Comment> commentList = [];
@@ -508,7 +498,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           List<Widget> lastReadPageWidgets = [];
           if (lastReadPageIndex >= 0) {
             String thumbnail = doujinshi is DownloadedDoujinshi
-                ? doujinshi.downloadedPathList[lastReadPageIndex]
+                ? doujinshi.downloadedPathList[lastReadPageIndex].path
                 : doujinshi.previewThumbnailList[lastReadPageIndex];
             lastReadPageWidgets.add(Row(
               mainAxisAlignment: MainAxisAlignment.start,

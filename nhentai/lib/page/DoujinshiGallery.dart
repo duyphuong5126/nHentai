@@ -16,14 +16,12 @@ import 'package:nhentai/component/SortOptionList.dart';
 import 'package:nhentai/component/YesNoActionsAlertDialog.dart';
 import 'package:nhentai/component/doujinshi/recommendation/RecommendedDoujinshiList.dart';
 import 'package:nhentai/data/remote/url_builder.dart';
-import 'package:nhentai/data/remote/web_network_service.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiList.dart';
 import 'package:nhentai/domain/entity/RecommendationType.dart';
 import 'package:nhentai/domain/entity/SearchHistory.dart';
 import 'package:nhentai/domain/entity/SearchHistoryItem.dart';
 import 'package:nhentai/domain/entity/Tag.dart';
-import 'package:nhentai/domain/usecase/GetDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/OpenDoujinshiModel.dart';
 import 'package:nhentai/page/uimodel/SortOption.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
@@ -41,8 +39,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   static const String HINT = 'nakadashi';
   static const double SUGGESTION_MAX_HEIGHT = 500.0;
   static const double SUGGESTION_WIDTH = 220.0;
-
-  final GetDoujinshiUseCase _getDoujinshiUseCase = GetDoujinshiUseCaseImpl();
 
   final DataCubit<int> _numOfPagesCubit = DataCubit<int>(-1);
   final DataCubit<List<Doujinshi>> _doujinshiListCubit =
@@ -72,6 +68,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   Map<int, List<Doujinshi>> _doujinshiMap = {};
 
   WebViewController? _galleryController;
+
+  WebViewController? _searchDoujinController;
 
   void _changeToPage(int page) async {
     if (_doujinshiMap.containsKey(page)) {
@@ -157,13 +155,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
 
   void _searchDoujinshi(int doujinshiId) async {
     _loadingCubit.emit(true);
-    _getDoujinshiUseCase.execute(doujinshiId).listen((doujinshi) {
-      _openDoujinshi(doujinshi);
-      _loadingCubit.emit(false);
-    }, onError: (error, stackTrace) {
-      print('Failed to get doujinshi $doujinshiId with error $error');
-      _loadingCubit.emit(false);
-    }, onDone: () => _loadingCubit.emit(false));
+    _searchDoujinController?.loadUrl(UrlBuilder.buildDetailUrl(doujinshiId));
   }
 
   void _onSearchTermChanged(String newTerm) {
@@ -174,7 +166,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       _searchDoujinshi(doujinshiId);
       _saveSearchHistory(newTerm);
     } else if (newTerm != _searchTerm) {
-      _scrollController.jumpTo(0);
       _doujinshiMap.clear();
       _sortOption = SortOption.MostRecent;
       _sortOptionCubit.emit(_sortOption);
@@ -190,7 +181,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _onRefreshGallery() async {
-    _scrollController.jumpTo(0);
     _doujinshiMap.clear();
     _sortOption = SortOption.MostRecent;
     _sortOptionCubit.emit(_sortOption);
@@ -247,34 +237,75 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
           Positioned.fill(
               child: Align(
                   alignment: Alignment.topLeft,
-                  child: WebView(
-                    javascriptMode: JavascriptMode.unrestricted,
-                    onWebViewCreated: (controller) {
-                      _galleryController = controller;
-                      _changeToPage(0);
-                    },
-                    onPageFinished: (url) async {
-                      try {
-                        String? body = await _galleryController?.body.then(
-                            (webBodyString) =>
-                                WebNetworkService.unescapeBodyString(
-                                    webBodyString));
-                        if (body != null) {
-                          DoujinshiList doujinshiList =
-                              DoujinshiList.fromJson(jsonDecode(body));
-                          numOfPages = doujinshiList.numPages;
-                          itemCountPerPage = doujinshiList.perPage;
-                          _doujinshiMap[currentPage] = doujinshiList.result;
+                  child: SizedBox(
+                    child: WebView(
+                      javascriptMode: JavascriptMode.unrestricted,
+                      onWebViewCreated: (controller) {
+                        _galleryController = controller;
+                        _changeToPage(0);
+                      },
+                      onPageFinished: (url) async {
+                        try {
+                          String? body = await _galleryController?.bodyJson;
+                          if (body != null) {
+                            DoujinshiList doujinshiList =
+                                DoujinshiList.fromJson(jsonDecode(body));
+                            numOfPages = doujinshiList.numPages;
+                            itemCountPerPage = doujinshiList.perPage;
+                            _doujinshiMap[currentPage] = doujinshiList.result;
 
-                          _doujinshiListCubit.emit(_getCurrentPage());
-                          _numOfPagesCubit.emit(doujinshiList.numPages);
-                          _pageIndicatorCubit.emit(_pageIndicator());
+                            _doujinshiListCubit.emit(_getCurrentPage());
+                            _numOfPagesCubit.emit(doujinshiList.numPages);
+                            _pageIndicatorCubit.emit(_pageIndicator());
+                            _loadingCubit.emit(false);
+                          }
+                        } catch (error) {
+                          print('Gallery WebView error=$error');
                           _loadingCubit.emit(false);
+                          context.showErrorSnackBar(_searchTerm.isNotEmpty
+                              ? 'Could not search for $_searchTerm doujinshis'
+                              : 'Could not load gallery');
                         }
-                      } catch (error) {
-                        print('Gallery WebView error=$error');
-                      }
-                    },
+                      },
+                      onWebResourceError: (error) {
+                        print('Gallery WebView resource error=$error');
+                        _loadingCubit.emit(false);
+                        context.showErrorSnackBar(_searchTerm.isNotEmpty
+                            ? 'Could not search for $_searchTerm doujinshis'
+                            : 'Could not load gallery');
+                      },
+                    ),
+                    width: 1,
+                    height: 1,
+                  ))),
+          Positioned.fill(
+              child: Align(
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(
+                    child: WebView(
+                      javascriptMode: JavascriptMode.unrestricted,
+                      onWebViewCreated: (controller) {
+                        _searchDoujinController = controller;
+                      },
+                      onPageFinished: (url) async {
+                        try {
+                          String? body =
+                              await _searchDoujinController?.bodyJson;
+                          if (body != null) {
+                            _openDoujinshi(
+                                Doujinshi.fromJson(jsonDecode(body)));
+                            _loadingCubit.emit(false);
+                          }
+                        } catch (error) {
+                          print('Search Doujinshi WebView error=$error');
+                          _loadingCubit.emit(false);
+                          context.showErrorSnackBar(
+                              'Could not find any matched doujinshi');
+                        }
+                      },
+                    ),
+                    width: 1,
+                    height: 1,
                   ))),
           Positioned.fill(
               child: Align(
@@ -581,10 +612,6 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
         BlocBuilder(
             bloc: _searchTermCubit,
             builder: (BuildContext c, String searchTerm) {
-              if (searchTerm.isNotEmpty) {
-                Future.delayed(Duration(seconds: 1))
-                    .then((value) => _scrollController.jumpTo(0));
-              }
               return Visibility(
                 child: Container(
                   child: SortOptionList(

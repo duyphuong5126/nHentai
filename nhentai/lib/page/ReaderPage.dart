@@ -11,6 +11,7 @@ import 'package:nhentai/component/doujinshi/DownloadedReaderThumbnail.dart';
 import 'package:nhentai/component/doujinshi/ReaderThumbnail.dart';
 import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
+import 'package:nhentai/domain/entity/image.dart';
 import 'package:nhentai/domain/usecase/StoreReadDoujinshiUseCase.dart';
 import 'package:nhentai/page/uimodel/ReaderType.dart';
 import 'package:nhentai/page/uimodel/ReadingModel.dart';
@@ -33,7 +34,6 @@ class _ReaderPageState extends State<ReaderPage>
   static const double _DEFAULT_ITEM_HEIGHT = 300;
   static const double _DEFAULT_THUMBNAIL_WIDTH = 60;
   static const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
-  static const double _DEFAULT_CACHE_EXTENT = 2000;
 
   final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   final StoreReadDoujinshiUseCase _storeReadDoujinshiUseCase =
@@ -356,7 +356,7 @@ class _ReaderPageState extends State<ReaderPage>
                       },
                       itemBuilder: (BuildContext c, int index) {
                         String thumbnailPath = doujinshi is DownloadedDoujinshi
-                            ? doujinshi.downloadedPathList[index]
+                            ? doujinshi.downloadedPathList[index].path
                             : doujinshi.previewThumbnailList[index];
                         return doujinshi is DownloadedDoujinshi
                             ? DownloadedReaderThumbnail(
@@ -541,9 +541,9 @@ class _ReaderPageState extends State<ReaderPage>
     }
     _verticalPageScrollController = null;
     onPageVisible(startPageIndex);
-    List<String> pageUrlList = doujinshi is DownloadedDoujinshi
-        ? doujinshi.downloadedPathList
-        : doujinshi.fullSizePageUrlList;
+    Iterable<String> pageUrlList = doujinshi is DownloadedDoujinshi
+        ? doujinshi.downloadedPathList.map((page) => page.path)
+        : doujinshi.fullSizePageUrlList.map((page) => page.path);
     return PageView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: pageUrlList.length,
@@ -551,11 +551,11 @@ class _ReaderPageState extends State<ReaderPage>
         controller: _horizontalPageScrollController,
         onPageChanged: onPageVisible,
         itemBuilder: (BuildContext c, int index) {
-          print('ReaderPage: horizontal - ${pageUrlList[index]}');
+          print('ReaderPage: horizontal - ${pageUrlList.elementAt(index)}');
           Widget pageWidget = Container(
             child: doujinshi is DownloadedDoujinshi
                 ? Image.file(
-                    File(pageUrlList[index]),
+                    File(pageUrlList.elementAt(index)),
                     fit: BoxFit.fitWidth,
                     errorBuilder: (context, error, stackTrace) => Image.asset(
                       Constant.IMAGE_NOTHING,
@@ -563,7 +563,7 @@ class _ReaderPageState extends State<ReaderPage>
                     ),
                   )
                 : CachedNetworkImage(
-                    imageUrl: pageUrlList[index],
+                    imageUrl: pageUrlList.elementAt(index),
                     errorWidget: (context, url, error) => Image.asset(
                       Constant.IMAGE_NOTHING,
                       fit: BoxFit.fitWidth,
@@ -610,15 +610,20 @@ class _ReaderPageState extends State<ReaderPage>
       Doujinshi doujinshi, int startPageIndex, Function(int) onPageVisible) {
     _horizontalPageScrollController = null;
     _verticalPageScrollController = AutoScrollController();
-    List<String> pageUrlList = doujinshi is DownloadedDoujinshi
+    List<DoujinshiImage> pageUrlList = doujinshi is DownloadedDoujinshi
         ? doujinshi.downloadedPathList
         : doujinshi.fullSizePageUrlList;
+    double cacheSize = 0;
+    List<DoujinshiImage> cacheList = pageUrlList.sublist(0, startPageIndex);
+    for (int i = 0; i < cacheList.length; i++) {
+      cacheSize += cacheList.elementAt(i).height;
+    }
     _scrollInitially(startPageIndex);
     return ListView.builder(
       shrinkWrap: true,
       controller: _verticalPageScrollController,
       itemCount: pageUrlList.length,
-      cacheExtent: _DEFAULT_CACHE_EXTENT,
+      cacheExtent: cacheSize,
       itemBuilder: (BuildContext buildContext, int index) {
         print('ReaderPage: vertical - ${pageUrlList[index]}');
         return AutoScrollTag(
@@ -648,7 +653,7 @@ class _ReaderPageState extends State<ReaderPage>
                         : Container(
                             child: doujinshi is DownloadedDoujinshi
                                 ? Image.file(
-                                    File(pageUrlList[index]),
+                                    File(pageUrlList.elementAt(index).path),
                                     fit: BoxFit.fitWidth,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
@@ -658,7 +663,7 @@ class _ReaderPageState extends State<ReaderPage>
                                     ),
                                   )
                                 : CachedNetworkImage(
-                                    imageUrl: pageUrlList[index],
+                                    imageUrl: pageUrlList.elementAt(index).path,
                                     errorWidget: (context, url, error) =>
                                         Image.asset(
                                       Constant.IMAGE_NOTHING,

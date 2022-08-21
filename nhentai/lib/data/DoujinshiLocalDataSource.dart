@@ -4,6 +4,7 @@ import 'package:nhentai/domain/entity/Doujinshi.dart';
 import 'package:nhentai/domain/entity/DoujinshiStatuses.dart';
 import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/entity/RecommendationType.dart';
+import 'package:nhentai/domain/entity/image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -116,8 +117,10 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
       return DownloadedDoujinshi(
           doujinshi: doujinshi,
           downloadedPathList: doujinshi.fullSizePageUrlList
-              .map((pageUrl) =>
-                  doujinshiFolderPath + '/${pageUrl.split('/').last}')
+              .map((page) => DoujinshiImage(
+                  path: doujinshiFolderPath + '/${page.path.split('/').last}',
+                  width: page.width,
+                  height: page.height))
               .toList(),
           downloadedThumbnail: doujinshiFolderPath +
               '/${doujinshi.thumbnailImage.split('/').last}',
@@ -134,7 +137,8 @@ class DoujinshiLocalDataSourceImpl extends DoujinshiLocalDataSource {
     return Rx.fromCallable(() => Future.value(downloadedDoujinshi)).flatMap(
         (downloadedDoujinshi) {
       List<String> downloadedPaths = [];
-      downloadedPaths.addAll(downloadedDoujinshi.downloadedPathList);
+      downloadedPaths.addAll(
+          downloadedDoujinshi.downloadedPathList.map((image) => image.path));
       downloadedPaths.add(downloadedDoujinshi.downloadedCover);
       downloadedPaths.add(downloadedDoujinshi.downloadedBackupCover);
       downloadedPaths.add(downloadedDoujinshi.downloadedThumbnail);
