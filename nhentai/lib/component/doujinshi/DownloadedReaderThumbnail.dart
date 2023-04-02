@@ -34,7 +34,7 @@ class _DownloadedReaderThumbnailState extends State<DownloadedReaderThumbnail> {
   final DataCubit<bool> _isCensoredCubit = DataCubit(false);
 
   void _initCensoredStatus() async {
-    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+    _isCensoredCubit.push(await _preferenceManager.isCensored());
   }
 
   @override

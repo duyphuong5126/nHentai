@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:intl/intl.dart';
 import 'package:nhentai/Constant.dart';
 import 'package:nhentai/MainNavigator.dart';
 import 'package:nhentai/StateHolder.dart';
@@ -49,6 +50,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       DataCubit<SortOption>(SortOption.MostRecent);
   final DataCubit<bool> _loadingCubit = DataCubit<bool>(false);
   final DataCubit<bool> _refreshStatusesSignalCubit = DataCubit<bool>(false);
+  final DataCubit<int> _clearSearchBox = DataCubit(
+    DateTime.now().millisecondsSinceEpoch,
+  );
   String _searchTerm = '';
   SortOption _sortOption = SortOption.MostRecent;
 
@@ -76,14 +80,15 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
       currentPage = page;
       _doujinshiMap[currentPage] = _doujinshiMap[page]!;
 
-      _doujinshiListCubit.emit(_getCurrentPage());
-      _pageIndicatorCubit.emit(_pageIndicator());
+      _doujinshiListCubit.push(_getCurrentPage());
+      _pageIndicatorCubit.push(_pageIndicator());
     } else {
       String galleryUrl =
           UrlBuilder.buildGalleryUrl(page + 1, _searchTerm, _sortOption);
-      _loadingCubit.emit(true);
+      _loadingCubit.push(true);
       currentPage = page;
       _galleryController?.loadUrl(galleryUrl);
+      _clearSearchBox.push(DateTime.now().millisecondsSinceEpoch);
     }
     Future.delayed(Duration(seconds: 2))
         .then((value) => _refreshController.refreshCompleted());
@@ -104,18 +109,20 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   String _pageIndicator() {
     String pageIndicator;
     int currentPageSize = _getCurrentPage().length;
+    NumberFormat numberFormat = NumberFormat.decimalPattern();
     if (numOfPages <= 0) {
       pageIndicator = _searchTerm.isNotEmpty
           ? 'No result for \"$_searchTerm\"'
           : 'No result';
     } else if (currentPageSize <= 0) {
-      pageIndicator = 'Page ${currentPage + 1}/$numOfPages';
+      pageIndicator =
+          'Page ${currentPage + 1}/${numberFormat.format(numOfPages)}';
     } else if (currentPageSize <= 1) {
       pageIndicator =
-          'Page ${currentPage + 1}/$numOfPages - Loaded 1 doujinshi';
+          'Page ${currentPage + 1}/${numberFormat.format(numOfPages)} - Loaded 1 doujinshi';
     } else {
       pageIndicator =
-          'Page ${currentPage + 1}/$numOfPages - Loaded $currentPageSize doujinshis';
+          'Page ${currentPage + 1}/${numberFormat.format(numOfPages)} - Loaded $currentPageSize doujinshis';
     }
     return pageIndicator;
   }
@@ -154,8 +161,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   }
 
   void _searchDoujinshi(int doujinshiId) async {
-    _loadingCubit.emit(true);
+    _loadingCubit.push(true);
     _searchDoujinController?.loadUrl(UrlBuilder.buildDetailUrl(doujinshiId));
+    _clearSearchBox.push(DateTime.now().millisecondsSinceEpoch);
   }
 
   void _onSearchTermChanged(String newTerm) {
@@ -168,9 +176,9 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     } else if (newTerm != _searchTerm) {
       _doujinshiMap.clear();
       _sortOption = SortOption.MostRecent;
-      _sortOptionCubit.emit(_sortOption);
+      _sortOptionCubit.push(_sortOption);
       _searchTerm = newTerm;
-      _searchTermCubit.emit(newTerm);
+      _searchTermCubit.push(newTerm);
       selectedPageHolder.data = 0;
       _goToPage(0);
       if (newTerm.isNotEmpty) {
@@ -183,8 +191,8 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   void _onRefreshGallery() async {
     _doujinshiMap.clear();
     _sortOption = SortOption.MostRecent;
-    _sortOptionCubit.emit(_sortOption);
-    _searchTermCubit.emit(_searchTerm);
+    _sortOptionCubit.push(_sortOption);
+    _searchTermCubit.push(_searchTerm);
     selectedPageHolder.data = 0;
     _goToPage(0);
   }
@@ -208,7 +216,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
     if (openDoujinshiResult is Tag) {
       _onSearchTermChanged(openDoujinshiResult.name);
     }
-    _refreshStatusesSignalCubit.emit(true);
+    _refreshStatusesSignalCubit.push(true);
   }
 
   void _initSearchHistory() async {
@@ -254,14 +262,14 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                             itemCountPerPage = doujinshiList.perPage;
                             _doujinshiMap[currentPage] = doujinshiList.result;
 
-                            _doujinshiListCubit.emit(_getCurrentPage());
-                            _numOfPagesCubit.emit(doujinshiList.numPages);
-                            _pageIndicatorCubit.emit(_pageIndicator());
-                            _loadingCubit.emit(false);
+                            _doujinshiListCubit.push(_getCurrentPage());
+                            _numOfPagesCubit.push(doujinshiList.numPages);
+                            _pageIndicatorCubit.push(_pageIndicator());
+                            _loadingCubit.push(false);
                           }
                         } catch (error) {
                           print('Gallery WebView error=$error');
-                          _loadingCubit.emit(false);
+                          _loadingCubit.push(false);
                           context.showErrorSnackBar(_searchTerm.isNotEmpty
                               ? 'Could not search for $_searchTerm doujinshis'
                               : 'Could not load gallery');
@@ -269,7 +277,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       },
                       onWebResourceError: (error) {
                         print('Gallery WebView resource error=$error');
-                        _loadingCubit.emit(false);
+                        _loadingCubit.push(false);
                         context.showErrorSnackBar(_searchTerm.isNotEmpty
                             ? 'Could not search for $_searchTerm doujinshis'
                             : 'Could not load gallery');
@@ -294,11 +302,11 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                           if (body != null) {
                             _openDoujinshi(
                                 Doujinshi.fromJson(jsonDecode(body)));
-                            _loadingCubit.emit(false);
+                            _loadingCubit.push(false);
                           }
                         } catch (error) {
                           print('Search Doujinshi WebView error=$error');
-                          _loadingCubit.emit(false);
+                          _loadingCubit.push(false);
                           context.showErrorSnackBar(
                               'Could not find any matched doujinshi');
                         }
@@ -518,27 +526,36 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                               ),
                             );
                           },
-                          fieldViewBuilder: (BuildContext context,
-                              TextEditingController textEditingController,
-                              FocusNode focusNode,
-                              VoidCallback onFieldSubmitted) {
+                          fieldViewBuilder: (
+                            BuildContext context,
+                            TextEditingController textEditingController,
+                            FocusNode focusNode,
+                            VoidCallback onFieldSubmitted,
+                          ) {
                             editingController = textEditingController;
-                            return TextField(
-                              focusNode: focusNode,
-                              controller: textEditingController,
-                              decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: 'e.g. tag: "$HINT"',
-                                  hintStyle: searchTextStyle,
-                                  contentPadding: EdgeInsets.only(bottom: 10)),
-                              style: searchTextStyle,
-                              maxLines: 1,
-                              textInputAction: TextInputAction.search,
-                              onSubmitted: (searchText) {
-                                String searchTerm =
-                                    searchText.isNotEmpty ? searchText : HINT;
-                                _onSearchTermChanged(searchTerm);
+                            return BlocListener(
+                              listener: (context, state) {
+                                textEditingController.clear();
                               },
+                              bloc: _clearSearchBox,
+                              child: TextField(
+                                focusNode: focusNode,
+                                controller: textEditingController,
+                                decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'e.g. tag: "$HINT"',
+                                    hintStyle: searchTextStyle,
+                                    contentPadding:
+                                        EdgeInsets.only(bottom: 10)),
+                                style: searchTextStyle,
+                                maxLines: 1,
+                                textInputAction: TextInputAction.search,
+                                onSubmitted: (searchText) {
+                                  String searchTerm =
+                                      searchText.isNotEmpty ? searchText : HINT;
+                                  _onSearchTermChanged(searchTerm);
+                                },
+                              ),
                             );
                           },
                         ),
@@ -624,6 +641,17 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                 visible: searchTerm.isNotEmpty,
               );
             }),
+        Container(
+          margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
+          child: Center(
+            child: NumberPageIndicesList(
+              numOfPagesCubit: _numOfPagesCubit,
+              selectedPageIndexHolder: selectedPageHolder,
+              onPageSelected: this._goToPage,
+              showPageNumberInput: false,
+            ),
+          ),
+        ),
         DoujinshiGridGallery(
           doujinshiListCubit: _doujinshiListCubit,
           onDoujinshiSelected: this._openDoujinshi,

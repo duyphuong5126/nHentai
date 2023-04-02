@@ -11,6 +11,8 @@ import 'package:nhentai/domain/entity/DownloadedDoujinshi.dart';
 import 'package:nhentai/domain/usecase/GetDoujinshiStatusesUseCase.dart';
 import 'package:nhentai/preference/SharedPreferenceManager.dart';
 
+import 'Thumbnal.dart';
+
 class DoujinshiThumbnail extends StatefulWidget {
   final Doujinshi doujinshi;
   final Function(Doujinshi) onDoujinshiSelected;
@@ -44,11 +46,11 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
   void _refreshDoujinshiStatus(int doujinshiId) async {
     DoujinshiStatuses statuses =
         await _getDoujinshiStatusesUseCase.execute(doujinshiId);
-    _statusesCubit.emit(statuses);
+    _statusesCubit.push(statuses);
   }
 
   void _initCensoredStatus() async {
-    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+    _isCensoredCubit.push(await _preferenceManager.isCensored());
   }
 
   @override
@@ -59,7 +61,7 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
     widget.refreshStatusesSignalCubit?.stream.listen((needRefreshStatuses) {
       if (needRefreshStatuses) {
         _refreshDoujinshiStatus(doujinshi.id);
-        widget.refreshStatusesSignalCubit?.emit(false);
+        widget.refreshStatusesSignalCubit?.push(false);
       }
     });
     List<InlineSpan> spans = [];
@@ -123,23 +125,8 @@ class _DoujinshiThumbnailState extends State<DoujinshiThumbnail> {
                                         fit: BoxFit.fitWidth,
                                       ),
                                     )
-                                  : CachedNetworkImage(
-                                      imageUrl: doujinshi.thumbnailImage,
-                                      height: double.infinity,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (context, url, error) {
-                                        return Container(
-                                          color: Constant.getNothingColor(),
-                                          padding: EdgeInsets.all(5),
-                                          child: Image.asset(
-                                            Constant.IMAGE_NOTHING,
-                                            height: double.infinity,
-                                            width: double.infinity,
-                                            fit: BoxFit.fitWidth,
-                                          ),
-                                        );
-                                      },
+                                  : Thumbnail(
+                                      thumbnailUrl: doujinshi.thumbnailImage,
                                     );
                         }),
                     Row(

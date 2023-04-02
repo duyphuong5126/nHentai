@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,10 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share/share.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+const double _DEFAULT_ITEM_HEIGHT = 300;
+const double _DEFAULT_THUMBNAIL_WIDTH = 60;
+const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
+
 class ReaderPage extends StatefulWidget {
   const ReaderPage({Key? key}) : super(key: key);
 
@@ -31,10 +36,6 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage>
     with SingleTickerProviderStateMixin {
-  static const double _DEFAULT_ITEM_HEIGHT = 300;
-  static const double _DEFAULT_THUMBNAIL_WIDTH = 60;
-  static const double _DEFAULT_THUMBNAIL_HEIGHT = 90;
-
   final SharedPreferenceManager _preferenceManager = SharedPreferenceManager();
   final StoreReadDoujinshiUseCase _storeReadDoujinshiUseCase =
       StoreReadDoujinshiUseCaseImpl();
@@ -60,15 +61,15 @@ class _ReaderPageState extends State<ReaderPage>
   final DataCubit<bool> _isCensoredCubit = DataCubit(false);
 
   void _initCensoredStatus() async {
-    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+    _isCensoredCubit.push(await _preferenceManager.isCensored());
   }
 
   void _iniReaderType() async {
-    _readerTypeCubit?.emit(await _preferenceManager.getReaderType());
+    _readerTypeCubit?.push(await _preferenceManager.getReaderType());
     _screenCoverageCubit
-        ?.emit(await _preferenceManager.getReaderScreenCoverage());
+        ?.push(await _preferenceManager.getReaderScreenCoverage());
     _screenTransparencyCubit
-        ?.emit(await _preferenceManager.getReaderTransparency());
+        ?.push(await _preferenceManager.getReaderTransparency());
   }
 
   void _storeReadDoujinshi(Doujinshi doujinshi, int lastReadPageIndex) async {
@@ -177,7 +178,7 @@ class _ReaderPageState extends State<ReaderPage>
                 child: Align(
               child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
                   (visiblePage) {
-                _currentPageCubit?.emit(visiblePage);
+                _currentPageCubit?.push(visiblePage);
                 _scrollToThumbnailIndex(visiblePage);
                 _storeReadDoujinshi(doujinshi, visiblePage);
               }),
@@ -215,7 +216,7 @@ class _ReaderPageState extends State<ReaderPage>
               child: Align(
             child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
                 (visiblePage) {
-              _currentPageCubit?.emit(visiblePage);
+              _currentPageCubit?.push(visiblePage);
               _scrollToThumbnailIndex(visiblePage);
               _storeReadDoujinshi(doujinshi, visiblePage);
             }),
@@ -254,7 +255,7 @@ class _ReaderPageState extends State<ReaderPage>
                 child: Align(
               child: _buildReaderBody(doujinshi, readingModel.startPageIndex,
                   (visiblePage) {
-                _currentPageCubit?.emit(visiblePage);
+                _currentPageCubit?.push(visiblePage);
                 _scrollToThumbnailIndex(visiblePage);
                 _storeReadDoujinshi(doujinshi, visiblePage);
               }),
@@ -369,7 +370,7 @@ class _ReaderPageState extends State<ReaderPage>
                                       ?.scrollToIndex(selectedIndex);
                                   _horizontalPageScrollController
                                       ?.jumpToPage(selectedIndex);
-                                  _currentPageCubit?.emit(selectedIndex);
+                                  _currentPageCubit?.push(selectedIndex);
                                 },
                                 selectedIndexBloc: _currentPageCubit!)
                             : ReaderThumbnail(
@@ -382,7 +383,7 @@ class _ReaderPageState extends State<ReaderPage>
                                       ?.scrollToIndex(selectedIndex);
                                   _horizontalPageScrollController
                                       ?.jumpToPage(selectedIndex);
-                                  _currentPageCubit?.emit(selectedIndex);
+                                  _currentPageCubit?.push(selectedIndex);
                                 },
                                 selectedIndexBloc: _currentPageCubit!);
                       }),
@@ -551,7 +552,8 @@ class _ReaderPageState extends State<ReaderPage>
         controller: _horizontalPageScrollController,
         onPageChanged: onPageVisible,
         itemBuilder: (BuildContext c, int index) {
-          print('ReaderPage: horizontal - ${pageUrlList.elementAt(index)}');
+          final pageUrl = pageUrlList.elementAt(index);
+          print('ReaderPage: horizontal - $pageUrl');
           Widget pageWidget = Container(
             child: doujinshi is DownloadedDoujinshi
                 ? Image.file(
@@ -562,29 +564,9 @@ class _ReaderPageState extends State<ReaderPage>
                       fit: BoxFit.fitWidth,
                     ),
                   )
-                : CachedNetworkImage(
-                    imageUrl: pageUrlList.elementAt(index),
-                    errorWidget: (context, url, error) => Image.asset(
-                      Constant.IMAGE_NOTHING,
-                      fit: BoxFit.fitWidth,
-                    ),
-                    fit: BoxFit.fitWidth,
-                    placeholder: (BuildContext context, String url) {
-                      return Container(
-                        color: Colors.transparent,
-                        child: Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: TextStyle(
-                                fontSize: 24,
-                                fontFamily: Constant.BOLD,
-                                color: Colors.white),
-                          ),
-                        ),
-                        constraints:
-                            BoxConstraints.expand(height: _DEFAULT_ITEM_HEIGHT),
-                      );
-                    },
+                : _HorizontalPage(
+                    pageUrl: pageUrl,
+                    pageIndex: index,
                   ),
           );
           return BlocBuilder(
@@ -625,7 +607,8 @@ class _ReaderPageState extends State<ReaderPage>
       itemCount: pageUrlList.length,
       cacheExtent: cacheSize,
       itemBuilder: (BuildContext buildContext, int index) {
-        print('ReaderPage: vertical - ${pageUrlList[index]}');
+        final page = pageUrlList.elementAt(index);
+        print('ReaderPage: vertical - ${page.path}');
         return AutoScrollTag(
             key: ValueKey(index),
             controller: _verticalPageScrollController!,
@@ -662,31 +645,11 @@ class _ReaderPageState extends State<ReaderPage>
                                       fit: BoxFit.fitWidth,
                                     ),
                                   )
-                                : CachedNetworkImage(
-                                    imageUrl: pageUrlList.elementAt(index).path,
-                                    errorWidget: (context, url, error) =>
-                                        Image.asset(
-                                      Constant.IMAGE_NOTHING,
-                                      fit: BoxFit.fitWidth,
-                                    ),
-                                    fit: BoxFit.fitWidth,
-                                    placeholder:
-                                        (BuildContext context, String url) {
-                                      return Container(
-                                        color: Colors.transparent,
-                                        child: Center(
-                                          child: Text(
-                                            '${index + 1}',
-                                            style: TextStyle(
-                                                fontSize: 24,
-                                                fontFamily: Constant.BOLD,
-                                                color: Colors.white),
-                                          ),
-                                        ),
-                                        constraints: BoxConstraints.expand(
-                                            height: _DEFAULT_ITEM_HEIGHT),
-                                      );
-                                    },
+                                : _VerticalPage(
+                                    pageUrl: page.path,
+                                    pageIndex: index,
+                                    imageWidth: page.width,
+                                    imageHeight: page.height,
                                   ),
                             margin: EdgeInsets.only(bottom: 10),
                           );
@@ -731,7 +694,7 @@ class _ReaderPageState extends State<ReaderPage>
                               onChanged: (newType) {
                                 if (newType != null) {
                                   _preferenceManager.saveReaderType(newType);
-                                  _readerTypeCubit?.emit(newType);
+                                  _readerTypeCubit?.push(newType);
                                 }
                               },
                               items: ReaderType.values
@@ -775,7 +738,7 @@ class _ReaderPageState extends State<ReaderPage>
                                 if (coverage != null) {
                                   _preferenceManager
                                       .saveReaderScreenCoverage(coverage);
-                                  _screenCoverageCubit?.emit(coverage);
+                                  _screenCoverageCubit?.push(coverage);
                                 }
                               },
                               items: ReaderScreenCoverage.values
@@ -823,7 +786,7 @@ class _ReaderPageState extends State<ReaderPage>
                             min: 0,
                             max: 255,
                             onChanged: (double value) {
-                              _screenTransparencyCubit?.emit(value);
+                              _screenTransparencyCubit?.push(value);
                               _preferenceManager.saveReaderTransparency(value);
                             },
                           );
@@ -877,5 +840,178 @@ class _ReaderPageState extends State<ReaderPage>
                 print('Bookmark feature coming soon message is confirmed');
               });
         });
+  }
+}
+
+class _VerticalPage extends StatefulWidget {
+  const _VerticalPage({
+    Key? key,
+    required this.pageUrl,
+    required this.pageIndex,
+    required this.imageWidth,
+    required this.imageHeight,
+  }) : super(key: key);
+
+  final String pageUrl;
+  final int pageIndex;
+  final int imageWidth;
+  final int imageHeight;
+
+  @override
+  State<_VerticalPage> createState() => _VerticalPageState();
+}
+
+class _VerticalPageState extends State<_VerticalPage> {
+  @override
+  Widget build(BuildContext context) {
+    log("Test>>> rebuild page ${widget.pageIndex}");
+    double screenWidth = MediaQuery.of(context).size.width;
+    final widgetHeight =
+        (widget.imageHeight.toDouble() / widget.imageWidth) * screenWidth;
+
+    return Image(
+      key: ValueKey(DateTime.now().microsecondsSinceEpoch),
+      image: CachedNetworkImageProvider(
+        widget.pageUrl,
+        errorListener: _retry,
+      ),
+      height: widgetHeight,
+      errorBuilder: (context, url, error) {
+        return Container(
+          color: Constant.grey4D4D4D,
+          alignment: Alignment.center,
+          height: widgetHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Could not load page ${widget.pageIndex}',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontFamily: Constant.BOLD,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(
+                height: 16,
+              ),
+              MaterialButton(
+                color: Constant.mainColor,
+                onPressed: _retry,
+                child: Text('Retry'),
+              )
+            ],
+          ),
+        );
+      },
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) {
+          return child;
+        }
+        return Container(
+          color: Colors.transparent,
+          child: Center(
+            child: Text(
+              '${widget.pageIndex + 1}',
+              style: TextStyle(
+                fontSize: 24,
+                fontFamily: Constant.BOLD,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          constraints: BoxConstraints.expand(
+            height: _DEFAULT_ITEM_HEIGHT,
+          ),
+        );
+      },
+    );
+  }
+
+  _retry() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+}
+
+class _HorizontalPage extends StatefulWidget {
+  const _HorizontalPage({
+    Key? key,
+    required this.pageUrl,
+    required this.pageIndex,
+  }) : super(key: key);
+
+  final String pageUrl;
+  final int pageIndex;
+
+  @override
+  State<_HorizontalPage> createState() => _HorizontalPageState();
+}
+
+class _HorizontalPageState extends State<_HorizontalPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Image(
+      key: ValueKey(DateTime.now().microsecondsSinceEpoch),
+      image: CachedNetworkImageProvider(
+        widget.pageUrl,
+        errorListener: _retry,
+      ),
+      errorBuilder: (context, url, error) {
+        return Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Could not load page ${widget.pageIndex}',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontFamily: Constant.BOLD,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(
+                height: 16,
+              ),
+              MaterialButton(
+                color: Constant.mainColor,
+                onPressed: _retry,
+                child: Text('Retry'),
+              )
+            ],
+          ),
+        );
+      },
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) {
+          return child;
+        }
+        return Container(
+          color: Colors.transparent,
+          child: Center(
+            child: Text(
+              '${widget.pageIndex + 1}',
+              style: TextStyle(
+                fontSize: 24,
+                fontFamily: Constant.BOLD,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          constraints: BoxConstraints.expand(
+            height: _DEFAULT_ITEM_HEIGHT,
+          ),
+        );
+      },
+    );
+  }
+
+  _retry() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

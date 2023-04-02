@@ -99,7 +99,9 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
 
   WebViewController? _recommendationWebViewController;
 
-  WebViewController? _detailWebViewController;
+  WebViewController? _updateDoujinshiWebViewController;
+
+  WebViewController? _openDoujinshiWebViewController;
 
   WebViewController? _commentListWebViewController;
 
@@ -111,17 +113,18 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   void _updateDoujinshiStatuses(int doujinshiId) async {
     DoujinshiStatuses statuses =
         await _getDoujinshiStatusesUseCase.execute(doujinshiId);
-    _lastReadPageCubit.emit(statuses.lastReadPageIndex);
-    _isFavoriteCubit.emit(statuses.isFavorite);
+    _lastReadPageCubit.push(statuses.lastReadPageIndex);
+    _isFavoriteCubit.push(statuses.isFavorite);
     if (statuses.isDownloaded ||
         statuses.isFavorite ||
         statuses.lastReadPageIndex >= 0) {
-      _detailWebViewController?.loadUrl(UrlBuilder.buildDetailUrl(doujinshiId));
+      _updateDoujinshiWebViewController
+          ?.loadUrl(UrlBuilder.buildDetailUrl(doujinshiId));
     }
   }
 
   void _initCensoredStatus() async {
-    _isCensoredCubit.emit(await _preferenceManager.isCensored());
+    _isCensoredCubit.push(await _preferenceManager.isCensored());
   }
 
   void _loadCommentList(int doujinshiId) async {
@@ -182,7 +185,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                                       RecommendedDoujinshiList.fromJson(
                                           jsonDecode(body));
                                   _recommendedDoujinshiListCubit
-                                      .emit(doujinshiList.result);
+                                      .push(doujinshiList.result);
                                 }
                               } catch (error) {
                                 print(
@@ -194,25 +197,66 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                         SizedBox(
                           width: 1,
                           height: 1,
-                          child: WebView(
-                            javascriptMode: JavascriptMode.unrestricted,
-                            onWebViewCreated: (controller) {
-                              _detailWebViewController = controller;
-                            },
-                            onPageFinished: (url) async {
-                              try {
-                                String? body =
-                                    await _detailWebViewController?.bodyJson;
-                                if (body != null) {
-                                  Doujinshi doujinshi =
-                                      Doujinshi.fromJson(jsonDecode(body));
-                                  await _updateDoujinshiInfoUseCase
-                                      .execute(doujinshi);
-                                }
-                              } catch (error) {
-                                print('Detail WebView error=$error');
-                              }
-                            },
+                          child: Stack(
+                            alignment: Alignment.topLeft,
+                            children: [
+                              WebView(
+                                javascriptMode: JavascriptMode.unrestricted,
+                                onWebViewCreated: (controller) {
+                                  _updateDoujinshiWebViewController =
+                                      controller;
+                                },
+                                onPageFinished: (url) async {
+                                  try {
+                                    String? body =
+                                        await _updateDoujinshiWebViewController
+                                            ?.bodyJson;
+                                    if (body != null) {
+                                      Doujinshi doujinshi =
+                                          Doujinshi.fromJson(jsonDecode(body));
+                                      await _updateDoujinshiInfoUseCase
+                                          .execute(doujinshi);
+                                    }
+                                  } catch (error) {
+                                    print('Detail WebView error=$error');
+                                  }
+                                },
+                              ),
+                              WebView(
+                                javascriptMode: JavascriptMode.unrestricted,
+                                onWebViewCreated: (controller) {
+                                  _openDoujinshiWebViewController = controller;
+                                },
+                                onPageFinished: (url) async {
+                                  try {
+                                    String? body =
+                                        await _openDoujinshiWebViewController
+                                            ?.bodyJson;
+                                    if (body != null) {
+                                      Doujinshi doujinshi =
+                                          Doujinshi.fromJson(jsonDecode(body));
+                                      showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return YesNoActionsAlertDialog(
+                                              title: 'Open New Doujinshi',
+                                              content:
+                                                  'You are about to go open the doujinshi ${doujinshi.id}.\nAre you sure?',
+                                              yesLabel: 'Yes',
+                                              noLabel: 'No',
+                                              yesAction: () {
+                                                _openDoujinshi(doujinshi);
+                                              },
+                                              noAction: () {},
+                                            );
+                                          });
+                                    }
+                                  } catch (error) {
+                                    print('Detail WebView error=$error');
+                                  }
+                                },
+                              )
+                            ],
                           ),
                         ),
                         SizedBox(
@@ -234,7 +278,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                                   List<Comment> commentList = [];
                                   jsonArray.forEach((json) =>
                                       commentList.add(Comment.fromJson(json)));
-                                  _commentListCubit.emit(commentList);
+                                  _commentListCubit.push(commentList);
                                 }
                               } catch (error) {
                                 print('Detail WebView error=$error');
@@ -287,7 +331,10 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   }
 
   Widget _generateDetailSections(
-      Doujinshi doujinshi, List<Comment> commentList, bool isSearchable) {
+    Doujinshi doujinshi,
+    List<Comment> commentList,
+    bool isSearchable,
+  ) {
     Map<String, List<Tag>> tagMap = {};
     doujinshi.tags.forEach((tag) {
       if (!tagMap.containsKey(tag.type)) {
@@ -315,6 +362,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                   ),
                 )
               : CoverImage(
+                  key: ValueKey(DateTime.now().microsecondsSinceEpoch),
                   doujinshi: doujinshi,
                 );
           return GestureDetector(
@@ -593,10 +641,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                     doujinshiListCubit: _recommendedDoujinshiListCubit,
                     onDoujinshiSelected: (doujinshi) {
                       AnalyticsUtils.openRecommendedDoujinshi(doujinshi.id);
-                      _listScrollController.scrollTo(
-                          index: 0, duration: Duration(milliseconds: 500));
-                      _doujinshiCubit.emit(doujinshi);
-                      _loadCommentList(doujinshi.id);
+                      _openDoujinshi(doujinshi);
                     })
               ],
             ),
@@ -642,7 +687,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
         if (indices.isNotEmpty) {
           int minimumIndex = indices.reduce(min);
           _isFloatingActionButtonShown
-              .emit(minimumIndex > itemSizeWithoutComment);
+              .push(minimumIndex > itemSizeWithoutComment);
         }
       };
       _positionsListener.itemPositions.addListener(_visibleRangeObserver!);
@@ -687,6 +732,13 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     );
   }
 
+  _openDoujinshi(Doujinshi doujinshi) {
+    _listScrollController.scrollTo(
+        index: 0, duration: Duration(milliseconds: 500));
+    _doujinshiCubit.push(doujinshi);
+    _loadCommentList(doujinshi.id);
+  }
+
   Color _getProgressColor(double progress) {
     return progress < 0.5
         ? Constant.mainColor
@@ -696,7 +748,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
   }
 
   void _readDoujinshi(Doujinshi doujinshi, int startPageIndex) async {
-    _lastReadPageCubit.emit(-1);
+    _lastReadPageCubit.push(-1);
     AnalyticsUtils.readDoujinshi(doujinshi.id);
     await Navigator.of(context).pushNamed(MainNavigator.DOUJINSHI_READER_PAGE,
         arguments:
@@ -721,7 +773,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
     print(
         'Debug: isFavorite=$isFavorite, updateSuccessfully=$updateSuccessfully');
     if (updateSuccessfully) {
-      _isFavoriteCubit.emit(isFavorite);
+      _isFavoriteCubit.push(isFavorite);
     }
   }
 
@@ -871,21 +923,7 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
                 margin: EdgeInsets.only(right: 5),
                 child: Linkify(
                   onOpen: (link) {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return YesNoActionsAlertDialog(
-                            title: 'Open External Link',
-                            content:
-                                'You are about to go to this url: ${link.url}.\nAre you sure?',
-                            yesLabel: 'Yes',
-                            noLabel: 'No',
-                            yesAction: () {
-                              launch(link.url);
-                            },
-                            noAction: () {},
-                          );
-                        });
+                    _launch(link.url);
                   },
                   text: comment.body,
                   style: TextStyle(
@@ -935,5 +973,38 @@ class _DoujinshiPageState extends State<DoujinshiPage> {
           doujinshiId, notificationTitle, notificationBody,
           presentAlert: true, presentSound: true, presentBadge: true);
     }
+  }
+
+  static const _doujinshiLinkPattern = 'nhentai.net/g/';
+
+  _launch(String url) async {
+    if (url.contains(_doujinshiLinkPattern)) {
+      url.split('/').forEach((fragment) {
+        int? doujinshiId = int.tryParse(fragment);
+        if (doujinshiId != null) {
+          _openDoujinshiWebViewController
+              ?.loadUrl(UrlBuilder.buildDetailUrl(doujinshiId));
+        }
+      });
+    } else {
+      _launchWebUrl(url);
+    }
+  }
+
+  _launchWebUrl(String url) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return YesNoActionsAlertDialog(
+            title: 'Open External Link',
+            content: 'You are about to go to this url: $url.\nAre you sure?',
+            yesLabel: 'Yes',
+            noLabel: 'No',
+            yesAction: () {
+              launchUrl(Uri.parse(url));
+            },
+            noAction: () {},
+          );
+        });
   }
 }

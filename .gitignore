@@ -20,3 +20,6 @@ doc/api/
 *.js.deps
 *.js.map
 nhentai/android/app/google-services.json
+.idea/vcs.xml
+.idea/nHentai.iml
+.idea/modules.xml

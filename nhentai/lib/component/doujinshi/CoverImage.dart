@@ -63,23 +63,9 @@ class _CoverImageState extends State<CoverImage> {
                       );
                     });
                   })
-                : CachedNetworkImage(
-                    imageUrl: doujinshi.coverImage,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorWidget: (context, url, error) {
-                      return CachedNetworkImage(
-                        imageUrl: doujinshi.backUpCoverImage,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) {
-                          return Image.asset(
-                            'images/ic_nothing_here_grey.png',
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      );
-                    },
+                : _Cover(
+                    coverUrl: doujinshi.coverImage,
+                    backUpUrl: doujinshi.backUpCoverImage,
                   )
           ],
         ),
@@ -95,5 +81,53 @@ class _CoverImageState extends State<CoverImage> {
     _eternalScrollTimer = null;
     _scrollController?.dispose();
     _scrollController = null;
+  }
+}
+
+class _Cover extends StatefulWidget {
+  const _Cover({
+    Key? key,
+    required this.coverUrl,
+    required this.backUpUrl,
+  }) : super(key: key);
+  final String coverUrl;
+  final String backUpUrl;
+
+  @override
+  State<_Cover> createState() => _CoverState();
+}
+
+class _CoverState extends State<_Cover> {
+  String coverUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    coverUrl = widget.coverUrl;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(
+      image: CachedNetworkImageProvider(
+        coverUrl,
+        errorListener: () {
+          if (mounted) {
+            setState(() {
+              coverUrl = widget.backUpUrl;
+            });
+          }
+        },
+      ),
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          'images/ic_nothing_here_grey.png',
+          width: double.infinity,
+          fit: BoxFit.cover,
+        );
+      },
+    );
   }
 }

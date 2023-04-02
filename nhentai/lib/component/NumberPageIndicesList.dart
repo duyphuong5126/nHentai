@@ -11,13 +11,15 @@ class NumberPageIndicesList<T extends StateHolder<int>> extends StatefulWidget {
   final DataCubit<int> numOfPagesCubit;
   final Function(int) onPageSelected;
   final T selectedPageIndexHolder;
+  final bool showPageNumberInput;
 
-  const NumberPageIndicesList({
-    Key? key,
-    required this.numOfPagesCubit,
-    required this.selectedPageIndexHolder,
-    required this.onPageSelected,
-  }) : super(key: key);
+  const NumberPageIndicesList(
+      {Key? key,
+      required this.numOfPagesCubit,
+      required this.selectedPageIndexHolder,
+      required this.onPageSelected,
+      this.showPageNumberInput = true})
+      : super(key: key);
 
   @override
   _NumberPageIndicesListState createState() => _NumberPageIndicesListState();
@@ -71,10 +73,10 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
             bool isFirstIndexVisible = indices.contains(0);
             bool isLastIndexVisible = indices.contains(numOfPages - 1);
             _backwardButtonsVisibility
-                .emit(!isFirstIndexVisible && numOfPages > 0);
+                .push(!isFirstIndexVisible && numOfPages > 0);
             _forwardButtonsVisibility
-                .emit(!isLastIndexVisible && numOfPages > 0);
-            _pageNumberTextFieldVisibility.emit(numOfPages > 0 &&
+                .push(!isLastIndexVisible && numOfPages > 0);
+            _pageNumberTextFieldVisibility.push(numOfPages > 0 &&
                 (!isFirstIndexVisible || !isLastIndexVisible));
           };
           _positionsListener.itemPositions.addListener(_visibleRangeObserver!);
@@ -165,7 +167,7 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
                                 onPagePressed: (selectedPage) {
                                   widget.selectedPageIndexHolder.data =
                                       selectedPage;
-                                  _selectedPageIndexCubit.emit(selectedPage);
+                                  _selectedPageIndexCubit.push(selectedPage);
                                   widget.onPageSelected(selectedPage);
                                 },
                               );
@@ -230,73 +232,85 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
                       ],
                     ),
                   ),
-                  BlocBuilder(
-                      bloc: _pageNumberTextFieldVisibility,
-                      builder: (context, bool isVisible) {
-                        return Visibility(
-                          child: Center(
-                            child: Container(
-                              margin: EdgeInsets.only(top: 10.0),
-                              width: 220,
-                              height: 40,
-                              child: Container(
-                                padding: EdgeInsets.only(left: 10.0),
-                                decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(20))),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      child: TextField(
-                                        controller: _pageNumberInputController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: InputDecoration(
-                                            hintStyle: TextStyle(
+                  !widget.showPageNumberInput
+                      ? Visibility(
+                          child: Container(),
+                          visible: false,
+                        )
+                      : BlocBuilder(
+                          bloc: _pageNumberTextFieldVisibility,
+                          builder: (context, bool isVisible) {
+                            return Visibility(
+                              child: Center(
+                                child: Container(
+                                  margin: EdgeInsets.only(top: 10.0),
+                                  width: 220,
+                                  height: 40,
+                                  child: Container(
+                                    padding: EdgeInsets.only(left: 10.0),
+                                    decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(20))),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          child: TextField(
+                                            controller:
+                                                _pageNumberInputController,
+                                            keyboardType: TextInputType.number,
+                                            decoration: InputDecoration(
+                                                hintStyle: TextStyle(
+                                                    color: Constant.grey1f1f1f,
+                                                    fontFamily:
+                                                        Constant.REGULAR,
+                                                    fontSize: 15),
+                                                border: InputBorder.none,
+                                                hintText: 'Page number'),
+                                            style: TextStyle(
                                                 color: Constant.grey1f1f1f,
                                                 fontFamily: Constant.REGULAR,
                                                 fontSize: 15),
-                                            border: InputBorder.none,
-                                            hintText: 'Page number'),
-                                        style: TextStyle(
-                                            color: Constant.grey1f1f1f,
-                                            fontFamily: Constant.REGULAR,
-                                            fontSize: 15),
-                                        onSubmitted: (text) {
-                                          _submitPageIndex(text, numOfPages);
-                                        },
-                                      ),
-                                      width: 150,
-                                      height: 60,
-                                    ),
-                                    Material(
-                                      color: Colors.transparent,
-                                      child: Ink(
-                                        child: InkWell(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: Icon(
-                                              Icons.arrow_forward,
-                                              size: 20,
-                                              color: Constant.grey1f1f1f,
+                                            onSubmitted: (text) {
+                                              _submitPageIndex(
+                                                  text, numOfPages);
+                                            },
+                                          ),
+                                          width: 150,
+                                          height: 60,
+                                        ),
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: Ink(
+                                            child: InkWell(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
+                                                child: Icon(
+                                                  Icons.arrow_forward,
+                                                  size: 20,
+                                                  color: Constant.grey1f1f1f,
+                                                ),
+                                              ),
+                                              onTap: () => _submitPageIndex(
+                                                  _pageNumberInputController
+                                                      .text,
+                                                  numOfPages),
                                             ),
                                           ),
-                                          onTap: () => _submitPageIndex(
-                                              _pageNumberInputController.text,
-                                              numOfPages),
-                                        ),
-                                      ),
-                                    )
-                                  ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          visible: isVisible,
-                        );
-                      })
+                              visible: isVisible,
+                            );
+                          })
                 ],
               ),
               visible: numOfPages > 0,
@@ -324,7 +338,7 @@ class _NumberPageIndicesListState extends State<NumberPageIndicesList> {
     if (pageIndex >= 0) {
       widget.selectedPageIndexHolder.data = pageIndex;
       _listScrollController.jumpTo(index: pageIndex);
-      _selectedPageIndexCubit.emit(pageIndex);
+      _selectedPageIndexCubit.push(pageIndex);
       widget.onPageSelected(pageIndex);
     }
   }

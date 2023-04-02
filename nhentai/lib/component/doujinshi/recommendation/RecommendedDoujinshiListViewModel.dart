@@ -63,7 +63,7 @@ class RecommendedDoujinshiListViewModelImpl
     List<Doujinshi>? namedList = _namedLists[name];
     print('Recommendation of $name>>> cached list $namedList');
     if (namedList != null && namedList.isNotEmpty) {
-      _recommendedListCubit.emit(namedList);
+      _recommendedListCubit.push(namedList);
     } else {
       refreshCurrentList();
     }
@@ -77,7 +77,7 @@ class RecommendedDoujinshiListViewModelImpl
         .listen((RecommendationInfo recommendationInfo) {
       String finalUrl = UrlBuilder.buildGalleryUrl(
           1, recommendationInfo.searchTerm, recommendationInfo.sortOption);
-      _recommendedUrl.emit(finalUrl);
+      _recommendedUrl.push(finalUrl);
     }, onError: (error, stackTrace) {
       print(
           'Recommendation of $name>>> Could not get recommended doujinshis with error $error');
@@ -99,7 +99,7 @@ class RecommendedDoujinshiListViewModelImpl
         .result
         .sublist(0, RECOMMENDATION_LIMIT);
     if (doujinshiList.isNotEmpty) {
-      _recommendedListCubit.emit(doujinshiList);
+      _recommendedListCubit.push(doujinshiList);
       _namedLists[name] = doujinshiList;
     }
   }

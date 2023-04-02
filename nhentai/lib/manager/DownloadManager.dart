@@ -52,7 +52,7 @@ class DownloadManager {
       return;
     }
     onDownloadStarted?.call();
-    DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
+    DownloadManager.downloadProgressCubit.push(DoujinshiDownloadProgress(
         doujinshiId: doujinshi.id,
         pagesDownloadProgress: 0.0,
         isFailed: false,
@@ -67,7 +67,7 @@ class DownloadManager {
           'DownloadManager: doujinshi ${doujinshi.id} - savedPageLocalPath=$savedPageLocalPath');
       progress++;
       _sendDownloadingNotification(progress, total, doujinshi.id);
-      DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
+      DownloadManager.downloadProgressCubit.push(DoujinshiDownloadProgress(
           doujinshiId: doujinshi.id,
           pagesDownloadProgress: progress / total,
           isFailed: false,
@@ -77,7 +77,7 @@ class DownloadManager {
       downloadSubscription = null;
       print(
           'DownloadManager: failed to download doujinshi ${doujinshi.id} with error $error');
-      DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
+      DownloadManager.downloadProgressCubit.push(DoujinshiDownloadProgress(
           doujinshiId: doujinshi.id,
           pagesDownloadProgress: (progress / total),
           isFailed: true,
@@ -89,7 +89,7 @@ class DownloadManager {
           (onFinishObserver) => onFinishObserver.call(doujinshi.id, true));
       _finishDownloadObservers.clear();
 
-      DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
+      DownloadManager.downloadProgressCubit.push(DoujinshiDownloadProgress(
           doujinshiId: -1,
           pagesDownloadProgress: 0,
           isFailed: false,
@@ -100,13 +100,13 @@ class DownloadManager {
       print('DownloadManager: downloaded doujinshi ${doujinshi.id}');
       await Future.delayed(Duration(seconds: 1), () {
         progress++;
-        DownloadManager.downloadProgressCubit.emit(DoujinshiDownloadProgress(
+        DownloadManager.downloadProgressCubit.push(DoujinshiDownloadProgress(
             doujinshiId: doujinshi.id,
             pagesDownloadProgress: (progress / total),
             isFailed: false,
             isFinished: false));
       }).then((value) => Future.delayed(Duration(seconds: 1), () {
-            DownloadManager.downloadProgressCubit.emit(
+            DownloadManager.downloadProgressCubit.push(
                 DoujinshiDownloadProgress(
                     doujinshiId: doujinshi.id,
                     pagesDownloadProgress: (progress / total),
@@ -119,7 +119,7 @@ class DownloadManager {
                 onFinishObserver.call(doujinshi.id, false));
             _finishDownloadObservers.clear();
 
-            DownloadManager.downloadProgressCubit.emit(
+            DownloadManager.downloadProgressCubit.push(
                 DoujinshiDownloadProgress(
                     doujinshiId: -1,
                     pagesDownloadProgress: 0,

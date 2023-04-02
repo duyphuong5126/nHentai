@@ -37,7 +37,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isRecent) {
-                    widget.sortOptionCubit.emit(SortOption.MostRecent);
+                    widget.sortOptionCubit.push(SortOption.MostRecent);
                     widget.onSortOptionSelected(SortOption.MostRecent);
                   }
                 },
@@ -80,7 +80,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isPopularToday) {
-                    widget.sortOptionCubit.emit(SortOption.PopularToday);
+                    widget.sortOptionCubit.push(SortOption.PopularToday);
                     widget.onSortOptionSelected(SortOption.PopularToday);
                   }
                 },
@@ -104,7 +104,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isPopularThisWeek) {
-                    widget.sortOptionCubit.emit(SortOption.PopularThisWeek);
+                    widget.sortOptionCubit.push(SortOption.PopularThisWeek);
                     widget.onSortOptionSelected(SortOption.PopularThisWeek);
                   }
                 },
@@ -128,7 +128,7 @@ class _SortOptionListState extends State<SortOptionList> {
               GestureDetector(
                 onTap: () {
                   if (!isPopularAllTime) {
-                    widget.sortOptionCubit.emit(SortOption.PopularAllTime);
+                    widget.sortOptionCubit.push(SortOption.PopularAllTime);
                     widget.onSortOptionSelected(SortOption.PopularAllTime);
                   }
                 },

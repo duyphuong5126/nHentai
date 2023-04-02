@@ -79,7 +79,7 @@ class _NHentaiAppState extends State<NHentaiApp> {
       print(
           'Active version=${activeVersion.appVersionCode}, installed version=${packageInfo.version}');
       if (packageInfo.version != activeVersion.appVersionCode) {
-        newVersionCubit.emit(activeVersion);
+        newVersionCubit.push(activeVersion);
       }
     }, onError: (error, s) {
       print(

@@ -96,7 +96,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
                     : Icon(Icons.history);
                 return IconButton(
                     onPressed: () {
-                      _collectionTypeCubit.emit(
+                      _collectionTypeCubit.push(
                           collectionType == DoujinshiCollectionType.Recent
                               ? DoujinshiCollectionType.Favorite
                               : DoujinshiCollectionType.Recent);
@@ -237,7 +237,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
             _changeToPage(0);
           } else if (favoriteCount != _favoriteCount) {
             _favoriteCount = favoriteCount;
-            refreshStatusesSignalCubit.emit(true);
+            refreshStatusesSignalCubit.push(true);
           }
           break;
         }
@@ -275,10 +275,10 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
       _currentPage = page;
       doujinshiMap[_currentPage] = doujinshiMap[page]!;
 
-      _doujinshiListCubit.emit(_getCurrentPage());
-      _pageIndicatorCubit.emit(_pageIndicator());
+      _doujinshiListCubit.push(_getCurrentPage());
+      _pageIndicatorCubit.push(_pageIndicator());
     } else {
-      _loadingCubit.emit(true);
+      _loadingCubit.push(true);
       DoujinshiList doujinshiList = _collectionTypeCubit.state ==
               DoujinshiCollectionType.Recent
           ? await _getRecentlyReadDoujinshiListUseCase.execute(page, _PER_PAGE)
@@ -287,10 +287,10 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
       _numOfPages = doujinshiList.numPages;
       doujinshiMap[_currentPage] = doujinshiList.result;
 
-      _doujinshiListCubit.emit(_getCurrentPage());
-      _numOfPagesCubit.emit(doujinshiList.numPages);
-      _pageIndicatorCubit.emit(_pageIndicator());
-      _loadingCubit.emit(false);
+      _doujinshiListCubit.push(_getCurrentPage());
+      _numOfPagesCubit.push(doujinshiList.numPages);
+      _pageIndicatorCubit.push(_pageIndicator());
+      _loadingCubit.push(false);
     }
   }
 
@@ -335,9 +335,9 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
     _currentPage = -1;
     doujinshiMap.clear();
     _scrollController.jumpTo(0);
-    _numOfPagesCubit.emit(0);
-    _doujinshiListCubit.emit([]);
-    _pageIndicatorCubit.emit('');
-    _loadingCubit.emit(false);
+    _numOfPagesCubit.push(0);
+    _doujinshiListCubit.push([]);
+    _pageIndicatorCubit.push('');
+    _loadingCubit.push(false);
   }
 }

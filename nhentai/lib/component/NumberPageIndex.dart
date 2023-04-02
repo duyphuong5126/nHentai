@@ -25,7 +25,7 @@ class _NumberPageIndexState extends State<NumberPageIndex> {
   @override
   Widget build(BuildContext context) {
     int index = widget.pageIndex;
-    widget.selectedPageIndexCubit.emit(widget.initialSelectedPageIndex);
+    widget.selectedPageIndexCubit.push(widget.initialSelectedPageIndex);
     return BlocBuilder(
         bloc: widget.selectedPageIndexCubit,
         buildWhen: (int previousIndex, int currentIndex) {

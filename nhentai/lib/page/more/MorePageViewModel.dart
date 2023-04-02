@@ -40,12 +40,12 @@ class MorePageViewModelImpl extends MorePageViewModel {
 
   @override
   void initStates() async {
-    isCensoredCubit.emit(await _preferenceManager.isCensored());
+    isCensoredCubit.push(await _preferenceManager.isCensored());
 
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     print(
         'appName=${packageInfo.appName},packageName=${packageInfo.packageName},version=${packageInfo.version},buildNumber=${packageInfo.buildNumber}');
-    packageCubit.emit(packageInfo);
+    packageCubit.push(packageInfo);
 
     _getActiveVersionUseCase.execute().listen((activeVersion) async {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -53,7 +53,7 @@ class MorePageViewModelImpl extends MorePageViewModel {
           'active version=${activeVersion.appVersionCode}, installed version=${packageInfo.version}');
       if (packageInfo.version != activeVersion.appVersionCode &&
           activeVersion.isActivated) {
-        newVersionCubit.emit(activeVersion);
+        newVersionCubit.push(activeVersion);
       }
     });
   }
@@ -61,21 +61,21 @@ class MorePageViewModelImpl extends MorePageViewModel {
   @override
   void setCensoredStatus(bool isCensored) {
     _preferenceManager.saveCensored(isCensored);
-    isCensoredCubit.emit(isCensored);
+    isCensoredCubit.push(isCensored);
   }
 
   @override
   void installAndroidVersion(Version version) {
-    loadingCubit.emit('Downloading apk file');
+    loadingCubit.push('Downloading apk file');
     _downloadActiveApkUseCase
         .execute(version.appVersionCode, version.downloadUrl)
         .listen((localApkPath) {
-      loadingCubit.emit(null);
-      apkPathCubit.emit(localApkPath);
+      loadingCubit.push(null);
+      apkPathCubit.push(localApkPath);
     }, onDone: () {
-      loadingCubit.emit(null);
+      loadingCubit.push(null);
     }, onError: (error, stackTrace) {
-      loadingCubit.emit(null);
+      loadingCubit.push(null);
     });
   }
 }
