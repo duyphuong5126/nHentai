@@ -65,6 +65,7 @@ class _DownloadPageState extends State<DownloadPage> {
     _initDoujinshiCollection();
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: DefaultScreenTitle('Download'),
         centerTitle: true,
         backgroundColor: Constant.mainColor,

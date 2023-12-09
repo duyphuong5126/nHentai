@@ -76,6 +76,7 @@ class _DoujinshiCollectionPageState extends State<DoujinshiCollectionPage> {
     _initDoujinshiCollection();
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: BlocBuilder(
           bloc: _collectionTypeCubit,
           builder: (context, collectionType) {

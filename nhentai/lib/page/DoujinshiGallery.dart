@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -236,6 +237,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: _getTitle(),
         centerTitle: true,
         backgroundColor: Colors.grey[900],
@@ -255,6 +257,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                       onPageFinished: (url) async {
                         try {
                           String? body = await _galleryController?.bodyJson;
+                          log('Test>>> Gallery url=$url, body=$body');
                           if (body != null) {
                             DoujinshiList doujinshiList =
                                 DoujinshiList.fromJson(jsonDecode(body));
@@ -299,6 +302,7 @@ class _DoujinshiGalleryState extends State<DoujinshiGallery> {
                         try {
                           String? body =
                               await _searchDoujinController?.bodyJson;
+                          log('Test>>> Search url=$url, body=$body');
                           if (body != null) {
                             _openDoujinshi(
                                 Doujinshi.fromJson(jsonDecode(body)));

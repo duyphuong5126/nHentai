@@ -40,6 +40,7 @@ class _MorePageState extends State<MorePage> {
     _viewModel.initStates();
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: DefaultScreenTitle('About'),
         centerTitle: true,
         backgroundColor: Constant.mainColor,

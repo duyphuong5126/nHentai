@@ -11,6 +11,7 @@ import 'package:nhentai/domain/usecase/GetActiveVersionUseCase.dart';
 import 'package:nhentai/page/DoujinshiPage.dart';
 import 'package:nhentai/page/HomePage.dart';
 import 'package:nhentai/page/ReaderPage.dart';
+import 'package:nhentai/page/protection_bypass_page.dart';
 import 'package:package_info/package_info.dart';
 
 class NHentaiApp extends StatefulWidget {
@@ -36,7 +37,8 @@ class _NHentaiAppState extends State<NHentaiApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       routes: {
-        '/': (context) => HomePage(
+        '/': (context) => ProtectionByPassPage(),
+        MainNavigator.HOME_PAGE: (context) => HomePage(
               homeTabNameHolder: homeTabNameHolder,
               newVersionCubit: newVersionCubit,
             ),
@@ -82,8 +84,7 @@ class _NHentaiAppState extends State<NHentaiApp> {
         newVersionCubit.push(activeVersion);
       }
     }, onError: (error, s) {
-      print(
-          'Failed to check active version error=$error');
+      print('Failed to check active version error=$error');
     });
   }
 

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -51,6 +52,7 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
         BlocConsumer(
           bloc: _recommendedDoujinshiListViewModel?.recommendedUrl(),
           listener: (context, String url) {
+            log('Test>>> Recommend url=$url');
             _recommendationWebViewController?.loadUrl(url);
           },
           builder: (context, String url) {
@@ -70,6 +72,7 @@ class _RecommendedDoujinshiListState extends State<RecommendedDoujinshiList> {
                           String? body =
                               await _recommendationWebViewController?.bodyJson;
                           if (body != null) {
+                            log('Test>>> Recommend body=$body');
                             _recommendedDoujinshiListViewModel
                                 ?.onDataLoaded(body);
                           }
